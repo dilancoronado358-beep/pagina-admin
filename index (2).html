@@ -1,1751 +1,1240 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebElite | Desarrollo Web Premium para Marcas de Élite</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --black: #080808;
-            --black-2: #111111;
-            --black-3: #1a1a1a;
-            --black-4: #222222;
-            --gold: #c9a84c;
-            --gold-light: #e8c97a;
-            --gold-dark: #9a7a30;
-            --white: #f7f3ee;
-            --white-dim: #b8b0a4;
-            --white-dimmer: #6b6560;
-            --font-display: 'Cormorant Garamond', serif;
-            --font-body: 'DM Sans', sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebElite Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg2: #111;
+  --bg3: #1a1a1a;
+  --bg4: #222;
+  --gold: #c9a84c;
+  --gold2: #e8c97a;
+  --gold-dim: rgba(201,168,76,0.15);
+  --white: #f0ece6;
+  --dim: #888;
+  --dimmer: #555;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3498db;
+  --border: rgba(255,255,255,0.07);
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --r: 6px;
+  --sidebar: 240px;
+  --header: 56px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);font-size:14px;line-height:1.5;}
+a{color:inherit;text-decoration:none;}
+button{font-family:var(--font);cursor:pointer;}
+input,textarea,select{font-family:var(--font);}
 
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px;}
 
-        body {
-            background: var(--black);
-            color: var(--white);
-            font-family: var(--font-body);
-            line-height: 1.6;
-            overflow-x: hidden;
-            cursor: none;
-        }
+/* ── LOGIN ── */
+#login-screen {
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;z-index:9999;
+}
+.login-box {
+  width:100%;max-width:380px;padding:2.5rem;
+  background:var(--bg2);border:1px solid rgba(201,168,76,0.2);
+  border-radius:var(--r);
+}
+.login-logo {
+  font-size:1.6rem;font-weight:700;text-align:center;margin-bottom:0.3rem;
+}
+.login-logo em{font-style:italic;color:var(--gold);}
+.login-sub{text-align:center;color:var(--dim);font-size:0.82rem;margin-bottom:2rem;}
+.login-label{font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:0.4rem;display:block;}
+.login-input {
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--white);padding:0.7rem 1rem;border-radius:var(--r);
+  font-size:0.9rem;margin-bottom:1rem;transition:border-color 0.2s;
+}
+.login-input:focus{outline:none;border-color:var(--gold);}
+.login-btn {
+  width:100%;background:var(--gold);border:none;color:#000;
+  padding:0.8rem;border-radius:var(--r);font-weight:700;font-size:0.9rem;
+  letter-spacing:0.05em;transition:all 0.2s;
+}
+.login-btn:hover{background:var(--gold2);}
+.login-err{color:var(--red);font-size:0.8rem;text-align:center;margin-top:0.8rem;display:none;}
+.login-lock{text-align:center;margin-bottom:1.5rem;font-size:2.5rem;color:var(--gold);}
 
-        /* ── CURSOR PERSONALIZADO ── */
-        .cursor {
-            width: 10px; height: 10px;
-            background: var(--gold);
-            border-radius: 50%;
-            position: fixed; top: 0; left: 0;
-            pointer-events: none; z-index: 99999;
-            transform: translate(-50%, -50%);
-            transition: width 0.2s, height 0.2s, background 0.2s;
-        }
-        .cursor-follower {
-            width: 36px; height: 36px;
-            border: 1px solid rgba(201,168,76,0.5);
-            border-radius: 50%;
-            position: fixed; top: 0; left: 0;
-            pointer-events: none; z-index: 99998;
-            transform: translate(-50%, -50%);
-            transition: all 0.08s ease;
-        }
-        body:has(a:hover) .cursor, body:has(button:hover) .cursor { width: 18px; height: 18px; }
+/* ── LAYOUT ── */
+#app{display:none;height:100%;flex-direction:column;}
+#app.visible{display:flex;}
 
-        /* ── BARRA DE URGENCIA ── */
-        .urgency-bar {
-            background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-dark));
-            background-size: 200% 100%;
-            animation: shimmer 3s infinite;
-            color: var(--black);
-            text-align: center;
-            padding: 10px 20px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            position: relative; z-index: 1001;
-        }
-        .urgency-bar span { margin: 0 8px; }
-        @keyframes shimmer { 0%,100%{background-position:0%} 50%{background-position:100%} }
+/* Header */
+.top-bar {
+  height:var(--header);background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 1.5rem;position:fixed;top:0;left:0;right:0;z-index:100;
+}
+.top-logo{font-size:1.2rem;font-weight:700;}
+.top-logo em{font-style:italic;color:var(--gold);}
+.top-right{display:flex;align-items:center;gap:1rem;}
+.top-badge {
+  background:var(--gold-dim);color:var(--gold);
+  padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;
+  border:1px solid rgba(201,168,76,0.3);
+}
+.top-btn {
+  background:transparent;border:1px solid var(--border);color:var(--dim);
+  padding:5px 12px;border-radius:var(--r);font-size:0.8rem;
+  transition:all 0.2s;display:flex;align-items:center;gap:6px;
+}
+.top-btn:hover{border-color:var(--gold);color:var(--gold);}
+.top-save-btn {
+  background:var(--gold);border:none;color:#000;
+  padding:6px 16px;border-radius:var(--r);font-size:0.82rem;font-weight:700;
+  transition:all 0.2s;display:flex;align-items:center;gap:6px;
+}
+.top-save-btn:hover{background:var(--gold2);}
+.top-save-btn.saved{background:var(--green);color:#fff;}
 
-        /* ── HEADER ── */
-        header {
-            position: fixed; width: 100%; z-index: 1000;
-            top: 36px;
-            transition: top 0.3s, background 0.3s, backdrop-filter 0.3s;
-        }
-        header.scrolled {
-            top: 0;
-            background: rgba(8,8,8,0.92);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(201,168,76,0.12);
-        }
-        .navbar {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1.4rem 5%; max-width: 1400px; margin: 0 auto;
-        }
-        .logo {
-            font-family: var(--font-display); font-size: 2rem; font-weight: 700;
-            color: var(--white); text-decoration: none; letter-spacing: 0.02em;
-        }
-        .logo em { font-style: italic; color: var(--gold); }
-        .nav-links { display: flex; gap: 2.5rem; }
-        .nav-links a {
-            color: var(--white-dim); text-decoration: none; font-size: 0.88rem;
-            font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
-            transition: color 0.3s; position: relative;
-        }
-        .nav-links a:hover { color: var(--gold); }
-        .nav-links a::after {
-            content: ''; position: absolute; bottom: -4px; left: 0;
-            width: 0; height: 1px; background: var(--gold); transition: width 0.3s;
-        }
-        .nav-links a:hover::after { width: 100%; }
-        .btn-gold {
-            background: transparent; border: 1px solid var(--gold);
-            color: var(--gold); padding: 0.65rem 1.6rem;
-            font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
-            letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none;
-            cursor: pointer; transition: all 0.3s; display: inline-block;
-        }
-        .btn-gold:hover { background: var(--gold); color: var(--black); }
-        .btn-gold-fill {
-            background: var(--gold); border: 1px solid var(--gold);
-            color: var(--black); padding: 0.9rem 2.2rem;
-            font-family: var(--font-body); font-size: 0.85rem; font-weight: 700;
-            letter-spacing: 0.1em; text-transform: uppercase; text-decoration: none;
-            cursor: pointer; transition: all 0.3s; display: inline-block;
-        }
-        .btn-gold-fill:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 10px 30px rgba(201,168,76,0.3); }
-        .mobile-menu { display: none; font-size: 1.4rem; cursor: pointer; color: var(--white); }
+/* Main wrapper */
+.main-wrapper {
+  display:flex;height:100%;padding-top:var(--header);
+}
 
-        /* ── HERO ── */
-        .hero {
-            min-height: 100vh;
-            display: flex; align-items: center;
-            padding: 0 5%; padding-top: 120px;
-            position: relative; overflow: hidden;
-            background: var(--black);
-        }
-        .hero-bg {
-            position: absolute; inset: 0; z-index: 0;
-            background: radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201,168,76,0.06) 0%, transparent 70%),
-                        radial-gradient(ellipse 50% 80% at 20% 80%, rgba(201,168,76,0.04) 0%, transparent 60%);
-        }
-        .hero-grid {
-            position: absolute; inset: 0; z-index: 0;
-            background-image: linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
-            background-size: 60px 60px;
-            mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
-        }
-        .hero-content { max-width: 750px; position: relative; z-index: 1; }
-        .hero-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            border: 1px solid rgba(201,168,76,0.4); padding: 6px 16px;
-            margin-bottom: 2rem; font-size: 0.75rem; letter-spacing: 0.14em;
-            text-transform: uppercase; color: var(--gold);
-            animation: fadeUp 0.8s 0.2s both;
-        }
-        .hero-badge::before { content: ''; width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: blink 2s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-        .hero h1 {
-            font-family: var(--font-display); font-size: clamp(3rem, 7vw, 5.5rem);
-            font-weight: 300; line-height: 1.05; letter-spacing: -0.01em;
-            margin-bottom: 1.8rem;
-            animation: fadeUp 0.8s 0.4s both;
-        }
-        .hero h1 em { font-style: italic; color: var(--gold); }
-        .hero h1 strong { font-weight: 700; }
-        .hero-sub {
-            font-size: 1.1rem; color: var(--white-dim); max-width: 520px;
-            margin-bottom: 2.5rem; line-height: 1.8;
-            animation: fadeUp 0.8s 0.6s both;
-        }
-        .hero-buttons {
-            display: flex; gap: 1rem; flex-wrap: wrap;
-            animation: fadeUp 0.8s 0.8s both;
-        }
-        .hero-scroll {
-            position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 8px;
-            color: var(--white-dimmer); font-size: 0.75rem; letter-spacing: 0.12em;
-            text-transform: uppercase; animation: fadeIn 1s 1.5s both;
-        }
-        .hero-scroll-line {
-            width: 1px; height: 50px; background: linear-gradient(to bottom, var(--gold), transparent);
-            animation: scrollLine 2s infinite;
-        }
-        @keyframes scrollLine { 0%{transform:scaleY(0);transform-origin:top} 50%{transform:scaleY(1);transform-origin:top} 51%{transform:scaleY(1);transform-origin:bottom} 100%{transform:scaleY(0);transform-origin:bottom} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+/* Sidebar */
+.sidebar {
+  width:var(--sidebar);background:var(--bg2);
+  border-right:1px solid var(--border);
+  position:fixed;top:var(--header);bottom:0;
+  overflow-y:auto;display:flex;flex-direction:column;
+  padding:1rem 0;
+}
+.sidebar-section{padding:0.5rem 1rem 0.2rem;font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dimmer);}
+.nav-item {
+  display:flex;align-items:center;gap:10px;
+  padding:0.6rem 1.2rem;color:var(--dim);font-size:0.87rem;font-weight:500;
+  cursor:pointer;transition:all 0.15s;border-left:2px solid transparent;
+  margin:1px 0;
+}
+.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.03);}
+.nav-item.active{color:var(--gold);background:var(--gold-dim);border-left-color:var(--gold);}
+.nav-item i{width:16px;text-align:center;font-size:0.85rem;}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;font-weight:700;}
 
-        /* ── STATS ── */
-        .stats {
-            background: var(--black-2);
-            border-top: 1px solid rgba(201,168,76,0.12);
-            border-bottom: 1px solid rgba(201,168,76,0.12);
-            padding: 3rem 5%;
-        }
-        .stats-inner {
-            max-width: 1100px; margin: 0 auto;
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 2rem;
-        }
-        .stat-item { text-align: center; }
-        .stat-num {
-            font-family: var(--font-display); font-size: 3.5rem; font-weight: 700;
-            color: var(--gold); line-height: 1; display: block;
-        }
-        .stat-label {
-            font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
-            color: var(--white-dimmer); margin-top: 0.4rem;
-        }
+/* Content */
+.content {
+  margin-left:var(--sidebar);flex:1;padding:2rem;
+  overflow-y:auto;height:calc(100vh - var(--header));
+}
 
-        /* ── SECCIÓN TITLE ── */
-        .section-label {
-            display: inline-block; font-size: 0.72rem; letter-spacing: 0.18em;
-            text-transform: uppercase; color: var(--gold); margin-bottom: 1rem;
-        }
-        .section-title {
-            font-family: var(--font-display); font-size: clamp(2.2rem, 4vw, 3.4rem);
-            font-weight: 300; line-height: 1.15; margin-bottom: 1rem;
-        }
-        .section-title em { font-style: italic; color: var(--gold); }
-        .section-sub { color: var(--white-dim); font-size: 1rem; max-width: 500px; line-height: 1.8; }
-        .section-header { margin-bottom: 4rem; }
-        .divider {
-            width: 60px; height: 1px; background: var(--gold);
-            margin: 1.5rem 0;
-        }
+/* ── COMPONENTS ── */
+.page{display:none;}
+.page.active{display:block;}
 
-        /* ── SERVICIOS ── */
-        .services { padding: 8rem 5%; background: var(--black); }
-        .services-inner { max-width: 1200px; margin: 0 auto; }
-        .services-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-            border: 1px solid rgba(201,168,76,0.15);
-            margin-top: 1rem;
-        }
-        .service-card {
-            padding: 3rem 2.5rem; background: var(--black-2);
-            transition: background 0.4s; position: relative; overflow: hidden;
-        }
-        .service-card::before {
-            content: ''; position: absolute; top: 0; left: 0;
-            width: 100%; height: 2px; background: var(--gold);
-            transform: scaleX(0); transform-origin: left; transition: transform 0.4s;
-        }
-        .service-card:hover { background: var(--black-3); }
-        .service-card:hover::before { transform: scaleX(1); }
-        .service-num {
-            font-family: var(--font-display); font-size: 4rem; font-weight: 700;
-            color: rgba(201,168,76,0.12); line-height: 1; margin-bottom: 1.5rem;
-            transition: color 0.4s;
-        }
-        .service-card:hover .service-num { color: rgba(201,168,76,0.25); }
-        .service-icon-wrap {
-            width: 52px; height: 52px; border: 1px solid rgba(201,168,76,0.3);
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 1.5rem; color: var(--gold); font-size: 1.3rem;
-            transition: background 0.3s;
-        }
-        .service-card:hover .service-icon-wrap { background: rgba(201,168,76,0.1); }
-        .service-card h3 {
-            font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
-            margin-bottom: 1rem; line-height: 1.2;
-        }
-        .service-card p { color: var(--white-dim); font-size: 0.93rem; line-height: 1.8; margin-bottom: 1.5rem; }
-        .service-link {
-            font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
-            color: var(--gold); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-            transition: gap 0.3s;
-        }
-        .service-link:hover { gap: 14px; }
+.page-title{font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;}
+.page-sub{color:var(--dim);font-size:0.85rem;margin-bottom:2rem;}
 
-        /* ── POR QUÉ YO ── */
-        .why { padding: 8rem 5%; background: var(--black-2); }
-        .why-inner {
-            max-width: 1200px; margin: 0 auto;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center;
-        }
-        .why-visual {
-            position: relative;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .why-box {
-            width: 100%; aspect-ratio: 1;
-            border: 1px solid rgba(201,168,76,0.2);
-            position: relative; overflow: hidden;
-            background: var(--black-3);
-        }
-        .why-box-inner {
-            position: absolute; inset: 20px;
-            border: 1px solid rgba(201,168,76,0.1);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            gap: 1rem;
-        }
-        .why-big-num {
-            font-family: var(--font-display); font-size: 8rem; font-weight: 700;
-            color: var(--gold); line-height: 1;
-        }
-        .why-big-label {
-            font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase;
-            color: var(--white-dim); text-align: center;
-        }
-        .why-corner {
-            position: absolute; width: 40px; height: 40px;
-        }
-        .why-corner.tl { top: -1px; left: -1px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
-        .why-corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
-        .why-list { display: flex; flex-direction: column; gap: 2rem; }
-        .why-item { display: flex; gap: 1.5rem; align-items: flex-start; }
-        .why-check {
-            width: 40px; height: 40px; border: 1px solid rgba(201,168,76,0.4);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--gold); font-size: 0.9rem; flex-shrink: 0;
-        }
-        .why-item h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.4rem; }
-        .why-item p { color: var(--white-dim); font-size: 0.9rem; line-height: 1.7; }
+.card {
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;
+}
+.card-title {
+  font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:1.2rem;display:flex;align-items:center;gap:8px;
+}
+.card-title i{font-size:0.9rem;}
 
-        /* ── PORTAFOLIO ── */
-        .portfolio { padding: 8rem 5%; background: var(--black); }
-        .portfolio-inner { max-width: 1200px; margin: 0 auto; }
-        .portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-        .portfolio-item {
-            position: relative; overflow: hidden; aspect-ratio: 4/3;
-            cursor: pointer;
-        }
-        .portfolio-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.25,0.46,0.45,0.94); }
-        .portfolio-item:hover .portfolio-img { transform: scale(1.08); }
-        .portfolio-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(to top, rgba(8,8,8,0.92) 0%, transparent 60%);
-            display: flex; flex-direction: column; justify-content: flex-end;
-            padding: 2rem; transform: translateY(60px); transition: transform 0.4s;
-        }
-        .portfolio-item:hover .portfolio-overlay { transform: translateY(0); }
-        .portfolio-tag {
-            font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
-            color: var(--gold); margin-bottom: 0.5rem;
-        }
-        .portfolio-overlay h3 { font-family: var(--font-display); font-size: 1.4rem; margin-bottom: 0.8rem; }
-        .portfolio-overlay p { color: var(--white-dim); font-size: 0.85rem; line-height: 1.7; }
+.field-group{margin-bottom:1.2rem;}
+.field-label{font-size:0.75rem;letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);margin-bottom:0.4rem;display:block;}
+.field-input {
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--white);padding:0.6rem 0.9rem;border-radius:var(--r);
+  font-size:0.88rem;transition:border-color 0.2s;
+}
+.field-input:focus{outline:none;border-color:var(--gold);}
+.field-textarea {
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--white);padding:0.6rem 0.9rem;border-radius:var(--r);
+  font-size:0.88rem;resize:vertical;min-height:80px;transition:border-color 0.2s;
+}
+.field-textarea:focus{outline:none;border-color:var(--gold);}
 
-        /* ── PROCESO ── */
-        .process { padding: 8rem 5%; background: var(--black-2); }
-        .process-inner { max-width: 1100px; margin: 0 auto; }
-        .process-grid {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 0; margin-top: 1rem;
-            border: 1px solid rgba(201,168,76,0.15);
-        }
-        .step {
-            padding: 2.5rem 2rem; position: relative;
-            border-right: 1px solid rgba(201,168,76,0.15);
-            transition: background 0.3s;
-        }
-        .step:last-child { border-right: none; }
-        .step:hover { background: rgba(201,168,76,0.03); }
-        .step-num {
-            font-family: var(--font-display); font-size: 5rem; font-weight: 700;
-            color: rgba(201,168,76,0.08); line-height: 1; display: block;
-            margin-bottom: 1.2rem; transition: color 0.3s;
-        }
-        .step:hover .step-num { color: rgba(201,168,76,0.18); }
-        .step-icon { color: var(--gold); font-size: 1.4rem; margin-bottom: 1rem; }
-        .step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.8rem; letter-spacing: 0.02em; }
-        .step p { color: var(--white-dim); font-size: 0.87rem; line-height: 1.7; }
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
 
-        /* ── PRECIOS ── */
-        .pricing { padding: 8rem 5%; background: var(--black); }
-        .pricing-inner { max-width: 1100px; margin: 0 auto; }
-        .pricing-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 1rem;
-        }
-        .price-card {
-            border: 1px solid rgba(201,168,76,0.15); padding: 3rem 2.5rem;
-            background: var(--black-2); position: relative; transition: border-color 0.3s;
-        }
-        .price-card.featured {
-            border-color: var(--gold);
-            background: linear-gradient(135deg, var(--black-3) 0%, rgba(201,168,76,0.05) 100%);
-        }
-        .price-card:hover { border-color: rgba(201,168,76,0.5); }
-        .price-badge {
-            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-            background: var(--gold); color: var(--black);
-            font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
-            font-weight: 700; padding: 4px 16px;
-        }
-        .price-plan {
-            font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase;
-            color: var(--gold); margin-bottom: 1.2rem;
-        }
-        .price-num {
-            font-family: var(--font-display); font-size: 3.5rem; font-weight: 700;
-            line-height: 1; color: var(--white); margin-bottom: 0.3rem;
-        }
-        .price-num sup { font-size: 1.5rem; vertical-align: top; margin-top: 0.6rem; display: inline-block; }
-        .price-period { color: var(--white-dimmer); font-size: 0.85rem; margin-bottom: 2rem; }
-        .price-divider { height: 1px; background: rgba(201,168,76,0.15); margin-bottom: 2rem; }
-        .price-features { list-style: none; display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 2.5rem; }
-        .price-features li {
-            display: flex; align-items: center; gap: 10px;
-            font-size: 0.9rem; color: var(--white-dim);
-        }
-        .price-features li i { color: var(--gold); font-size: 0.75rem; flex-shrink: 0; }
-        .price-features li.disabled { color: var(--white-dimmer); }
-        .price-features li.disabled i { color: var(--white-dimmer); }
-        .price-desc { color: var(--white-dim); font-size: 0.87rem; line-height: 1.7; margin-bottom: 2rem; }
+/* Table */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);}
+td{padding:0.7rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem;vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.td-gold{color:var(--gold);font-weight:600;font-family:var(--mono);}
 
-        /* ── TESTIMONIOS ── */
-        .testimonials { padding: 8rem 5%; background: var(--black-2); }
-        .testimonials-inner { max-width: 1200px; margin: 0 auto; }
-        .testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-        .testimonial-card {
-            border: 1px solid rgba(201,168,76,0.12); padding: 2.5rem;
-            background: var(--black-3); transition: border-color 0.3s;
-        }
-        .testimonial-card:hover { border-color: rgba(201,168,76,0.3); }
-        .stars { color: var(--gold); font-size: 0.85rem; margin-bottom: 1.5rem; letter-spacing: 3px; }
-        .testimonial-text {
-            font-family: var(--font-display); font-style: italic; font-size: 1.15rem;
-            line-height: 1.7; color: var(--white); margin-bottom: 2rem;
-        }
-        .testimonial-author { display: flex; align-items: center; gap: 1rem; }
-        .author-avatar {
-            width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
-            border: 1px solid rgba(201,168,76,0.3);
-        }
-        .author-name { font-weight: 600; font-size: 0.9rem; }
-        .author-role { color: var(--white-dimmer); font-size: 0.78rem; margin-top: 2px; }
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:0.72rem;font-weight:600;}
+.badge-green{background:rgba(46,204,113,0.15);color:var(--green);}
+.badge-red{background:rgba(231,76,60,0.15);color:var(--red);}
+.badge-gold{background:var(--gold-dim);color:var(--gold);}
+.badge-blue{background:rgba(52,152,219,0.15);color:var(--blue);}
 
-        /* ── FAQ ── */
-        .faq { padding: 8rem 5%; background: var(--black); }
-        .faq-inner { max-width: 780px; margin: 0 auto; }
-        .faq-item {
-            border-bottom: 1px solid rgba(201,168,76,0.12);
-        }
-        .faq-question {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 1.8rem 0; cursor: pointer; transition: color 0.3s;
-            font-weight: 500; font-size: 1rem;
-        }
-        .faq-question:hover { color: var(--gold); }
-        .faq-icon { color: var(--gold); font-size: 0.9rem; transition: transform 0.3s; }
-        .faq-item.open .faq-icon { transform: rotate(45deg); }
-        .faq-answer {
-            overflow: hidden; max-height: 0; transition: max-height 0.4s ease, padding 0.3s;
-        }
-        .faq-item.open .faq-answer { max-height: 300px; }
-        .faq-answer p { color: var(--white-dim); font-size: 0.93rem; line-height: 1.8; padding-bottom: 1.8rem; }
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);font-size:0.8rem;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;}
+.btn-primary{background:var(--gold);color:#000;}
+.btn-primary:hover{background:var(--gold2);}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,0.2);}
+.btn-danger{background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.2);}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-success{background:rgba(46,204,113,0.15);color:var(--green);border:1px solid rgba(46,204,113,0.2);}
+.btn-success:hover{background:var(--green);color:#fff;}
+.btn-sm{padding:4px 10px;font-size:0.75rem;}
 
-        /* ── CONTACTO / CALENDLY ── */
-        .contact { padding: 8rem 5%; background: var(--black-2); }
-        .contact-inner {
-            max-width: 1200px; margin: 0 auto;
-            display: grid; grid-template-columns: 1fr 1.4fr; gap: 5rem; align-items: start;
-        }
-        .contact-info { display: flex; flex-direction: column; gap: 2.5rem; }
-        .contact-item { display: flex; gap: 1.2rem; align-items: flex-start; }
-        .contact-icon-box {
-            width: 44px; height: 44px; border: 1px solid rgba(201,168,76,0.3);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--gold); font-size: 1rem; flex-shrink: 0;
-        }
-        .contact-item h4 { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem; }
-        .contact-item p { color: var(--white-dim); font-size: 0.93rem; }
-        .calendly-wrapper {
-            border: 1px solid rgba(201,168,76,0.2); overflow: hidden;
-            background: var(--black-3);
-        }
-        .calendly-header {
-            padding: 1.2rem 1.8rem;
-            border-bottom: 1px solid rgba(201,168,76,0.15);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .calendly-dot { width: 8px; height: 8px; border-radius: 50%; }
-        .calendly-dot.green { background: #2ecc71; animation: blink 2s infinite; }
-        .calendly-header-text {
-            font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
-            color: var(--white-dim); margin-left: auto;
-        }
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;}
+.stat-label{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:0.5rem;}
+.stat-val{font-size:1.8rem;font-weight:700;color:var(--gold);font-family:var(--mono);}
+.stat-sub{font-size:0.75rem;color:var(--dimmer);margin-top:0.3rem;}
 
-        /* ── FOOTER ── */
-        footer {
-            background: var(--black); padding: 5rem 5% 2rem;
-            border-top: 1px solid rgba(201,168,76,0.12);
-        }
-        .footer-top {
-            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
-            max-width: 1200px; margin: 0 auto 4rem; padding-bottom: 4rem;
-            border-bottom: 1px solid rgba(201,168,76,0.1);
-        }
-        .footer-brand .logo { display: block; margin-bottom: 1.2rem; font-size: 1.8rem; }
-        .footer-brand p { color: var(--white-dimmer); font-size: 0.88rem; line-height: 1.8; max-width: 260px; margin-bottom: 2rem; }
-        .footer-socials { display: flex; gap: 0.8rem; }
-        .footer-social {
-            width: 36px; height: 36px; border: 1px solid rgba(201,168,76,0.25);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--white-dim); text-decoration: none; font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-        .footer-social:hover { border-color: var(--gold); color: var(--gold); }
-        .footer-col h5 {
-            font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase;
-            color: var(--gold); margin-bottom: 1.5rem;
-        }
-        .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
-        .footer-col a { color: var(--white-dimmer); text-decoration: none; font-size: 0.88rem; transition: color 0.3s; }
-        .footer-col a:hover { color: var(--white); }
-        .footer-bottom {
-            max-width: 1200px; margin: 0 auto;
-            display: flex; justify-content: space-between; align-items: center;
-            color: var(--white-dimmer); font-size: 0.8rem;
-        }
+/* Toggle */
+.toggle-wrap{display:flex;align-items:center;gap:10px;}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider {
+  position:absolute;inset:0;background:var(--bg4);
+  border-radius:20px;transition:0.3s;
+}
+.toggle-slider::before {
+  content:'';position:absolute;width:14px;height:14px;
+  left:3px;top:3px;background:#fff;border-radius:50%;transition:0.3s;
+}
+.toggle input:checked + .toggle-slider{background:var(--gold);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(16px);}
 
-        /* ── WHATSAPP ── */
-        .whatsapp-float {
-            position: fixed; bottom: 28px; right: 28px;
-            width: 56px; height: 56px; background: #25d366;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 1.6rem; z-index: 999;
-            box-shadow: 0 4px 20px rgba(37,211,102,0.4); transition: all 0.3s;
-            text-decoration: none;
-        }
-        .whatsapp-float:hover { transform: scale(1.1); background: #1fad57; }
+/* Portfolio cards */
+.portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+.portfolio-admin-card {
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+}
+.portfolio-admin-img{width:100%;height:140px;object-fit:cover;}
+.portfolio-admin-body{padding:1rem;}
+.portfolio-admin-tag{font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
+.portfolio-admin-title{font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;}
+.portfolio-admin-desc{font-size:0.8rem;color:var(--dim);margin-bottom:0.8rem;line-height:1.5;}
+.portfolio-admin-actions{display:flex;gap:0.5rem;}
 
-        /* ── CTA BANNER ── */
-        .cta-banner {
-            padding: 6rem 5%; background: var(--black-3);
-            border-top: 1px solid rgba(201,168,76,0.12);
-            border-bottom: 1px solid rgba(201,168,76,0.12);
-            text-align: center; position: relative; overflow: hidden;
-        }
-        .cta-banner::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%);
-        }
-        .cta-banner h2 {
-            font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.2rem);
-            font-weight: 300; margin-bottom: 1.2rem; position: relative;
-        }
-        .cta-banner h2 em { font-style: italic; color: var(--gold); }
-        .cta-banner p { color: var(--white-dim); margin-bottom: 2.5rem; max-width: 500px; margin-left: auto; margin-right: auto; position: relative; }
-        .cta-banner .buttons { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; position: relative; }
+/* Price card */
+.price-admin-card {
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;
+  position:relative;
+}
+.price-admin-card.featured{border-color:rgba(201,168,76,0.4);}
+.featured-badge {
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;
+  padding:2px 10px;border-radius:10px;letter-spacing:0.08em;text-transform:uppercase;
+}
 
-        /* ── REVEAL ANIMATIONS ── */
-        .reveal {
-            opacity: 0; transform: translateY(30px); transition: opacity 0.7s, transform 0.7s;
-        }
-        .reveal.visible { opacity: 1; transform: translateY(0); }
+/* Cotizaciones */
+.cot-row{padding:1rem;background:var(--bg3);border-radius:var(--r);margin-bottom:0.8rem;border:1px solid var(--border);}
+.cot-row.unread{border-left:3px solid var(--gold);}
+.cot-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;}
+.cot-name{font-weight:600;font-size:0.95rem;}
+.cot-email{color:var(--dim);font-size:0.8rem;}
+.cot-total{font-family:var(--mono);font-size:1.1rem;color:var(--gold);font-weight:700;}
+.cot-date{color:var(--dimmer);font-size:0.75rem;}
+.cot-items{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;}
+.cot-item-tag{background:var(--bg4);color:var(--dim);padding:2px 8px;border-radius:4px;font-size:0.75rem;}
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1024px) {
-            .stats-inner { grid-template-columns: repeat(2, 1fr); }
-            .services-grid { grid-template-columns: 1fr; }
-            .why-inner { grid-template-columns: 1fr; }
-            .why-visual { display: none; }
-            .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
-            .contact-inner { grid-template-columns: 1fr; }
-            .footer-top { grid-template-columns: 1fr 1fr; }
-        }
-        @media (max-width: 768px) {
-            .nav-links { display: none; }
-            .mobile-menu { display: block; }
-            .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: rgba(8,8,8,0.98); padding: 2rem 5%; gap: 1.5rem; }
-            .portfolio-grid { grid-template-columns: 1fr; }
-            .process-grid { grid-template-columns: 1fr 1fr; }
-            .testimonials-grid { grid-template-columns: 1fr; }
-            .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
-            .footer-top { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 576px) {
-            .process-grid { grid-template-columns: 1fr; }
-            .stats-inner { grid-template-columns: repeat(2,1fr); }
-        }
+/* Toast */
+.toast {
+  position:fixed;bottom:1.5rem;right:1.5rem;
+  background:var(--bg3);border:1px solid var(--border);
+  padding:0.8rem 1.2rem;border-radius:var(--r);
+  display:flex;align-items:center;gap:10px;font-size:0.85rem;
+  transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:9999;
+  box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success .toast-icon{color:var(--green);}
+.toast.error .toast-icon{color:var(--red);}
+.toast.info .toast-icon{color:var(--blue);}
 
-        /* ── COTIZADOR ── */
-        .cotizador { padding: 8rem 5%; background: var(--black-3); }
-        .cotizador-inner { max-width: 1100px; margin: 0 auto; }
-        .cotizador-grid {
-            display: grid; grid-template-columns: 1.2fr 1fr; gap: 3rem; margin-top: 1rem; align-items: start;
-        }
-        .cotizador-form-panel {
-            background: var(--black-2); border: 1px solid rgba(201,168,76,0.18); padding: 2.5rem;
-        }
-        .cotizador-result-panel {
-            background: var(--black); border: 1px solid rgba(201,168,76,0.3);
-            padding: 2.5rem; position: sticky; top: 120px;
-        }
-        .cotizador-section-title {
-            font-family: var(--font-display); font-size: 1.1rem; font-weight: 600;
-            color: var(--gold); letter-spacing: 0.06em; text-transform: uppercase;
-            margin-bottom: 1.2rem; padding-bottom: 0.6rem;
-            border-bottom: 1px solid rgba(201,168,76,0.15);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .cotizador-block { margin-bottom: 2.2rem; }
-        .cot-label {
-            font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase;
-            color: var(--white-dim); margin-bottom: 0.7rem; display: block;
-        }
-        .cot-options { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-        .cot-option {
-            border: 1px solid rgba(201,168,76,0.2); padding: 0.55rem 1.1rem;
-            font-size: 0.85rem; color: var(--white-dim); cursor: pointer;
-            transition: all 0.25s; user-select: none; background: transparent;
-            font-family: var(--font-body);
-        }
-        .cot-option:hover { border-color: var(--gold); color: var(--white); }
-        .cot-option.selected { background: var(--gold); border-color: var(--gold); color: var(--black); font-weight: 600; }
-        .cot-option.multi.selected { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); }
-        .cot-input {
-            width: 100%; background: var(--black-3); border: 1px solid rgba(201,168,76,0.2);
-            color: var(--white); padding: 0.75rem 1rem; font-family: var(--font-body);
-            font-size: 0.9rem; transition: border-color 0.3s;
-        }
-        .cot-input:focus { outline: none; border-color: var(--gold); }
-        /* Result panel */
-        .result-label {
-            font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--white-dimmer);
-        }
-        .result-total {
-            font-family: var(--font-display); font-size: 3.2rem; font-weight: 700;
-            color: var(--gold); line-height: 1; margin: 0.3rem 0 0.2rem;
-        }
-        .result-note { font-size: 0.8rem; color: var(--white-dimmer); margin-bottom: 1.8rem; }
-        .result-divider { height: 1px; background: rgba(201,168,76,0.15); margin: 1.4rem 0; }
-        .result-line {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            gap: 1rem; margin-bottom: 0.8rem;
-        }
-        .result-line-label { font-size: 0.85rem; color: var(--white-dim); flex: 1; }
-        .result-line-val { font-size: 0.85rem; color: var(--white); font-weight: 500; white-space: nowrap; }
-        .result-line-val.gold { color: var(--gold); }
-        .result-empty {
-            text-align: center; padding: 2rem 0; color: var(--white-dimmer);
-            font-size: 0.88rem; font-style: italic;
-        }
-        .client-fields { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem; }
-        .client-field-group { display: flex; flex-direction: column; gap: 0.3rem; }
-        .client-field-group label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--white-dimmer); }
-        .btn-download {
-            width: 100%; background: var(--gold); border: none; color: var(--black);
-            padding: 1rem; font-family: var(--font-body); font-size: 0.85rem;
-            font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-            cursor: pointer; transition: all 0.3s; display: flex; align-items: center;
-            justify-content: center; gap: 8px;
-        }
-        .btn-download:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.3); }
-        .btn-download:disabled { background: var(--black-4); color: var(--white-dimmer); cursor: not-allowed; transform: none; box-shadow: none; }
-        .cot-range-wrap { display: flex; align-items: center; gap: 1rem; }
-        .cot-range {
-            flex: 1; -webkit-appearance: none; height: 3px; background: rgba(201,168,76,0.2);
-            outline: none; border-radius: 2px;
-        }
-        .cot-range::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 18px; height: 18px;
-            background: var(--gold); border-radius: 50%; cursor: pointer;
-        }
-        .cot-range-val {
-            font-family: var(--font-display); font-size: 1.4rem; font-weight: 700;
-            color: var(--gold); min-width: 30px; text-align: right;
-        }
-        @media (max-width: 900px) {
-            .cotizador-grid { grid-template-columns: 1fr; }
-            .cotizador-result-panel { position: static; }
-        }
-    </style>
-    <!-- jsPDF Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+/* Loading */
+.loading-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9998;display:none;
+}
+.loading-overlay.show{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Cotizador table config */
+.cot-config-row{
+  display:flex;align-items:center;gap:1rem;padding:0.6rem 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.cot-config-label{flex:1;font-size:0.88rem;}
+.cot-config-cat{font-size:0.75rem;color:var(--gold);width:100px;}
+.cot-config-price{width:100px;}
+.cot-config-price input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--white);padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:0.85rem;}
+.cot-config-price input:focus{outline:none;border-color:var(--gold);}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .content{margin-left:0;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .portfolio-grid{grid-template-columns:1fr;}
+}
+
+/* Color preview */
+.img-preview{
+  width:100%;height:120px;object-fit:cover;border-radius:var(--r);
+  border:1px solid var(--border);margin-top:0.5rem;display:none;
+}
+.img-preview.show{display:block;}
+
+/* Section divider */
+.section-divider{height:1px;background:var(--border);margin:1.5rem 0;}
+
+/* Feature list editor */
+.feature-item{
+  display:flex;align-items:center;gap:8px;margin-bottom:0.5rem;
+}
+.feature-item input{flex:1;}
+.feature-item .remove-feat{
+  background:transparent;border:none;color:var(--dimmer);
+  cursor:pointer;padding:4px;transition:color 0.2s;
+}
+.feature-item .remove-feat:hover{color:var(--red);}
+</style>
 </head>
 <body>
 
-<div class="cursor"></div>
-<div class="cursor-follower"></div>
-
-<!-- BARRA DE URGENCIA -->
-<div class="urgency-bar">
-    <span>🔥</span> Solo quedan <strong>2 proyectos disponibles</strong> para este mes — Agenda tu llamada ahora <span>🔥</span>
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
 </div>
 
-<!-- HEADER -->
-<header id="header">
-    <nav class="navbar">
-        <a href="#inicio" class="logo">Web<em>Elite</em></a>
-        <div class="nav-links" id="navLinks">
-            <a href="#servicios">Servicios</a>
-            <a href="#portafolio">Portafolio</a>
-            <a href="#precios">Precios</a>
-            <a href="#cotizador">Cotizador</a>
-            <a href="#faq">FAQ</a>
-            <a href="#contacto">Contacto</a>
-        </div>
-        <a href="#contacto" class="btn-gold">Agendar Llamada</a>
-        <div class="mobile-menu" id="mobileMenu"><i class="fas fa-bars"></i></div>
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <i class="fas fa-check-circle toast-icon"></i>
+  <span id="toast-msg">Guardado correctamente</span>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-lock"><i class="fas fa-shield-alt"></i></div>
+    <div class="login-logo">Web<em>Elite</em></div>
+    <div class="login-sub">Panel de administración</div>
+    <label class="login-label">Email</label>
+    <input type="email" class="login-input" id="login-email" placeholder="tu@email.com" value="dilancoronado358@gmail.com">
+    <label class="login-label">Contraseña</label>
+    <input type="password" class="login-input" id="login-pass" placeholder="••••••••" value="">
+    <button class="login-btn" onclick="doLogin()">
+      <i class="fas fa-arrow-right"></i> Ingresar
+    </button>
+    <div class="login-err" id="login-err">Email o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-logo">Web<em>Elite</em> <span style="color:var(--dimmer);font-size:0.75rem;margin-left:6px;">Admin</span></div>
+    <div class="top-right">
+      <span class="top-badge"><i class="fas fa-circle" style="font-size:0.5rem;margin-right:4px;"></i> En vivo</span>
+      <a href="WebElite-Premium.html" target="_blank" class="top-btn"><i class="fas fa-eye"></i> Ver sitio</a>
+      <button class="top-save-btn" id="globalSaveBtn" onclick="saveCurrentPage()">
+        <i class="fas fa-save"></i> Guardar cambios
+      </button>
+      <button class="top-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-section">Principal</div>
+      <div class="nav-item active" onclick="showPage('dashboard')"><i class="fas fa-chart-square"></i> Dashboard</div>
+      <div class="nav-item" onclick="showPage('general')"><i class="fas fa-sliders-h"></i> General</div>
+
+      <div class="sidebar-section" style="margin-top:0.5rem;">Contenido</div>
+      <div class="nav-item" onclick="showPage('hero')"><i class="fas fa-heading"></i> Hero & Urgencia</div>
+      <div class="nav-item" onclick="showPage('servicios')"><i class="fas fa-briefcase"></i> Servicios</div>
+      <div class="nav-item" onclick="showPage('portafolio')"><i class="fas fa-images"></i> Portafolio</div>
+      <div class="nav-item" onclick="showPage('proceso')"><i class="fas fa-tasks"></i> Proceso</div>
+      <div class="nav-item" onclick="showPage('porque')"><i class="fas fa-star"></i> Por qué yo</div>
+
+      <div class="sidebar-section" style="margin-top:0.5rem;">Ventas</div>
+      <div class="nav-item" onclick="showPage('precios')"><i class="fas fa-tag"></i> Planes & Precios</div>
+      <div class="nav-item" onclick="showPage('cotizador')"><i class="fas fa-calculator"></i> Cotizador</div>
+      <div class="nav-item" onclick="showPage('cotizaciones')"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones <span class="nav-badge" id="unread-badge" style="display:none">0</span></div>
+
+      <div class="sidebar-section" style="margin-top:0.5rem;">Config</div>
+      <div class="nav-item" onclick="showPage('contacto')"><i class="fas fa-address-card"></i> Contacto & Redes</div>
+      <div class="nav-item" onclick="showPage('seguridad')"><i class="fas fa-lock"></i> Seguridad</div>
     </nav>
-</header>
 
-<!-- HERO -->
-<section class="hero" id="inicio">
-    <div class="hero-bg"></div>
-    <div class="hero-grid"></div>
-    <div class="hero-content">
-        <div class="hero-badge">Disponible para nuevos proyectos</div>
-        <h1>
-            Sitios web que<br>
-            <em>convierten</em> visitantes<br>
-            en <strong>clientes</strong>
-        </h1>
-        <p class="hero-sub">Diseño y desarrollo web premium para marcas ambiciosas. Cada pixel, cada línea de código y cada decisión de diseño está pensada para hacer crecer tu negocio.</p>
-        <div class="hero-buttons">
-            <a href="#contacto" class="btn-gold-fill">Agendar consultoría gratuita</a>
-            <a href="#portafolio" class="btn-gold">Ver portafolio</a>
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Resumen de tu sitio web</div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Cotizaciones totales</div>
+            <div class="stat-val" id="dash-total-cot">—</div>
+            <div class="stat-sub">Desde el inicio</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sin leer</div>
+            <div class="stat-val" id="dash-unread" style="color:var(--red)">—</div>
+            <div class="stat-sub">Requieren atención</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Valor promedio</div>
+            <div class="stat-val" id="dash-avg">—</div>
+            <div class="stat-sub">Por cotización</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Proyectos activos</div>
+            <div class="stat-val" id="dash-servicios">—</div>
+            <div class="stat-sub">Servicios publicados</div>
+          </div>
         </div>
-    </div>
-    <div class="hero-scroll">
-        <div class="hero-scroll-line"></div>
-        <span>Scroll</span>
-    </div>
-</section>
 
-<!-- STATS -->
-<section class="stats">
-    <div class="stats-inner reveal">
-        <div class="stat-item">
-            <span class="stat-num" data-target="47">0</span>
-            <span class="stat-label">Proyectos completados</span>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-clock"></i> Últimas cotizaciones recibidas</div>
+          <div id="dash-recent-cots"><div style="color:var(--dim);font-size:0.85rem;">Cargando...</div></div>
         </div>
-        <div class="stat-item">
-            <span class="stat-num" data-target="98">0</span>
-            <span class="stat-label">% Clientes satisfechos</span>
+
+        <div class="card">
+          <div class="card-title"><i class="fas fa-rocket"></i> Accesos rápidos</div>
+          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="showPage('hero')"><i class="fas fa-heading"></i> Editar Hero</button>
+            <button class="btn btn-ghost" onclick="showPage('portafolio')"><i class="fas fa-images"></i> Editar Portafolio</button>
+            <button class="btn btn-ghost" onclick="showPage('precios')"><i class="fas fa-tag"></i> Editar Precios</button>
+            <button class="btn btn-ghost" onclick="showPage('cotizaciones')"><i class="fas fa-file-invoice-dollar"></i> Ver Cotizaciones</button>
+          </div>
         </div>
-        <div class="stat-item">
-            <span class="stat-num" data-target="5">0</span>
-            <span class="stat-label">Años de experiencia</span>
+      </div>
+
+      <!-- ── GENERAL ── -->
+      <div class="page" id="page-general">
+        <div class="page-title">Configuración General</div>
+        <div class="page-sub">Estadísticas y datos que aparecen en la página</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-chart-bar"></i> Estadísticas (contadores animados)</div>
+          <div class="grid-2">
+            <div class="field-group">
+              <label class="field-label">Proyectos completados</label>
+              <input class="field-input" id="g-stat_proyectos" type="number">
+            </div>
+            <div class="field-group">
+              <label class="field-label">% Clientes satisfechos</label>
+              <input class="field-input" id="g-stat_satisfechos" type="number">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Años de experiencia</label>
+              <input class="field-input" id="g-stat_experiencia" type="number">
+            </div>
+          </div>
         </div>
-        <div class="stat-item">
-            <span class="stat-num" data-target="3">0</span>
-            <span class="stat-label">Días promedio de respuesta</span>
+      </div>
+
+      <!-- ── HERO ── -->
+      <div class="page" id="page-hero">
+        <div class="page-title">Hero & Urgencia</div>
+        <div class="page-sub">La primera sección que ven tus visitantes</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-exclamation-triangle"></i> Barra de urgencia (arriba)</div>
+          <div class="field-group">
+            <label class="field-label">Texto de urgencia (soporta HTML básico)</label>
+            <textarea class="field-textarea" id="g-urgency_texto"></textarea>
+          </div>
         </div>
-    </div>
-</section>
-
-<!-- SERVICIOS -->
-<section class="services" id="servicios">
-    <div class="services-inner">
-        <div class="section-header reveal">
-            <span class="section-label">Lo que hago</span>
-            <h2 class="section-title">Servicios diseñados para<br><em>resultados reales</em></h2>
-            <div class="divider"></div>
-            <p class="section-sub">No solo construyo sitios bonitos — construyo máquinas de conversión que trabajan para tu negocio las 24 horas.</p>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-heading"></i> Sección Hero</div>
+          <div class="field-group">
+            <label class="field-label">Título principal</label>
+            <textarea class="field-textarea" id="g-hero_titulo" style="min-height:60px;"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Subtítulo / descripción</label>
+            <textarea class="field-textarea" id="g-hero_subtitulo"></textarea>
+          </div>
         </div>
-        <div class="services-grid reveal">
-            <div class="service-card">
-                <div class="service-num">01</div>
-                <div class="service-icon-wrap"><i class="fas fa-laptop-code"></i></div>
-                <h3>Desarrollo Web a Medida</h3>
-                <p>Sitios web únicos construidos desde cero para tu marca. Sin plantillas, sin límites. Velocidad de carga óptima, código limpio y arquitectura escalable.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="service-card">
-                <div class="service-num">02</div>
-                <div class="service-icon-wrap"><i class="fas fa-shopping-bag"></i></div>
-                <h3>E-Commerce Premium</h3>
-                <p>Tiendas online optimizadas para vender. Checkout rápido, pasarelas de pago seguras, gestión de inventario y experiencia de compra que genera confianza.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="service-card">
-                <div class="service-num">03</div>
-                <div class="service-icon-wrap"><i class="fas fa-search"></i></div>
-                <h3>Optimización SEO</h3>
-                <p>Aparecer en Google no es suerte — es estrategia. Optimizo tu sitio para que tus clientes te encuentren antes que a tu competencia.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="service-card">
-                <div class="service-num">04</div>
-                <div class="service-icon-wrap"><i class="fas fa-palette"></i></div>
-                <h3>Diseño UI/UX</h3>
-                <p>Interfaces que deleitan a los usuarios y los guían naturalmente hacia la conversión. Diseño basado en psicología del usuario y datos reales.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="service-card">
-                <div class="service-num">05</div>
-                <div class="service-icon-wrap"><i class="fas fa-mobile-alt"></i></div>
-                <h3>Diseño Responsive</h3>
-                <p>El 70% del tráfico web viene de móviles. Cada proyecto está perfecto en todos los dispositivos — sin compromisos, sin excepciones.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="service-card">
-                <div class="service-num">06</div>
-                <div class="service-icon-wrap"><i class="fas fa-tools"></i></div>
-                <h3>Mantenimiento & Soporte</h3>
-                <p>Tu sitio siempre actualizado, seguro y funcionando al 100%. Soporte rápido cuando lo necesites, sin burocracia ni tiempos de espera infinitos.</p>
-                <a href="#contacto" class="service-link">Solicitar proyecto <i class="fas fa-arrow-right"></i></a>
-            </div>
+      </div>
+
+      <!-- ── SERVICIOS ── -->
+      <div class="page" id="page-servicios">
+        <div class="page-title">Servicios</div>
+        <div class="page-sub">Edita los 6 servicios que ofreces</div>
+        <div id="servicios-list"></div>
+      </div>
+
+      <!-- ── PORTAFOLIO ── -->
+      <div class="page" id="page-portafolio">
+        <div class="page-title">Portafolio</div>
+        <div class="page-sub">Gestiona los proyectos de tu portafolio</div>
+        <div style="margin-bottom:1rem;">
+          <button class="btn btn-primary" onclick="addPortafolioItem()"><i class="fas fa-plus"></i> Agregar proyecto</button>
         </div>
-    </div>
-</section>
+        <div class="portfolio-grid" id="portafolio-grid"></div>
+      </div>
 
-<!-- POR QUÉ YO -->
-<section class="why" id="porque">
-    <div class="why-inner">
-        <div class="why-visual reveal">
-            <div class="why-box">
-                <div class="why-corner tl"></div>
-                <div class="why-corner br"></div>
-                <div class="why-box-inner">
-                    <div class="why-big-num">5★</div>
-                    <div class="why-big-label">Calificación promedio<br>de todos los proyectos</div>
-                </div>
-            </div>
+      <!-- ── PROCESO ── -->
+      <div class="page" id="page-proceso">
+        <div class="page-title">Proceso de Trabajo</div>
+        <div class="page-sub">Los 4 pasos de tu metodología</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-heading"></i> Título de sección</div>
+          <div class="field-group">
+            <label class="field-label">Título</label>
+            <input class="field-input" id="g-proceso_titulo">
+          </div>
         </div>
-        <div class="reveal">
-            <span class="section-label">Por qué elegirme</span>
-            <h2 class="section-title">No soy una agencia.<br>Soy <em>tu socio digital</em></h2>
-            <div class="divider"></div>
-            <div class="why-list">
-                <div class="why-item">
-                    <div class="why-check"><i class="fas fa-check"></i></div>
-                    <div>
-                        <h4>Trato directo, sin intermediarios</h4>
-                        <p>Hablas directamente conmigo en cada etapa. Sin account managers, sin malentendidos, sin sorpresas.</p>
-                    </div>
-                </div>
-                <div class="why-item">
-                    <div class="why-check"><i class="fas fa-check"></i></div>
-                    <div>
-                        <h4>Entrega a tiempo, garantizada</h4>
-                        <p>Cada proyecto tiene plazos claros y los cumplo. Si me retraso, trabajo gratis hasta terminarlo.</p>
-                    </div>
-                </div>
-                <div class="why-item">
-                    <div class="why-check"><i class="fas fa-check"></i></div>
-                    <div>
-                        <h4>Diseño orientado a resultados</h4>
-                        <p>Cada decisión de diseño tiene un "por qué" basado en conversión y experiencia de usuario, no en caprichos visuales.</p>
-                    </div>
-                </div>
-                <div class="why-item">
-                    <div class="why-check"><i class="fas fa-check"></i></div>
-                    <div>
-                        <h4>Soporte post-lanzamiento incluido</h4>
-                        <p>30 días de soporte gratuito después de entregar tu proyecto. No desaparezco una vez cobrado.</p>
-                    </div>
-                </div>
-            </div>
+        <div id="proceso-list"></div>
+      </div>
+
+      <!-- ── POR QUÉ YO ── -->
+      <div class="page" id="page-porque">
+        <div class="page-title">Por qué yo</div>
+        <div class="page-sub">Tus diferenciadores clave</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-heading"></i> Título</div>
+          <div class="field-group">
+            <label class="field-label">Título de sección</label>
+            <textarea class="field-textarea" id="g-why_titulo" style="min-height:60px;"></textarea>
+          </div>
         </div>
-    </div>
-</section>
+        <div id="porque-list"></div>
+      </div>
 
-<!-- PORTAFOLIO -->
-<section class="portfolio" id="portafolio">
-    <div class="portfolio-inner">
-        <div class="section-header reveal">
-            <span class="section-label">Trabajo reciente</span>
-            <h2 class="section-title">Proyectos que hablan<br><em>por sí solos</em></h2>
-            <div class="divider"></div>
+      <!-- ── PRECIOS ── -->
+      <div class="page" id="page-precios">
+        <div class="page-title">Planes & Precios</div>
+        <div class="page-sub">Edita los 3 planes de tu sección de precios</div>
+        <div class="grid-3" id="planes-grid"></div>
+      </div>
+
+      <!-- ── COTIZADOR ── -->
+      <div class="page" id="page-cotizador">
+        <div class="page-title">Configuración del Cotizador</div>
+        <div class="page-sub">Edita las opciones y precios del cotizador interactivo</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-layer-group"></i> Tipos de proyecto</div>
+          <div id="cot-tipo-list"></div>
         </div>
-        <div class="portfolio-grid reveal">
-            <div class="portfolio-item">
-                <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80" alt="Luxury Brand E-Commerce" class="portfolio-img">
-                <div class="portfolio-overlay">
-                    <span class="portfolio-tag">E-Commerce</span>
-                    <h3>Luxury Brand E-Commerce</h3>
-                    <p>Tienda premium con CRM integrado y sistema de reservas. +140% en conversiones.</p>
-                </div>
-            </div>
-            <div class="portfolio-item">
-                <img src="https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=800&q=80" alt="Corporate Platform" class="portfolio-img">
-                <div class="portfolio-overlay">
-                    <span class="portfolio-tag">Plataforma Corporativa</span>
-                    <h3>Corporate Business Platform</h3>
-                    <p>Dashboard administrativo con sistema de usuarios y reporting avanzado en tiempo real.</p>
-                </div>
-            </div>
-            <div class="portfolio-item">
-                <img src="https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=800&q=80" alt="Creative Agency" class="portfolio-img">
-                <div class="portfolio-overlay">
-                    <span class="portfolio-tag">Agencia Creativa</span>
-                    <h3>Creative Agency Website</h3>
-                    <p>Portfolio interactivo con animaciones personalizadas y CMS exclusivo hecho a medida.</p>
-                </div>
-            </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-palette"></i> Niveles de diseño</div>
+          <div id="cot-diseno-list"></div>
         </div>
-    </div>
-</section>
-
-<!-- PROCESO -->
-<section class="process" id="proceso">
-    <div class="process-inner">
-        <div class="section-header reveal">
-            <span class="section-label">Cómo trabajo</span>
-            <h2 class="section-title">Del briefing al<br><em>lanzamiento exitoso</em></h2>
-            <div class="divider"></div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-bolt"></i> Tiempos de entrega</div>
+          <div id="cot-tiempo-list"></div>
         </div>
-        <div class="process-grid reveal">
-            <div class="step">
-                <span class="step-num">01</span>
-                <div class="step-icon"><i class="fas fa-comments"></i></div>
-                <h3>Consultoría Inicial</h3>
-                <p>Analizamos tus objetivos, audiencia ideal y competencia. Definimos juntos la estrategia perfecta para tu proyecto.</p>
-            </div>
-            <div class="step">
-                <span class="step-num">02</span>
-                <div class="step-icon"><i class="fas fa-pencil-ruler"></i></div>
-                <h3>Diseño Exclusivo</h3>
-                <p>Wireframes, mockups y prototipo interactivo. Ves exactamente cómo quedará tu sitio antes de escribir una línea de código.</p>
-            </div>
-            <div class="step">
-                <span class="step-num">03</span>
-                <div class="step-icon"><i class="fas fa-code"></i></div>
-                <h3>Desarrollo Avanzado</h3>
-                <p>Código limpio, optimizado y escalable. Pruebas exhaustivas en todos los dispositivos y navegadores.</p>
-            </div>
-            <div class="step">
-                <span class="step-num">04</span>
-                <div class="step-icon"><i class="fas fa-rocket"></i></div>
-                <h3>Lanzamiento & Soporte</h3>
-                <p>Despliegue profesional, configuración SEO inicial y 30 días de soporte incluido para garantizar el éxito.</p>
-            </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-puzzle-piece"></i> Funcionalidades adicionales</div>
+          <div id="cot-func-list"></div>
         </div>
-    </div>
-</section>
+      </div>
 
-<!-- PRECIOS -->
-<section class="pricing" id="precios">
-    <div class="pricing-inner">
-        <div class="section-header reveal" style="text-align:center; max-width:600px; margin: 0 auto 4rem;">
-            <span class="section-label">Inversión</span>
-            <h2 class="section-title">Planes claros,<br><em>sin sorpresas</em></h2>
-            <div class="divider" style="margin: 1.5rem auto;"></div>
-            <p class="section-sub" style="max-width:100%">Transparencia total desde el primer momento. Sabes exactamente qué recibes por cada inversión.</p>
+      <!-- ── COTIZACIONES ── -->
+      <div class="page" id="page-cotizaciones">
+        <div class="page-title">Cotizaciones recibidas</div>
+        <div class="page-sub">Solicitudes de presupuesto de tus visitantes</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-ghost btn-sm" onclick="filterCots('all')" id="filter-all">Todas</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterCots('unread')" id="filter-unread">Sin leer</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadCotizaciones()"><i class="fas fa-sync"></i> Actualizar</button>
         </div>
-        <div class="pricing-grid reveal">
-            <div class="price-card">
-                <div class="price-plan">Básico</div>
-                <div class="price-num"><sup>$</sup>499</div>
-                <div class="price-period">Pago único · Entrega en 7 días</div>
-                <div class="price-divider"></div>
-                <p class="price-desc">Ideal para freelancers, emprendedores y pequeños negocios que necesitan presencia web profesional.</p>
-                <ul class="price-features">
-                    <li><i class="fas fa-check"></i> Hasta 5 páginas</li>
-                    <li><i class="fas fa-check"></i> Diseño responsive</li>
-                    <li><i class="fas fa-check"></i> Formulario de contacto</li>
-                    <li><i class="fas fa-check"></i> SEO básico</li>
-                    <li><i class="fas fa-check"></i> 15 días de soporte</li>
-                    <li class="disabled"><i class="fas fa-times"></i> E-Commerce</li>
-                    <li class="disabled"><i class="fas fa-times"></i> Integraciones avanzadas</li>
-                </ul>
-                <a href="#contacto" class="btn-gold" style="width:100%; text-align:center; display:block;">Empezar</a>
+        <div id="cotizaciones-list"></div>
+      </div>
+
+      <!-- ── CONTACTO ── -->
+      <div class="page" id="page-contacto">
+        <div class="page-title">Contacto & Redes</div>
+        <div class="page-sub">Datos de contacto que aparecen en tu web</div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-address-card"></i> Información de contacto</div>
+          <div class="grid-2">
+            <div class="field-group">
+              <label class="field-label">Email</label>
+              <input class="field-input" id="g-email_contacto">
             </div>
-            <div class="price-card featured">
-                <div class="price-badge">Más Popular</div>
-                <div class="price-plan">Profesional</div>
-                <div class="price-num"><sup>$</sup>999</div>
-                <div class="price-period">Pago único · Entrega en 14 días</div>
-                <div class="price-divider"></div>
-                <p class="price-desc">Para negocios en crecimiento que necesitan un sitio web que realmente convierta y venda.</p>
-                <ul class="price-features">
-                    <li><i class="fas fa-check"></i> Hasta 10 páginas</li>
-                    <li><i class="fas fa-check"></i> Diseño UI/UX personalizado</li>
-                    <li><i class="fas fa-check"></i> Animaciones & microinteracciones</li>
-                    <li><i class="fas fa-check"></i> SEO avanzado</li>
-                    <li><i class="fas fa-check"></i> Integración con herramientas</li>
-                    <li><i class="fas fa-check"></i> 30 días de soporte</li>
-                    <li class="disabled"><i class="fas fa-times"></i> E-Commerce completo</li>
-                </ul>
-                <a href="#contacto" class="btn-gold-fill" style="width:100%; text-align:center; display:block;">Empezar</a>
+            <div class="field-group">
+              <label class="field-label">Teléfono</label>
+              <input class="field-input" id="g-telefono">
             </div>
-            <div class="price-card">
-                <div class="price-plan">E-Commerce</div>
-                <div class="price-num"><sup>$</sup>1,899</div>
-                <div class="price-period">Pago único · Entrega en 21 días</div>
-                <div class="price-divider"></div>
-                <p class="price-desc">Tienda online completa y optimizada para vender. Todo lo que necesitas para empezar a facturar en línea.</p>
-                <ul class="price-features">
-                    <li><i class="fas fa-check"></i> Páginas ilimitadas</li>
-                    <li><i class="fas fa-check"></i> Tienda online completa</li>
-                    <li><i class="fas fa-check"></i> Pasarelas de pago</li>
-                    <li><i class="fas fa-check"></i> Gestión de inventario</li>
-                    <li><i class="fas fa-check"></i> CRM integrado</li>
-                    <li><i class="fas fa-check"></i> 60 días de soporte</li>
-                    <li><i class="fas fa-check"></i> Capacitación incluida</li>
-                </ul>
-                <a href="#contacto" class="btn-gold" style="width:100%; text-align:center; display:block;">Empezar</a>
+            <div class="field-group">
+              <label class="field-label">Número WhatsApp (sin + ni espacios)</label>
+              <input class="field-input" id="g-whatsapp_numero" placeholder="593969930639">
             </div>
+            <div class="field-group">
+              <label class="field-label">Mensaje automático WhatsApp</label>
+              <input class="field-input" id="g-whatsapp_mensaje">
+            </div>
+          </div>
         </div>
-    </div>
-</section>
+      </div>
 
-
-<!-- CTA BANNER -->
-<section class="cta-banner">
-    <h2>¿Listo para llevar tu negocio<br>al siguiente nivel <em>digital</em>?</h2>
-    <p>Agenda una consultoría gratuita de 30 minutos. Sin compromisos, con insights reales para tu negocio.</p>
-    <div class="buttons">
-        <a href="#contacto" class="btn-gold-fill">Agendar consultoría gratuita</a>
-        <a href="https://wa.me/qr/6FVSZOIED7H4E1" class="btn-gold" target="_blank"><i class="fab fa-whatsapp" style="margin-right:6px"></i> WhatsApp directo</a>
-    </div>
-</section>
-
-<!-- COTIZADOR -->
-<section class="cotizador" id="cotizador">
-    <div class="cotizador-inner">
-        <div class="section-header reveal" style="text-align:center; max-width:650px; margin:0 auto 4rem;">
-            <span class="section-label">Cotizador instantáneo</span>
-            <h2 class="section-title">Conoce el costo de tu<br><em>proyecto ahora mismo</em></h2>
-            <div class="divider" style="margin:1.5rem auto;"></div>
-            <p class="section-sub" style="max-width:100%">Configura tu proyecto ideal y descarga una cotización en PDF lista para compartir o presentar.</p>
+      <!-- ── SEGURIDAD ── -->
+      <div class="page" id="page-seguridad">
+        <div class="page-title">Seguridad</div>
+        <div class="page-sub">Cambia tu contraseña de acceso al panel</div>
+        <div class="card" style="max-width:420px;">
+          <div class="card-title"><i class="fas fa-lock"></i> Cambiar contraseña</div>
+          <div class="field-group">
+            <label class="field-label">Contraseña actual</label>
+            <input type="password" class="field-input" id="sec-current">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Nueva contraseña</label>
+            <input type="password" class="field-input" id="sec-new">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Confirmar nueva contraseña</label>
+            <input type="password" class="field-input" id="sec-confirm">
+          </div>
+          <button class="btn btn-primary" onclick="changePassword()"><i class="fas fa-save"></i> Actualizar contraseña</button>
         </div>
-        <div class="cotizador-grid reveal">
+      </div>
 
-            <!-- FORMULARIO IZQUIERDA -->
-            <div class="cotizador-form-panel">
+    </main>
+  </div>
+</div>
 
-                <div class="cotizador-block">
-                    <div class="cotizador-section-title"><i class="fas fa-layer-group"></i> Tipo de proyecto</div>
-                    <span class="cot-label">Selecciona la categoría principal</span>
-                    <div class="cot-options" id="opt-tipo">
-                        <button class="cot-option" data-group="tipo" data-val="landing" data-price="350" data-label="Landing Page">Landing Page</button>
-                        <button class="cot-option" data-group="tipo" data-val="corporativo" data-price="699" data-label="Sitio Corporativo">Sitio Corporativo</button>
-                        <button class="cot-option" data-group="tipo" data-val="ecommerce" data-price="1299" data-label="Tienda E-Commerce">Tienda E-Commerce</button>
-                        <button class="cot-option" data-group="tipo" data-val="plataforma" data-price="2499" data-label="Plataforma / App Web">Plataforma / App Web</button>
-                    </div>
-                </div>
+<script>
+// ══════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════
+const SUPABASE_URL = 'https://doavapomeebmidqgltia.supabase.co';
+const SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvYXZhcG9tZWVibWlkcWdsdGlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQwMzYyMiwiZXhwIjoyMDg3OTc5NjIyfQ.Jrih4qm3zAqfA_wLXS_HSCxV1HQcPTF8rgCSyfIbMeA';
 
-                <div class="cotizador-block">
-                    <div class="cotizador-section-title"><i class="fas fa-file-alt"></i> Número de páginas</div>
-                    <span class="cot-label">¿Cuántas páginas necesitas? <span class="cot-range-val" id="pages-val">5</span></span>
-                    <div class="cot-range-wrap">
-                        <span style="font-size:0.8rem;color:var(--white-dimmer)">1</span>
-                        <input type="range" class="cot-range" id="pages-range" min="1" max="20" value="5" step="1">
-                        <span style="font-size:0.8rem;color:var(--white-dimmer)">20+</span>
-                    </div>
-                </div>
+const sb = window.supabase.createClient(SUPABASE_URL, SERVICE_KEY);
 
-                <div class="cotizador-block">
-                    <div class="cotizador-section-title"><i class="fas fa-palette"></i> Diseño</div>
-                    <span class="cot-label">Nivel de personalización visual</span>
-                    <div class="cot-options" id="opt-diseno">
-                        <button class="cot-option" data-group="diseno" data-val="plantilla" data-price="0" data-label="Plantilla adaptada">Plantilla adaptada</button>
-                        <button class="cot-option" data-group="diseno" data-val="semipersonalizado" data-price="250" data-label="Semi-personalizado">Semi-personalizado</button>
-                        <button class="cot-option" data-group="diseno" data-val="100custom" data-price="550" data-label="100% a medida">100% a medida</button>
-                    </div>
-                </div>
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+let currentUser = null;
 
-                <div class="cotizador-block">
-                    <div class="cotizador-section-title"><i class="fas fa-puzzle-piece"></i> Funcionalidades adicionales</div>
-                    <span class="cot-label">Selecciona todo lo que necesites</span>
-                    <div class="cot-options" id="opt-funciones">
-                        <button class="cot-option multi" data-group="func" data-val="seo" data-price="199" data-label="SEO Avanzado">SEO Avanzado</button>
-                        <button class="cot-option multi" data-group="func" data-val="blog" data-price="149" data-label="Blog / CMS">Blog / CMS</button>
-                        <button class="cot-option multi" data-group="func" data-val="multiidioma" data-price="299" data-label="Multi-idioma">Multi-idioma</button>
-                        <button class="cot-option multi" data-group="func" data-val="chat" data-price="99" data-label="Chat en vivo">Chat en vivo</button>
-                        <button class="cot-option multi" data-group="func" data-val="reservas" data-price="249" data-label="Sistema de reservas">Sistema de reservas</button>
-                        <button class="cot-option multi" data-group="func" data-val="crm" data-price="349" data-label="Integración CRM">Integración CRM</button>
-                        <button class="cot-option multi" data-group="func" data-val="pagos" data-price="199" data-label="Pasarela de pagos">Pasarela de pagos</button>
-                        <button class="cot-option multi" data-group="func" data-val="analitica" data-price="99" data-label="Analítica avanzada">Analítica avanzada</button>
-                        <button class="cot-option multi" data-group="func" data-val="animaciones" data-price="199" data-label="Animaciones premium">Animaciones premium</button>
-                        <button class="cot-option multi" data-group="func" data-val="mantenimiento" data-price="89" data-label="Mantenimiento mensual">Mantenimiento mensual</button>
-                    </div>
-                </div>
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value.trim();
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  showLoading(true);
+  try {
+    const { data, error } = await sb.from('admin_users')
+      .select('*').eq('email', email).eq('password_hash', pass).single();
+    if (error || !data) throw new Error('Invalid');
+    currentUser = data;
+    sessionStorage.setItem('we_admin', JSON.stringify(data));
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    await initApp();
+  } catch(e) {
+    err.style.display = 'block';
+  } finally { showLoading(false); }
+}
 
-                <div class="cotizador-block">
-                    <div class="cotizador-section-title"><i class="fas fa-bolt"></i> Tiempo de entrega</div>
-                    <span class="cot-label">¿Cuándo lo necesitas?</span>
-                    <div class="cot-options" id="opt-tiempo">
-                        <button class="cot-option" data-group="tiempo" data-val="urgente" data-price="350" data-label="Urgente (menos de 1 semana)">Urgente &lt;1 semana</button>
-                        <button class="cot-option" data-group="tiempo" data-val="normal" data-price="0" data-label="Normal (2–3 semanas)">Normal 2–3 semanas</button>
-                        <button class="cot-option" data-group="tiempo" data-val="flexible" data-price="-100" data-label="Flexible (+1 mes)">Flexible +1 mes</button>
-                    </div>
-                </div>
+function logout() {
+  sessionStorage.removeItem('we_admin');
+  location.reload();
+}
 
-            </div>
+// Enter key login
+document.getElementById('login-pass').addEventListener('keydown', e => {
+  if(e.key === 'Enter') doLogin();
+});
 
-            <!-- PANEL RESULTADO DERECHA -->
-            <div class="cotizador-result-panel">
-                <div class="result-label">Estimado de inversión</div>
-                <div class="result-total" id="total-price">$0</div>
-                <div class="result-note">Precio orientativo en USD · IVA no incluido</div>
+// Check session
+const savedUser = sessionStorage.getItem('we_admin');
+if (savedUser) {
+  currentUser = JSON.parse(savedUser);
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  initApp();
+}
 
-                <div class="result-divider"></div>
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+let configData = {};
+let serviciosData = [];
+let portafolioData = [];
+let planesData = [];
+let cotizadorData = [];
+let processoData = [];
+let porqueData = [];
+let currentPage = 'dashboard';
 
-                <div id="desglose">
-                    <div class="result-empty">Selecciona las opciones de tu proyecto para ver el desglose.</div>
-                </div>
+async function initApp() {
+  showLoading(true);
+  try {
+    await Promise.all([
+      loadConfig(),
+      loadServicios(),
+      loadPortafolio(),
+      loadPlanes(),
+      loadCotizadorConfig(),
+    ]);
+    await loadDashboard();
+  } finally { showLoading(false); }
+}
 
-                <div class="result-divider"></div>
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if(n.getAttribute('onclick')?.includes("'" + name + "'")) n.classList.add('active');
+  });
+  currentPage = name;
+  // Render page-specific content
+  if(name === 'servicios') renderServicios();
+  if(name === 'portafolio') renderPortafolio();
+  if(name === 'precios') renderPlanes();
+  if(name === 'cotizador') renderCotizador();
+  if(name === 'cotizaciones') loadCotizaciones();
+  if(name === 'proceso') renderProceso();
+  if(name === 'porque') renderPorque();
+  if(name === 'hero' || name === 'general' || name === 'contacto') fillConfigFields();
+}
 
-                <div class="client-fields">
-                    <div class="cotizador-section-title" style="font-size:0.85rem; margin-bottom:1rem;"><i class="fas fa-user"></i> Datos para tu cotización PDF</div>
-                    <div class="client-field-group">
-                        <label>Tu nombre *</label>
-                        <input type="text" class="cot-input" id="pdf-nombre" placeholder="Ej: Juan Pérez">
-                    </div>
-                    <div class="client-field-group">
-                        <label>Empresa (opcional)</label>
-                        <input type="text" class="cot-input" id="pdf-empresa" placeholder="Ej: Mi Empresa SAS">
-                    </div>
-                    <div class="client-field-group">
-                        <label>Email *</label>
-                        <input type="email" class="cot-input" id="pdf-email" placeholder="tu@email.com">
-                    </div>
-                </div>
+// ══════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════
+async function loadConfig() {
+  const { data } = await sb.from('config').select('*');
+  configData = {};
+  if(data) data.forEach(r => configData[r.id] = r.valor);
+  fillConfigFields();
+}
 
-                <button class="btn-download" id="btn-download" disabled>
-                    <i class="fas fa-file-pdf"></i> Descargar Cotización PDF
-                </button>
-                <p style="font-size:0.75rem;color:var(--white-dimmer);text-align:center;margin-top:0.8rem;">
-                    Esta cotización es orientativa. El precio final se confirma tras la consultoría.
-                </p>
-            </div>
+function fillConfigFields() {
+  Object.keys(configData).forEach(key => {
+    const el = document.getElementById('g-' + key);
+    if(el) el.value = configData[key] || '';
+  });
+}
 
-        </div>
-    </div>
-</section>
-
-<!-- FAQ -->
-<section class="faq" id="faq">
-    <div class="faq-inner">
-        <div class="section-header reveal" style="text-align:center; max-width:580px; margin:0 auto 4rem;">
-            <span class="section-label">Preguntas frecuentes</span>
-            <h2 class="section-title">Resuelvo tus<br><em>dudas</em></h2>
-            <div class="divider" style="margin:1.5rem auto;"></div>
-        </div>
-        <div class="reveal">
-            <div class="faq-item">
-                <div class="faq-question">¿Cuánto tiempo demora en estar listo mi sitio? <i class="fas fa-plus faq-icon"></i></div>
-                <div class="faq-answer"><p>Depende del plan: Básico 7 días, Profesional 14 días, E-Commerce 21 días. Proyectos personalizados tienen cronograma detallado desde el inicio.</p></div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">¿Necesito saber de tecnología para trabajar contigo? <i class="fas fa-plus faq-icon"></i></div>
-                <div class="faq-answer"><p>No, para nada. Me encargo de toda la parte técnica. Te explico todo en lenguaje simple y te capacito para que puedas gestionar tu sitio sin depender de nadie.</p></div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">¿Qué incluye el soporte post-lanzamiento? <i class="fas fa-plus faq-icon"></i></div>
-                <div class="faq-answer"><p>Corrección de bugs, ajustes menores de contenido, dudas técnicas y monitoreo de funcionamiento. Todo dentro del período de soporte de tu plan.</p></div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">¿Puedo hacer cambios en el diseño durante el proceso? <i class="fas fa-plus faq-icon"></i></div>
-                <div class="faq-answer"><p>Sí. Cada proyecto incluye hasta 2 rondas de revisiones de diseño antes del desarrollo. Esto asegura que el resultado final sea exactamente lo que necesitas.</p></div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">¿Trabajas con clientes fuera de Ecuador? <i class="fas fa-plus faq-icon"></i></div>
-                <div class="faq-answer"><p>Absolutamente. Trabajo de forma 100% remota con clientes en toda Latinoamérica, España y Estados Unidos. La diferencia horaria no es un problema.</p></div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- CONTACTO / CALENDLY -->
-<section class="contact" id="contacto">
-    <div class="contact-inner">
-        <div class="reveal">
-            <span class="section-label">Hablemos</span>
-            <h2 class="section-title">Agenda tu<br><em>consultoría gratis</em></h2>
-            <div class="divider"></div>
-            <p style="color:var(--white-dim); font-size:0.95rem; line-height:1.8; margin-bottom:3rem;">30 minutos donde analizamos tu negocio, tu competencia y definimos exactamente qué necesita tu sitio web para generar resultados.</p>
-            <div class="contact-info">
-                <div class="contact-item">
-                    <div class="contact-icon-box"><i class="fas fa-envelope"></i></div>
-                    <div>
-                        <h4>Email</h4>
-                        <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fb9f92979a9598948994959a9f94c8cec3bb9c969a9297d5989496">[email&#160;protected]</a></p>
-                    </div>
-                </div>
-                <div class="contact-item">
-                    <div class="contact-icon-box"><i class="fab fa-whatsapp"></i></div>
-                    <div>
-                        <h4>WhatsApp</h4>
-                        <p>+593 96 993 0639</p>
-                    </div>
-                </div>
-                <div class="contact-item">
-                    <div class="contact-icon-box"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <h4>Disponibilidad</h4>
-                        <p>Lun – Vie: 9:00 – 18:00 (GMT-5)</p>
-                    </div>
-                </div>
-                <div class="contact-item">
-                    <div class="contact-icon-box"><i class="fas fa-globe"></i></div>
-                    <div>
-                        <h4>Modalidad</h4>
-                        <p>Trabajo remoto · Clientes internacionales</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="reveal">
-            <div class="calendly-wrapper">
-                <div class="calendly-header">
-                    <div class="calendly-dot green"></div>
-                    <span style="font-size:0.82rem; color:var(--white-dim);">Calendario en tiempo real</span>
-                    <span class="calendly-header-text">Consultoría Gratuita · 30 min</span>
-                </div>
-                <!-- Calendly Widget -->
-                <div class="calendly-inline-widget" data-url="https://calendly.com/dilancoronado358/30min?primary_color=c9a84c&hide_gdpr_banner=1" style="min-width:320px;height:700px;"></div>
-                <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-    <div class="footer-top">
-        <div class="footer-brand">
-            <a href="#inicio" class="logo">Web<em>Elite</em></a>
-            <p>Desarrollo web premium para marcas que quieren destacar y convertir visitas en clientes reales.</p>
-            <div class="footer-socials">
-                <a href="#" class="footer-social"><i class="fab fa-linkedin-in"></i></a>
-                <a href="#" class="footer-social"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="footer-social"><i class="fab fa-dribbble"></i></a>
-                <a href="https://wa.me/qr/6FVSZOIED7H4E1" class="footer-social" target="_blank"><i class="fab fa-whatsapp"></i></a>
-            </div>
-        </div>
-        <div class="footer-col">
-            <h5>Navegar</h5>
-            <ul>
-                <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#servicios">Servicios</a></li>
-                <li><a href="#portafolio">Portafolio</a></li>
-                <li><a href="#proceso">Proceso</a></li>
-                <li><a href="#precios">Precios</a></li>
-            </ul>
-        </div>
-        <div class="footer-col">
-            <h5>Servicios</h5>
-            <ul>
-                <li><a href="#servicios">Desarrollo Web</a></li>
-                <li><a href="#servicios">E-Commerce</a></li>
-                <li><a href="#servicios">Diseño UI/UX</a></li>
-                <li><a href="#servicios">Optimización SEO</a></li>
-                <li><a href="#servicios">Mantenimiento</a></li>
-            </ul>
-        </div>
-        <div class="footer-col">
-            <h5>Contacto</h5>
-            <ul>
-                <li><a href="/cdn-cgi/l/email-protection#a5c1ccc9c4cbc6cad7cacbc4c1ca96909de5c2c8c4ccc98bc6cac8"><span class="__cf_email__" data-cfemail="6c0805000d020f031e03020d08035f59542c0b010d0500420f0301">[email&#160;protected]</span></a></li>
-                <li><a href="https://wa.me/593969930639">+593 96 993 0639</a></li>
-                <li><a href="#contacto">Agendar llamada</a></li>
-                <li><a href="#faq">Preguntas frecuentes</a></li>
-            </ul>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <span>© 2025 WebElite · Todos los derechos reservados</span>
-        <span>Diseñado para convertir · Construido para durar</span>
-    </div>
-</footer>
-
-<!-- WhatsApp Flotante -->
-<a href="https://wa.me/593969930639?text=Hola%2C%20necesito%20m%C3%A1s%20informaci%C3%B3n" class="whatsapp-float" target="_blank" title="Escríbeme por WhatsApp">
-    <i class="fab fa-whatsapp"></i>
-</a>
-
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-    // Cursor personalizado
-    const cursor = document.querySelector('.cursor');
-    const follower = document.querySelector('.cursor-follower');
-    document.addEventListener('mousemove', e => {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
-        setTimeout(() => {
-            follower.style.left = e.clientX + 'px';
-            follower.style.top = e.clientY + 'px';
-        }, 80);
-    });
-
-    // Urgency bar offset para header
-    const urgencyBar = document.querySelector('.urgency-bar');
-    const header = document.getElementById('header');
-    window.addEventListener('scroll', () => {
-        const barH = urgencyBar.offsetHeight;
-        if (window.scrollY > barH) {
-            header.classList.add('scrolled');
-            header.style.top = '0';
-        } else {
-            header.classList.remove('scrolled');
-            header.style.top = barH + 'px';
-        }
-    });
-    // Init header top
-    header.style.top = urgencyBar.offsetHeight + 'px';
-
-    // Mobile menu
-    document.getElementById('mobileMenu').addEventListener('click', () => {
-        document.getElementById('navLinks').classList.toggle('open');
-    });
-
-    // Smooth scroll
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-        a.addEventListener('click', e => {
-            const target = document.querySelector(a.getAttribute('href'));
-            if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth' }); }
-        });
-    });
-
-    // Reveal on scroll
-    const reveals = document.querySelectorAll('.reveal');
-    const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry, i) => {
-            if (entry.isIntersecting) {
-                entry.target.style.transitionDelay = (i % 3) * 0.1 + 's';
-                entry.target.classList.add('visible');
-            }
-        });
-    }, { threshold: 0.1 });
-    reveals.forEach(el => revealObserver.observe(el));
-
-    // Contador animado
-    const counters = document.querySelectorAll('.stat-num[data-target]');
-    const counterObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const el = entry.target;
-                const target = +el.dataset.target;
-                let current = 0;
-                const step = target / 60;
-                const timer = setInterval(() => {
-                    current += step;
-                    if (current >= target) { el.textContent = target + (target === 98 ? '%' : '+'); clearInterval(timer); }
-                    else el.textContent = Math.floor(current) + (target === 98 ? '%' : '+');
-                }, 20);
-                counterObserver.unobserve(el);
-            }
-        });
-    }, { threshold: 0.5 });
-    counters.forEach(el => counterObserver.observe(el));
-
-    // ── COTIZADOR LOGIC ──
-    const state = {
-        tipo: null,
-        diseno: null,
-        tiempo: null,
-        funciones: new Set(),
-        pages: 5
-    };
-
-    function getPagePrice(pages) {
-        if (pages <= 5) return 0;
-        if (pages <= 10) return (pages - 5) * 40;
-        return (5 * 40) + (pages - 10) * 70;
+async function saveConfig() {
+  const updates = [];
+  document.querySelectorAll('[id^="g-"]').forEach(el => {
+    const key = el.id.replace('g-', '');
+    if(configData[key] !== undefined || el.value) {
+      updates.push({ id: key, valor: el.value, updated_at: new Date().toISOString() });
     }
+  });
+  if(updates.length === 0) return;
+  for(const u of updates) {
+    await sb.from('config').upsert(u, { onConflict: 'id' });
+  }
+  await loadConfig();
+}
 
-    function calcTotal() {
-        let total = 0;
-        if (state.tipo) total += state.tipo.price;
-        if (state.diseno) total += state.diseno.price;
-        if (state.tiempo) total += state.tiempo.price;
-        state.funciones.forEach(f => total += f.price);
-        total += getPagePrice(state.pages);
-        return Math.max(total, 0);
+// ══════════════════════════════════════
+// SERVICIOS
+// ══════════════════════════════════════
+async function loadServicios() {
+  const { data } = await sb.from('servicios').select('*').order('orden');
+  serviciosData = data || [];
+}
+
+function renderServicios() {
+  const container = document.getElementById('servicios-list');
+  container.innerHTML = serviciosData.map((s, i) => `
+    <div class="card">
+      <div class="card-title"><i class="${s.icono}"></i> Servicio ${s.numero}: ${s.titulo}</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label class="field-label">Ícono (clase Font Awesome)</label>
+          <input class="field-input" id="svc-icono-${s.id}" value="${s.icono}" placeholder="fas fa-laptop-code">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Número visible</label>
+          <input class="field-input" id="svc-num-${s.id}" value="${s.numero}">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Título del servicio</label>
+        <input class="field-input" id="svc-titulo-${s.id}" value="${s.titulo}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción</label>
+        <textarea class="field-textarea" id="svc-desc-${s.id}">${s.descripcion}</textarea>
+      </div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="svc-activo-${s.id}" ${s.activo?'checked':''}><span class="toggle-slider"></span></label>
+        <span style="font-size:0.82rem;color:var(--dim);">Visible en el sitio</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function saveServicios() {
+  for(const s of serviciosData) {
+    const titulo = document.getElementById(`svc-titulo-${s.id}`)?.value;
+    const desc   = document.getElementById(`svc-desc-${s.id}`)?.value;
+    const icono  = document.getElementById(`svc-icono-${s.id}`)?.value;
+    const num    = document.getElementById(`svc-num-${s.id}`)?.value;
+    const activo = document.getElementById(`svc-activo-${s.id}`)?.checked;
+    if(titulo !== undefined) {
+      await sb.from('servicios').update({
+        titulo, descripcion: desc, icono, numero: num, activo, updated_at: new Date().toISOString()
+      }).eq('id', s.id);
     }
+  }
+  await loadServicios();
+}
 
-    function formatMoney(n) {
-        return '$' + n.toLocaleString('en-US');
-    }
+// ══════════════════════════════════════
+// PORTAFOLIO
+// ══════════════════════════════════════
+async function loadPortafolio() {
+  const { data } = await sb.from('portafolio').select('*').order('orden');
+  portafolioData = data || [];
+}
 
-    function renderDesglose() {
-        const desglose = document.getElementById('desglose');
-        const items = [];
+function renderPortafolio() {
+  const grid = document.getElementById('portafolio-grid');
+  grid.innerHTML = portafolioData.map(p => `
+    <div class="portfolio-admin-card" id="port-card-${p.id}">
+      <img src="${p.imagen_url}" class="portfolio-admin-img" onerror="this.src='https://via.placeholder.com/400x140/1a1a1a/888?text=Sin+imagen'">
+      <div class="portfolio-admin-body">
+        <div class="field-group">
+          <label class="field-label">Tag / categoría</label>
+          <input class="field-input" id="port-tag-${p.id}" value="${p.tag}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Título</label>
+          <input class="field-input" id="port-titulo-${p.id}" value="${p.titulo}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Descripción</label>
+          <textarea class="field-textarea" style="min-height:60px;" id="port-desc-${p.id}">${p.descripcion}</textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">URL de imagen</label>
+          <input class="field-input" id="port-img-${p.id}" value="${p.imagen_url}" onchange="previewPortImg(${p.id})">
+        </div>
+        <div class="portfolio-admin-actions" style="margin-top:0.8rem;">
+          <button class="btn btn-primary btn-sm" onclick="savePortItem(${p.id})"><i class="fas fa-save"></i> Guardar</button>
+          <button class="btn btn-danger btn-sm" onclick="deletePortItem(${p.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
 
-        if (state.tipo) items.push({ label: state.tipo.label, val: formatMoney(state.tipo.price) });
-        if (state.diseno && state.diseno.price > 0) items.push({ label: state.diseno.label, val: '+' + formatMoney(state.diseno.price) });
+function previewPortImg(id) {
+  const url = document.getElementById(`port-img-${id}`).value;
+  document.querySelector(`#port-card-${id} .portfolio-admin-img`).src = url;
+}
 
-        const pageExtra = getPagePrice(state.pages);
-        if (pageExtra > 0) items.push({ label: `Páginas adicionales (${state.pages})`, val: '+' + formatMoney(pageExtra) });
+async function savePortItem(id) {
+  const tag    = document.getElementById(`port-tag-${id}`).value;
+  const titulo = document.getElementById(`port-titulo-${id}`).value;
+  const desc   = document.getElementById(`port-desc-${id}`).value;
+  const img    = document.getElementById(`port-img-${id}`).value;
+  await sb.from('portafolio').update({ tag, titulo, descripcion: desc, imagen_url: img, updated_at: new Date().toISOString() }).eq('id', id);
+  await loadPortafolio();
+  showToast('Proyecto guardado', 'success');
+}
 
-        state.funciones.forEach(f => {
-            items.push({ label: f.label, val: '+' + formatMoney(f.price) });
-        });
+async function deletePortItem(id) {
+  if(!confirm('¿Eliminar este proyecto del portafolio?')) return;
+  await sb.from('portafolio').delete().eq('id', id);
+  await loadPortafolio();
+  renderPortafolio();
+  showToast('Proyecto eliminado', 'info');
+}
 
-        if (state.tiempo && state.tiempo.price !== 0) {
-            const sign = state.tiempo.price > 0 ? '+' : '';
-            items.push({ label: state.tiempo.label, val: sign + formatMoney(state.tiempo.price) });
-        }
+async function addPortafolioItem() {
+  const { data } = await sb.from('portafolio').insert([{
+    tag: 'Nueva categoría', titulo: 'Nuevo Proyecto', descripcion: 'Descripción del proyecto',
+    imagen_url: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=800&q=80',
+    orden: portafolioData.length + 1, activo: true
+  }]).select();
+  await loadPortafolio();
+  renderPortafolio();
+  showToast('Proyecto agregado', 'success');
+}
 
-        if (items.length === 0) {
-            desglose.innerHTML = '<div class="result-empty">Selecciona las opciones de tu proyecto para ver el desglose.</div>';
-            return;
-        }
+// ══════════════════════════════════════
+// PLANES
+// ══════════════════════════════════════
+async function loadPlanes() {
+  const { data } = await sb.from('planes').select('*').order('orden');
+  planesData = data || [];
+}
 
-        desglose.innerHTML = items.map(i => `
-            <div class="result-line">
-                <span class="result-line-label">${i.label}</span>
-                <span class="result-line-val gold">${i.val}</span>
-            </div>
-        `).join('') + `
-            <div class="result-divider"></div>
-            <div class="result-line" style="margin-bottom:0">
-                <span class="result-line-label" style="font-weight:600;color:var(--white)">TOTAL ESTIMADO</span>
-                <span class="result-line-val gold" style="font-size:1rem;font-weight:700">${formatMoney(calcTotal())}</span>
-            </div>
-        `;
-    }
+function renderPlanes() {
+  const grid = document.getElementById('planes-grid');
+  grid.innerHTML = planesData.map(p => `
+    <div class="price-admin-card ${p.destacado?'featured':''}">
+      ${p.destacado ? '<div class="featured-badge">Más Popular</div>' : ''}
+      <div class="field-group" style="margin-top:${p.destacado?'1rem':'0'}">
+        <label class="field-label">Nombre del plan</label>
+        <input class="field-input" id="plan-nombre-${p.id}" value="${p.nombre}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Precio (USD)</label>
+        <input class="field-input" id="plan-precio-${p.id}" value="${p.precio}" type="number">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Período / nota</label>
+        <input class="field-input" id="plan-periodo-${p.id}" value="${p.periodo}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción corta</label>
+        <textarea class="field-textarea" style="min-height:60px;" id="plan-desc-${p.id}">${p.descripcion}</textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Características incluidas (una por línea)</label>
+        <textarea class="field-textarea" id="plan-feat-${p.id}" style="min-height:100px;">${(p.features||[]).join('\n')}</textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">No incluidas (una por línea)</label>
+        <textarea class="field-textarea" id="plan-dis-${p.id}" style="min-height:60px;">${(p.features_disabled||[]).join('\n')}</textarea>
+      </div>
+      <div class="toggle-wrap" style="margin-bottom:1rem;">
+        <label class="toggle"><input type="checkbox" id="plan-dest-${p.id}" ${p.destacado?'checked':''}><span class="toggle-slider"></span></label>
+        <span style="font-size:0.82rem;color:var(--dim);">Marcar como "Más Popular"</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="savePlan(${p.id})"><i class="fas fa-save"></i> Guardar plan</button>
+    </div>
+  `).join('');
+}
 
-    function updateTotal() {
-        const total = calcTotal();
-        document.getElementById('total-price').textContent = formatMoney(total);
-        renderDesglose();
+async function savePlan(id) {
+  const nombre   = document.getElementById(`plan-nombre-${id}`).value;
+  const precio   = parseInt(document.getElementById(`plan-precio-${id}`).value);
+  const periodo  = document.getElementById(`plan-periodo-${id}`).value;
+  const desc     = document.getElementById(`plan-desc-${id}`).value;
+  const featRaw  = document.getElementById(`plan-feat-${id}`).value;
+  const disRaw   = document.getElementById(`plan-dis-${id}`).value;
+  const destacado = document.getElementById(`plan-dest-${id}`).checked;
+  const features = featRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+  const features_disabled = disRaw.split('\n').map(s=>s.trim()).filter(Boolean);
+  await sb.from('planes').update({ nombre, precio, periodo, descripcion: desc, features, features_disabled, destacado, updated_at: new Date().toISOString() }).eq('id', id);
+  await loadPlanes();
+  showToast('Plan actualizado', 'success');
+}
 
-        const nombre = document.getElementById('pdf-nombre').value.trim();
-        const email = document.getElementById('pdf-email').value.trim();
-        const hasSelection = state.tipo !== null;
-        document.getElementById('btn-download').disabled = !(hasSelection && nombre && email);
-    }
+// ══════════════════════════════════════
+// COTIZADOR CONFIG
+// ══════════════════════════════════════
+async function loadCotizadorConfig() {
+  const { data } = await sb.from('cotizador_config').select('*').order('categoria');
+  cotizadorData = data || [];
+}
 
-    // Single-select buttons
-    document.querySelectorAll('.cot-option:not(.multi)').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const group = btn.dataset.group;
-            document.querySelectorAll(`.cot-option[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            state[group] = { val: btn.dataset.val, price: parseInt(btn.dataset.price), label: btn.dataset.label };
-            updateTotal();
-        });
-    });
+function renderCotizador() {
+  const cats = { tipo:'cot-tipo-list', diseno:'cot-diseno-list', tiempo:'cot-tiempo-list', func:'cot-func-list' };
+  Object.keys(cats).forEach(cat => {
+    const items = cotizadorData.filter(c => c.categoria === cat);
+    document.getElementById(cats[cat]).innerHTML = items.map(item => `
+      <div class="cot-config-row">
+        <span class="cot-config-label">${item.label}</span>
+        <div class="cot-config-price">
+          <input type="number" value="${item.precio}" id="cot-price-${item.id}" onchange="saveCotItem('${item.id}', this.value)">
+        </div>
+        <span style="font-size:0.75rem;color:var(--dim);width:60px;">USD</span>
+      </div>
+    `).join('') || '<div style="color:var(--dim);font-size:0.82rem;padding:0.5rem 0;">Sin datos</div>';
+  });
+}
 
-    // Multi-select buttons
-    document.querySelectorAll('.cot-option.multi').forEach(btn => {
-        btn.addEventListener('click', () => {
-            btn.classList.toggle('selected');
-            const key = btn.dataset.val;
-            if (btn.classList.contains('selected')) {
-                state.funciones.add({ val: key, price: parseInt(btn.dataset.price), label: btn.dataset.label });
-            } else {
-                state.funciones.forEach(f => { if (f.val === key) state.funciones.delete(f); });
-            }
-            updateTotal();
-        });
-    });
+async function saveCotItem(id, price) {
+  await sb.from('cotizador_config').update({ precio: parseInt(price), updated_at: new Date().toISOString() }).eq('id', id);
+  await loadCotizadorConfig();
+  showToast('Precio actualizado', 'success');
+}
 
-    // Pages range
-    const pagesRange = document.getElementById('pages-range');
-    pagesRange.addEventListener('input', () => {
-        state.pages = parseInt(pagesRange.value);
-        document.getElementById('pages-val').textContent = state.pages;
-        updateTotal();
-    });
+// ══════════════════════════════════════
+// PROCESO
+// ══════════════════════════════════════
+const procesoDefaults = [
+  { id:'proc1', icon:'fas fa-comments', titulo:'Consultoría Inicial', desc:'Analizamos tus objetivos, audiencia ideal y competencia. Definimos juntos la estrategia perfecta para tu proyecto.' },
+  { id:'proc2', icon:'fas fa-pencil-ruler', titulo:'Diseño Exclusivo', desc:'Wireframes, mockups y prototipo interactivo. Ves exactamente cómo quedará tu sitio antes de escribir una línea de código.' },
+  { id:'proc3', icon:'fas fa-code', titulo:'Desarrollo Avanzado', desc:'Código limpio, optimizado y escalable. Pruebas exhaustivas en todos los dispositivos y navegadores.' },
+  { id:'proc4', icon:'fas fa-rocket', titulo:'Lanzamiento & Soporte', desc:'Despliegue profesional, configuración SEO inicial y 30 días de soporte incluido para garantizar el éxito.' }
+];
 
-    // Client fields update button state
-    ['pdf-nombre','pdf-email'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateTotal);
-    });
+function renderProceso() {
+  const container = document.getElementById('proceso-list');
+  container.innerHTML = procesoDefaults.map((p, i) => `
+    <div class="card">
+      <div class="card-title"><i class="${p.icon}"></i> Paso ${i+1}</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label class="field-label">Ícono</label>
+          <input class="field-input" id="proc-icon-${p.id}" value="${configData['proc_icon_'+p.id] || p.icon}">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Título</label>
+          <input class="field-input" id="proc-titulo-${p.id}" value="${configData['proc_titulo_'+p.id] || p.titulo}">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción</label>
+        <textarea class="field-textarea" id="proc-desc-${p.id}">${configData['proc_desc_'+p.id] || p.desc}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
 
-    // ── PDF GENERATION ──
-    document.getElementById('btn-download').addEventListener('click', generatePDF);
+async function saveProceso() {
+  const updates = [];
+  procesoDefaults.forEach(p => {
+    updates.push({ id: 'proc_icon_'+p.id, valor: document.getElementById(`proc-icon-${p.id}`)?.value || p.icon, updated_at: new Date().toISOString() });
+    updates.push({ id: 'proc_titulo_'+p.id, valor: document.getElementById(`proc-titulo-${p.id}`)?.value || p.titulo, updated_at: new Date().toISOString() });
+    updates.push({ id: 'proc_desc_'+p.id, valor: document.getElementById(`proc-desc-${p.id}`)?.value || p.desc, updated_at: new Date().toISOString() });
+  });
+  for(const u of updates) await sb.from('config').upsert(u, { onConflict: 'id' });
+  await loadConfig();
+}
 
-    function generatePDF() {
-        const nombre = document.getElementById('pdf-nombre').value.trim();
-        const empresa = document.getElementById('pdf-empresa').value.trim();
-        const email = document.getElementById('pdf-email').value.trim();
-        const total = calcTotal();
-        const fecha = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-        const folio = 'WE-' + Date.now().toString().slice(-6);
+// ══════════════════════════════════════
+// POR QUÉ YO
+// ══════════════════════════════════════
+const porqueDefaults = [
+  { id:'pq1', titulo:'Trato directo, sin intermediarios', desc:'Hablas directamente conmigo en cada etapa. Sin account managers, sin malentendidos, sin sorpresas.' },
+  { id:'pq2', titulo:'Entrega a tiempo, garantizada', desc:'Cada proyecto tiene plazos claros y los cumplo. Si me retraso, trabajo gratis hasta terminarlo.' },
+  { id:'pq3', titulo:'Diseño orientado a resultados', desc:'Cada decisión de diseño tiene un "por qué" basado en conversión y experiencia de usuario.' },
+  { id:'pq4', titulo:'Soporte post-lanzamiento incluido', desc:'30 días de soporte gratuito después de entregar tu proyecto. No desaparezco una vez cobrado.' }
+];
 
-        // Build items array
-        const items = [];
-        if (state.tipo) items.push({ desc: state.tipo.label, cat: 'Tipo de proyecto', price: state.tipo.price });
-        if (state.diseno && state.diseno.price > 0) items.push({ desc: state.diseno.label, cat: 'Diseño', price: state.diseno.price });
-        const pageExtra = getPagePrice(state.pages);
-        if (pageExtra > 0) items.push({ desc: `${state.pages} páginas configuradas`, cat: 'Páginas', price: pageExtra });
-        state.funciones.forEach(f => items.push({ desc: f.label, cat: 'Funcionalidad', price: f.price }));
-        if (state.tiempo && state.tiempo.price !== 0) items.push({ desc: state.tiempo.label, cat: 'Tiempo de entrega', price: state.tiempo.price });
+function renderPorque() {
+  const container = document.getElementById('porque-list');
+  container.innerHTML = porqueDefaults.map((p, i) => `
+    <div class="card">
+      <div class="card-title"><i class="fas fa-check"></i> Diferenciador ${i+1}</div>
+      <div class="field-group">
+        <label class="field-label">Título</label>
+        <input class="field-input" id="pq-titulo-${p.id}" value="${configData['pq_titulo_'+p.id] || p.titulo}">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Descripción</label>
+        <textarea class="field-textarea" id="pq-desc-${p.id}">${configData['pq_desc_'+p.id] || p.desc}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
 
-        // jsPDF
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const W = 210, H = 297;
+async function savePorque() {
+  const updates = [];
+  porqueDefaults.forEach(p => {
+    updates.push({ id: 'pq_titulo_'+p.id, valor: document.getElementById(`pq-titulo-${p.id}`)?.value || p.titulo, updated_at: new Date().toISOString() });
+    updates.push({ id: 'pq_desc_'+p.id, valor: document.getElementById(`pq-desc-${p.id}`)?.value || p.desc, updated_at: new Date().toISOString() });
+  });
+  for(const u of updates) await sb.from('config').upsert(u, { onConflict: 'id' });
+  await loadConfig();
+}
 
-        // ── BACKGROUND
-        doc.setFillColor(8, 8, 8);
-        doc.rect(0, 0, W, H, 'F');
+// ══════════════════════════════════════
+// COTIZACIONES
+// ══════════════════════════════════════
+let allCotizaciones = [];
+let cotFilter = 'all';
 
-        // ── GOLD SIDEBAR
-        doc.setFillColor(201, 168, 76);
-        doc.rect(0, 0, 6, H, 'F');
+async function loadCotizaciones() {
+  showLoading(true);
+  try {
+    const { data } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
+    allCotizaciones = data || [];
+    const unread = allCotizaciones.filter(c => !c.leida).length;
+    const badge = document.getElementById('unread-badge');
+    if(unread > 0) { badge.textContent = unread; badge.style.display = 'inline-block'; }
+    else badge.style.display = 'none';
+    document.getElementById('dash-unread').textContent = unread;
+    renderCotizaciones();
+  } finally { showLoading(false); }
+}
 
-        // ── HEADER BLOCK
-        doc.setFillColor(17, 17, 17);
-        doc.rect(6, 0, W - 6, 52, 'F');
+function filterCots(f) {
+  cotFilter = f;
+  document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('btn-primary'));
+  document.getElementById('filter-' + f).classList.add('btn-primary');
+  renderCotizaciones();
+}
 
-        // Header gold line bottom
-        doc.setDrawColor(201, 168, 76);
-        doc.setLineWidth(0.3);
-        doc.line(6, 52, W, 52);
+function renderCotizaciones() {
+  const list = document.getElementById('cotizaciones-list');
+  let items = cotFilter === 'unread' ? allCotizaciones.filter(c=>!c.leida) : allCotizaciones;
+  if(items.length === 0) {
+    list.innerHTML = '<div class="card" style="text-align:center;color:var(--dim);padding:3rem;">No hay cotizaciones ' + (cotFilter==='unread'?'sin leer':'aún') + '</div>';
+    return;
+  }
+  list.innerHTML = items.map(c => {
+    const date = new Date(c.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const items_str = Object.keys(c.desglose||{}).map(k=>`<span class="cot-item-tag">${k}</span>`).join('');
+    return `
+      <div class="cot-row ${!c.leida?'unread':''}" id="cot-${c.id}">
+        <div class="cot-header">
+          <div>
+            <div class="cot-name">${c.nombre} ${!c.leida?'<span class="badge badge-gold" style="margin-left:6px;">Nuevo</span>':''}</div>
+            <div class="cot-email">${c.email}${c.empresa?' · '+c.empresa:''}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="cot-total">$${c.total.toLocaleString()}</div>
+            <div class="cot-date">${date}</div>
+          </div>
+        </div>
+        <div class="cot-items">${items_str || '<span class="cot-item-tag">Sin desglose</span>'}</div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
+          ${!c.leida?`<button class="btn btn-success btn-sm" onclick="markRead(${c.id})"><i class="fas fa-check"></i> Marcar leída</button>`:''}
+          <a href="mailto:${c.email}?subject=Re: Tu cotización WebElite" class="btn btn-ghost btn-sm"><i class="fas fa-envelope"></i> Responder</a>
+          <button class="btn btn-danger btn-sm" onclick="deleteCot(${c.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
-        // Logo
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(26);
-        doc.setTextColor(247, 243, 238);
-        doc.text('Web', 16, 22);
-        doc.setTextColor(201, 168, 76);
-        doc.text('Elite', 35, 22);
+async function markRead(id) {
+  await sb.from('cotizaciones').update({ leida: true }).eq('id', id);
+  await loadCotizaciones();
+  showToast('Marcada como leída', 'success');
+}
 
-        // Tagline
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(107, 101, 96);
-        doc.text('DESARROLLO WEB PREMIUM', 16, 28);
+async function deleteCot(id) {
+  if(!confirm('¿Eliminar esta cotización?')) return;
+  await sb.from('cotizaciones').delete().eq('id', id);
+  await loadCotizaciones();
+  showToast('Cotización eliminada', 'info');
+}
 
-        // Folio badge
-        doc.setFillColor(201, 168, 76);
-        doc.roundedRect(W - 50, 10, 44, 12, 1, 1, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(8, 8, 8);
-        doc.text('COTIZACIÓN ' + folio, W - 48, 18);
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+async function loadDashboard() {
+  const { data: cots } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
+  allCotizaciones = cots || [];
+  const total = cots?.length || 0;
+  const unread = cots?.filter(c=>!c.leida).length || 0;
+  const avg = total > 0 ? Math.round(cots.reduce((s,c)=>s+c.total,0)/total) : 0;
+  const actServicios = serviciosData.filter(s=>s.activo).length;
 
-        // Fecha
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(107, 101, 96);
-        doc.text('Emitida: ' + fecha, W - 50, 27);
+  document.getElementById('dash-total-cot').textContent = total;
+  document.getElementById('dash-unread').textContent = unread;
+  document.getElementById('dash-avg').textContent = avg > 0 ? '$'+avg.toLocaleString() : '—';
+  document.getElementById('dash-servicios').textContent = actServicios;
 
-        // ── TÍTULO COTIZACIÓN
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(18);
-        doc.setTextColor(247, 243, 238);
-        doc.text('PROPUESTA DE DESARROLLO', 16, 42);
-        doc.setTextColor(201, 168, 76);
-        doc.text('WEB', 16 + doc.getTextWidth('PROPUESTA DE DESARROLLO '), 42);
+  const unreadBadge = document.getElementById('unread-badge');
+  if(unread > 0) { unreadBadge.textContent = unread; unreadBadge.style.display = 'inline-block'; }
+  else unreadBadge.style.display = 'none';
 
-        // ── CLIENT BOX
-        doc.setFillColor(26, 26, 26);
-        doc.rect(6, 58, (W - 12) * 0.55, 32, 'F');
-        doc.setDrawColor(201, 168, 76, 0.3);
-        doc.setLineWidth(0.2);
-        doc.rect(6, 58, (W - 12) * 0.55, 32);
+  const recentEl = document.getElementById('dash-recent-cots');
+  const recent = allCotizaciones.slice(0,5);
+  if(recent.length === 0) {
+    recentEl.innerHTML = '<div style="color:var(--dim);font-size:0.85rem;padding:1rem 0;">Aún no hay cotizaciones</div>';
+    return;
+  }
+  recentEl.innerHTML = `<table><thead><tr><th>Nombre</th><th>Email</th><th>Total</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>` +
+    recent.map(c => {
+      const d = new Date(c.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
+      return `<tr>
+        <td>${c.nombre}</td>
+        <td style="color:var(--dim)">${c.email}</td>
+        <td class="td-gold">$${c.total.toLocaleString()}</td>
+        <td style="color:var(--dimmer)">${d}</td>
+        <td>${c.leida ? '<span class="badge badge-green">Leída</span>' : '<span class="badge badge-gold">Nueva</span>'}</td>
+      </tr>`;
+    }).join('') + '</tbody></table>';
+}
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(201, 168, 76);
-        doc.text('PREPARADO PARA', 12, 65);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.setTextColor(247, 243, 238);
-        doc.text(nombre, 12, 73);
-        if (empresa) {
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(176, 176, 160);
-            doc.text(empresa, 12, 80);
-        }
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(107, 101, 96);
-        doc.text(email, 12, empresa ? 87 : 80);
+// ══════════════════════════════════════
+// GLOBAL SAVE
+// ══════════════════════════════════════
+async function saveCurrentPage() {
+  const btn = document.getElementById('globalSaveBtn');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+  btn.disabled = true;
+  try {
+    if(['hero','general','contacto','proceso','porque'].includes(currentPage)) await saveConfig();
+    if(currentPage === 'proceso') await saveProceso();
+    if(currentPage === 'porque') await savePorque();
+    if(currentPage === 'servicios') await saveServicios();
+    if(currentPage === 'portafolio') showToast('Usa el botón "Guardar" en cada proyecto', 'info');
+    if(currentPage === 'precios') showToast('Usa el botón "Guardar plan" en cada card', 'info');
+    if(currentPage === 'cotizador') showToast('Los precios se guardan automáticamente', 'info');
+    if(currentPage === 'seguridad') { await changePassword(); return; }
+    showToast('Cambios guardados correctamente', 'success');
+    btn.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
+    btn.classList.add('saved');
+    setTimeout(()=>{
+      btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
+      btn.classList.remove('saved');
+      btn.disabled = false;
+    }, 2500);
+  } catch(e) {
+    showToast('Error al guardar: ' + e.message, 'error');
+    btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
+    btn.disabled = false;
+  }
+}
 
-        // ── TOTAL BOX
-        const tbX = 6 + (W - 12) * 0.58;
-        const tbW = (W - 12) * 0.42;
-        doc.setFillColor(201, 168, 76);
-        doc.rect(tbX, 58, tbW, 32, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(30, 20, 0);
-        doc.text('TOTAL ESTIMADO', tbX + 6, 65);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(22);
-        doc.setTextColor(8, 8, 8);
-        doc.text(formatMoney(total), tbX + 6, 76);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(80, 60, 0);
-        doc.text('USD · IVA no incluido', tbX + 6, 83);
-        doc.text('Válida por 15 días', tbX + 6, 88);
+// ══════════════════════════════════════
+// SEGURIDAD
+// ══════════════════════════════════════
+async function changePassword() {
+  const current  = document.getElementById('sec-current').value;
+  const newPass  = document.getElementById('sec-new').value;
+  const confirm  = document.getElementById('sec-confirm').value;
+  if(!current || !newPass || !confirm) { showToast('Completa todos los campos', 'error'); return; }
+  if(newPass !== confirm) { showToast('Las contraseñas no coinciden', 'error'); return; }
+  const { data } = await sb.from('admin_users').select('*').eq('email', currentUser.email).eq('password_hash', current).single();
+  if(!data) { showToast('Contraseña actual incorrecta', 'error'); return; }
+  await sb.from('admin_users').update({ password_hash: newPass }).eq('id', currentUser.id);
+  ['sec-current','sec-new','sec-confirm'].forEach(id => document.getElementById(id).value = '');
+  showToast('Contraseña actualizada', 'success');
+}
 
-        // ── TABLE HEADER
-        let y = 100;
-        doc.setFillColor(17, 17, 17);
-        doc.rect(6, y, W - 12, 9, 'F');
-        doc.setDrawColor(201, 168, 76);
-        doc.setLineWidth(0.4);
-        doc.line(6, y, W - 6, y);
-        doc.line(6, y + 9, W - 6, y + 9);
+// ══════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════
+function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(201, 168, 76);
-        doc.text('DESCRIPCIÓN', 12, y + 6);
-        doc.text('CATEGORÍA', 100, y + 6);
-        doc.text('VALOR (USD)', W - 12, y + 6, { align: 'right' });
-        y += 9;
-
-        // ── TABLE ROWS
-        items.forEach((item, i) => {
-            const rowH = 9;
-            if (i % 2 === 0) {
-                doc.setFillColor(20, 20, 20);
-            } else {
-                doc.setFillColor(26, 26, 26);
-            }
-            doc.rect(6, y, W - 12, rowH, 'F');
-            doc.setDrawColor(40, 40, 40);
-            doc.setLineWidth(0.1);
-            doc.line(6, y + rowH, W - 6, y + rowH);
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8.5);
-            doc.setTextColor(247, 243, 238);
-            doc.text(item.desc, 12, y + 6.2);
-
-            doc.setFontSize(7.5);
-            doc.setTextColor(107, 101, 96);
-            doc.text(item.cat, 100, y + 6.2);
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(8.5);
-            doc.setTextColor(201, 168, 76);
-            doc.text(formatMoney(item.price), W - 12, y + 6.2, { align: 'right' });
-            y += rowH;
-        });
-
-        // ── TOTAL ROW
-        y += 2;
-        doc.setFillColor(201, 168, 76);
-        doc.rect(6, y, W - 12, 11, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(8, 8, 8);
-        doc.text('TOTAL ESTIMADO', 12, y + 7.5);
-        doc.text(formatMoney(total) + ' USD', W - 12, y + 7.5, { align: 'right' });
-        y += 18;
-
-        // ── NOTAS / CONDICIONES
-        doc.setFillColor(17, 17, 17);
-        doc.rect(6, y, W - 12, 52, 'F');
-        doc.setDrawColor(201, 168, 76);
-        doc.setLineWidth(0.2);
-        doc.rect(6, y, W - 12, 52);
-
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(201, 168, 76);
-        doc.text('CONDICIONES Y PRÓXIMOS PASOS', 12, y + 8);
-
-        const condiciones = [
-            '→  Esta cotización es orientativa y sujeta a confirmación tras la consultoría inicial gratuita.',
-            '→  El precio final puede variar según el alcance detallado del proyecto.',
-            '→  Forma de pago: 50% al inicio del proyecto, 50% al entregar el resultado final.',
-            '→  Incluye 30 días de soporte técnico gratuito post-lanzamiento.',
-            '→  Cotización válida por 15 días calendario desde la fecha de emisión.',
-        ];
-
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(176, 172, 166);
-        condiciones.forEach((line, i) => {
-            doc.text(line, 12, y + 16 + (i * 7));
-        });
-
-        // NEXT STEP
-        y += 56;
-        doc.setFillColor(26, 26, 26);
-        doc.rect(6, y, W - 12, 22, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(247, 243, 238);
-        doc.text('¿Listo para empezar? Agenda tu consultoría gratuita de 30 minutos:', 12, y + 9);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(201, 168, 76);
-        doc.text('dilancoronado358@gmail.com  ·  +593 96 993 0639  ·  calendly.com/dilancoronado358', 12, y + 17);
-
-        // ── FOOTER
-        doc.setFillColor(17, 17, 17);
-        doc.rect(6, H - 16, W - 6, 16, 'F');
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(107, 101, 96);
-        doc.text('WebElite · Desarrollo Web Premium · Todos los derechos reservados · ' + new Date().getFullYear(), W / 2, H - 7, { align: 'center' });
-        doc.setTextColor(201, 168, 76);
-        doc.text(folio, W - 12, H - 7, { align: 'right' });
-
-        const filename = `Cotizacion-WebElite-${nombre.replace(/\s+/g, '-')}-${folio}.pdf`;
-
-        // Mobile-compatible download: use blob URL + hidden <a> click
-        try {
-            const blob = doc.output('blob');
-            const url = URL.createObjectURL(blob);
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-            if (isIOS) {
-                // iOS Safari: open in new tab (no direct download support)
-                const newTab = window.open(url, '_blank');
-                if (!newTab) {
-                    // If popup blocked, use data URI fallback
-                    const dataUri = doc.output('datauristring');
-                    const a = document.createElement('a');
-                    a.href = dataUri;
-                    a.target = '_blank';
-                    a.rel = 'noopener';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                }
-                setTimeout(() => URL.revokeObjectURL(url), 10000);
-            } else {
-                // Android + Desktop: standard blob download
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-            }
-
-            // Button feedback
-            const btn = document.getElementById('btn-download');
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> ¡PDF generado!';
-            btn.style.background = '#2ecc71';
-            setTimeout(() => {
-                btn.innerHTML = original;
-                btn.style.background = '';
-            }, 3000);
-
-        } catch (err) {
-            console.error('PDF error:', err);
-            // Last resort fallback: data URI
-            const dataUri = doc.output('datauristring');
-            const a = document.createElement('a');
-            a.href = dataUri;
-            a.download = filename;
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-    }
-
-    // FAQ Accordion
-    document.querySelectorAll('.faq-question').forEach(q => {
-        q.addEventListener('click', () => {
-            const item = q.parentElement;
-            const isOpen = item.classList.contains('open');
-            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-            if (!isOpen) item.classList.add('open');
-        });
-    });
-
+let toastTimer;
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const icon = t.querySelector('.toast-icon');
+  t.className = 'toast show ' + type;
+  document.getElementById('toast-msg').textContent = msg;
+  const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle' };
+  icon.className = `fas ${icons[type]||'fa-info-circle'} toast-icon`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
 </script>
-
-
 </body>
 </html>
