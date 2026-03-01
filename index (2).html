@@ -3,1237 +3,880 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebElite Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>WebElite — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root {
-  --bg: #0a0a0a;
-  --bg2: #111;
-  --bg3: #1a1a1a;
-  --bg4: #222;
-  --gold: #c9a84c;
-  --gold2: #e8c97a;
-  --gold-dim: rgba(201,168,76,0.15);
-  --white: #f0ece6;
-  --dim: #888;
-  --dimmer: #555;
-  --green: #2ecc71;
-  --red: #e74c3c;
-  --blue: #3498db;
-  --border: rgba(255,255,255,0.07);
-  --font: 'DM Sans', sans-serif;
-  --mono: 'DM Mono', monospace;
-  --r: 6px;
-  --sidebar: 240px;
-  --header: 56px;
-}
+:root{--bg:#080808;--bg2:#111;--bg3:#1a1a1a;--bg4:#242424;--gold:#c9a84c;--gold2:#e8d48a;--gd:rgba(201,168,76,0.12);--w:#f0ece6;--dim:#888;--dimmer:#555;--bdr:rgba(255,255,255,0.07);--green:#27ae60;--red:#e74c3c;--blue:#2980b9;--f:'DM Sans',sans-serif;--m:'DM Mono',monospace;--r:5px;}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;background:var(--bg);color:var(--white);font-family:var(--font);font-size:14px;line-height:1.5;}
-a{color:inherit;text-decoration:none;}
-button{font-family:var(--font);cursor:pointer;}
-input,textarea,select{font-family:var(--font);}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--w);font-family:var(--f);font-size:14px;}
+a{color:inherit;text-decoration:none;}button,input,textarea{font-family:var(--f);font-size:14px;}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:4px;height:4px;}
-::-webkit-scrollbar-track{background:var(--bg2);}
-::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px;}
+/* LOGIN */
+#L{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;transition:opacity .3s}
+#L.h{opacity:0;pointer-events:none}
+.lb{width:340px;background:var(--bg2);border:1px solid rgba(201,168,76,.25);border-radius:var(--r);padding:2.4rem}
+.ll{text-align:center;font-size:1.7rem;font-weight:700;margin-bottom:.2rem}
+.ll em{font-style:italic;color:var(--gold)}
+.ls{text-align:center;color:var(--dim);font-size:.78rem;margin-bottom:1.8rem}
+.li{text-align:center;font-size:1.8rem;color:var(--gold);margin-bottom:1rem}
+.lf{display:block;font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;margin-top:12px}
+.lin{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--w);padding:9px 12px;border-radius:var(--r);outline:none;transition:border-color .2s}
+.lin:focus{border-color:var(--gold)}
+.lbt{width:100%;margin-top:1.3rem;background:var(--gold);border:none;color:#000;padding:10px;border-radius:var(--r);font-weight:700;cursor:pointer;transition:background .2s}
+.lbt:hover{background:var(--gold2)}
+.le{color:var(--red);font-size:.78rem;text-align:center;margin-top:.7rem;min-height:16px}
 
-/* ── LOGIN ── */
-#login-screen {
-  position:fixed;inset:0;background:var(--bg);
-  display:flex;align-items:center;justify-content:center;z-index:9999;
-}
-.login-box {
-  width:100%;max-width:380px;padding:2.5rem;
-  background:var(--bg2);border:1px solid rgba(201,168,76,0.2);
-  border-radius:var(--r);
-}
-.login-logo {
-  font-size:1.6rem;font-weight:700;text-align:center;margin-bottom:0.3rem;
-}
-.login-logo em{font-style:italic;color:var(--gold);}
-.login-sub{text-align:center;color:var(--dim);font-size:0.82rem;margin-bottom:2rem;}
-.login-label{font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:0.4rem;display:block;}
-.login-input {
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  color:var(--white);padding:0.7rem 1rem;border-radius:var(--r);
-  font-size:0.9rem;margin-bottom:1rem;transition:border-color 0.2s;
-}
-.login-input:focus{outline:none;border-color:var(--gold);}
-.login-btn {
-  width:100%;background:var(--gold);border:none;color:#000;
-  padding:0.8rem;border-radius:var(--r);font-weight:700;font-size:0.9rem;
-  letter-spacing:0.05em;transition:all 0.2s;
-}
-.login-btn:hover{background:var(--gold2);}
-.login-err{color:var(--red);font-size:0.8rem;text-align:center;margin-top:0.8rem;display:none;}
-.login-lock{text-align:center;margin-bottom:1.5rem;font-size:2.5rem;color:var(--gold);}
+/* APP */
+#A{height:100%;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s}
+#A.s{opacity:1;pointer-events:all}
+.tb{height:52px;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 1.2rem;gap:.8rem;flex-shrink:0}
+.tl{font-size:1.05rem;font-weight:700;margin-right:auto}
+.tl em{font-style:italic;color:var(--gold)}
+.tl span{color:var(--dimmer);font-size:.7rem;margin-left:5px;font-weight:400}
+.td{background:var(--gd);color:var(--gold);border:1px solid rgba(201,168,76,.25);padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600}
+.tbt{background:transparent;border:1px solid var(--bdr);color:var(--dim);padding:5px 11px;border-radius:var(--r);cursor:pointer;font-size:.76rem;display:flex;align-items:center;gap:5px;transition:all .2s}
+.tbt:hover{border-color:rgba(255,255,255,.2);color:var(--w)}
+.tsv{background:var(--gold);border:none;color:#000;padding:6px 15px;border-radius:var(--r);font-weight:700;font-size:.78rem;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .2s}
+.tsv:hover{background:var(--gold2)}
+.tsv.ok{background:var(--green);color:#fff}
+.mn{display:flex;flex:1;overflow:hidden}
+.sb{width:210px;background:var(--bg2);border-right:1px solid var(--bdr);overflow-y:auto;flex-shrink:0}
+.ss{padding:12px 12px 3px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+.ni{display:flex;align-items:center;gap:8px;padding:6px 13px;color:var(--dim);font-size:.82rem;font-weight:500;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.ni:hover{color:var(--w);background:rgba(255,255,255,.025)}
+.ni.on{color:var(--gold);background:var(--gd);border-left-color:var(--gold)}
+.ni i{width:14px;text-align:center;font-size:.78rem;flex-shrink:0}
+.nb{margin-left:auto;background:var(--red);color:#fff;font-size:.58rem;padding:1px 5px;border-radius:10px;font-weight:700}
+.ct{flex:1;overflow-y:auto;padding:1.6rem}
+.pg{display:none}.pg.on{display:block}
+.pt{font-size:1.25rem;font-weight:700;margin-bottom:2px}
+.pst{color:var(--dim);font-size:.8rem;margin-bottom:1.6rem}
 
-/* ── LAYOUT ── */
-#app{display:none;height:100%;flex-direction:column;}
-#app.visible{display:flex;}
+/* Cards */
+.c{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:1.3rem;margin-bottom:1.1rem}
+.ch{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.fg{margin-bottom:.9rem}
+.fl{display:block;font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--bdr);color:var(--w);padding:7px 10px;border-radius:var(--r);outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--gold)}
+textarea.fi{resize:vertical;min-height:70px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem}
 
-/* Header */
-.top-bar {
-  height:var(--header);background:var(--bg2);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 1.5rem;position:fixed;top:0;left:0;right:0;z-index:100;
-}
-.top-logo{font-size:1.2rem;font-weight:700;}
-.top-logo em{font-style:italic;color:var(--gold);}
-.top-right{display:flex;align-items:center;gap:1rem;}
-.top-badge {
-  background:var(--gold-dim);color:var(--gold);
-  padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600;
-  border:1px solid rgba(201,168,76,0.3);
-}
-.top-btn {
-  background:transparent;border:1px solid var(--border);color:var(--dim);
-  padding:5px 12px;border-radius:var(--r);font-size:0.8rem;
-  transition:all 0.2s;display:flex;align-items:center;gap:6px;
-}
-.top-btn:hover{border-color:var(--gold);color:var(--gold);}
-.top-save-btn {
-  background:var(--gold);border:none;color:#000;
-  padding:6px 16px;border-radius:var(--r);font-size:0.82rem;font-weight:700;
-  transition:all 0.2s;display:flex;align-items:center;gap:6px;
-}
-.top-save-btn:hover{background:var(--gold2);}
-.top-save-btn.saved{background:var(--green);color:#fff;}
-
-/* Main wrapper */
-.main-wrapper {
-  display:flex;height:100%;padding-top:var(--header);
-}
-
-/* Sidebar */
-.sidebar {
-  width:var(--sidebar);background:var(--bg2);
-  border-right:1px solid var(--border);
-  position:fixed;top:var(--header);bottom:0;
-  overflow-y:auto;display:flex;flex-direction:column;
-  padding:1rem 0;
-}
-.sidebar-section{padding:0.5rem 1rem 0.2rem;font-size:0.65rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--dimmer);}
-.nav-item {
-  display:flex;align-items:center;gap:10px;
-  padding:0.6rem 1.2rem;color:var(--dim);font-size:0.87rem;font-weight:500;
-  cursor:pointer;transition:all 0.15s;border-left:2px solid transparent;
-  margin:1px 0;
-}
-.nav-item:hover{color:var(--white);background:rgba(255,255,255,0.03);}
-.nav-item.active{color:var(--gold);background:var(--gold-dim);border-left-color:var(--gold);}
-.nav-item i{width:16px;text-align:center;font-size:0.85rem;}
-.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;font-weight:700;}
-
-/* Content */
-.content {
-  margin-left:var(--sidebar);flex:1;padding:2rem;
-  overflow-y:auto;height:calc(100vh - var(--header));
-}
-
-/* ── COMPONENTS ── */
-.page{display:none;}
-.page.active{display:block;}
-
-.page-title{font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;}
-.page-sub{color:var(--dim);font-size:0.85rem;margin-bottom:2rem;}
-
-.card {
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;
-}
-.card-title {
-  font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--gold);margin-bottom:1.2rem;display:flex;align-items:center;gap:8px;
-}
-.card-title i{font-size:0.9rem;}
-
-.field-group{margin-bottom:1.2rem;}
-.field-label{font-size:0.75rem;letter-spacing:0.07em;text-transform:uppercase;color:var(--dim);margin-bottom:0.4rem;display:block;}
-.field-input {
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  color:var(--white);padding:0.6rem 0.9rem;border-radius:var(--r);
-  font-size:0.88rem;transition:border-color 0.2s;
-}
-.field-input:focus{outline:none;border-color:var(--gold);}
-.field-textarea {
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  color:var(--white);padding:0.6rem 0.9rem;border-radius:var(--r);
-  font-size:0.88rem;resize:vertical;min-height:80px;transition:border-color 0.2s;
-}
-.field-textarea:focus{outline:none;border-color:var(--gold);}
-
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
-
-/* Table */
-.table-wrap{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;}
-th{text-align:left;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--dim);padding:0.6rem 0.8rem;border-bottom:1px solid var(--border);}
-td{padding:0.7rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem;vertical-align:middle;}
-tr:hover td{background:rgba(255,255,255,0.02);}
-.td-gold{color:var(--gold);font-weight:600;font-family:var(--mono);}
-
-/* Badges */
-.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:0.72rem;font-weight:600;}
-.badge-green{background:rgba(46,204,113,0.15);color:var(--green);}
-.badge-red{background:rgba(231,76,60,0.15);color:var(--red);}
-.badge-gold{background:var(--gold-dim);color:var(--gold);}
-.badge-blue{background:rgba(52,152,219,0.15);color:var(--blue);}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r);font-size:0.8rem;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;}
-.btn-primary{background:var(--gold);color:#000;}
-.btn-primary:hover{background:var(--gold2);}
-.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--border);}
-.btn-ghost:hover{color:var(--white);border-color:rgba(255,255,255,0.2);}
-.btn-danger{background:rgba(231,76,60,0.15);color:var(--red);border:1px solid rgba(231,76,60,0.2);}
-.btn-danger:hover{background:var(--red);color:#fff;}
-.btn-success{background:rgba(46,204,113,0.15);color:var(--green);border:1px solid rgba(46,204,113,0.2);}
-.btn-success:hover{background:var(--green);color:#fff;}
-.btn-sm{padding:4px 10px;font-size:0.75rem;}
+/* Btns */
+.b{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--r);font-size:.76rem;font-weight:600;border:none;cursor:pointer;transition:all .2s}
+.bp{background:var(--gold);color:#000}.bp:hover{background:var(--gold2)}
+.bg{background:transparent;color:var(--dim);border:1px solid var(--bdr)}.bg:hover{color:var(--w);border-color:rgba(255,255,255,.2)}
+.br{background:rgba(231,76,60,.12);color:var(--red);border:1px solid rgba(231,76,60,.2)}.br:hover{background:var(--red);color:#fff}
+.bs{background:rgba(39,174,96,.12);color:var(--green);border:1px solid rgba(39,174,96,.2)}.bs:hover{background:var(--green);color:#fff}
+.sm{padding:3px 8px;font-size:.7rem}
 
 /* Stats */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
-.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;}
-.stat-label{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:0.5rem;}
-.stat-val{font-size:1.8rem;font-weight:700;color:var(--gold);font-family:var(--mono);}
-.stat-sub{font-size:0.75rem;color:var(--dimmer);margin-top:0.3rem;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.9rem;margin-bottom:1.4rem}
+.sc{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:1rem}
+.sl{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.sv{font-size:1.6rem;font-weight:700;color:var(--gold);font-family:var(--m);line-height:1}
+.ss{font-size:.7rem;color:var(--dimmer);margin-top:3px}
+
+/* Table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);padding:6px 8px;border-bottom:1px solid var(--bdr)}
+td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:.82rem;vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.015)}
+.tg{color:var(--gold);font-weight:600;font-family:var(--m)}
+
+/* Badge */
+.bx{display:inline-flex;align-items:center;padding:2px 6px;border-radius:10px;font-size:.66rem;font-weight:600}
+.bxg{background:rgba(39,174,96,.15);color:var(--green)}
+.bxo{background:var(--gd);color:var(--gold)}
 
 /* Toggle */
-.toggle-wrap{display:flex;align-items:center;gap:10px;}
-.toggle{position:relative;width:36px;height:20px;cursor:pointer;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider {
-  position:absolute;inset:0;background:var(--bg4);
-  border-radius:20px;transition:0.3s;
-}
-.toggle-slider::before {
-  content:'';position:absolute;width:14px;height:14px;
-  left:3px;top:3px;background:#fff;border-radius:50%;transition:0.3s;
-}
-.toggle input:checked + .toggle-slider{background:var(--gold);}
-.toggle input:checked + .toggle-slider::before{transform:translateX(16px);}
+.tw2{display:flex;align-items:center;gap:8px}
+.tog{position:relative;width:32px;height:17px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;position:absolute}
+.tsl{position:absolute;inset:0;background:var(--bg4);border-radius:17px;transition:.25s}
+.tsl::before{content:'';position:absolute;width:11px;height:11px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.25s}
+.tog input:checked+.tsl{background:var(--gold)}
+.tog input:checked+.tsl::before{transform:translateX(15px)}
 
-/* Portfolio cards */
-.portfolio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
-.portfolio-admin-card {
-  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
-}
-.portfolio-admin-img{width:100%;height:140px;object-fit:cover;}
-.portfolio-admin-body{padding:1rem;}
-.portfolio-admin-tag{font-size:0.7rem;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;}
-.portfolio-admin-title{font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;}
-.portfolio-admin-desc{font-size:0.8rem;color:var(--dim);margin-bottom:0.8rem;line-height:1.5;}
-.portfolio-admin-actions{display:flex;gap:0.5rem;}
+/* Port grid */
+.pgd{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+.pcx{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.pix{width:100%;height:120px;object-fit:cover;display:block}
+.pbx{padding:.8rem}
 
-/* Price card */
-.price-admin-card {
-  background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;
-  position:relative;
-}
-.price-admin-card.featured{border-color:rgba(201,168,76,0.4);}
-.featured-badge {
-  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
-  background:var(--gold);color:#000;font-size:0.65rem;font-weight:700;
-  padding:2px 10px;border-radius:10px;letter-spacing:0.08em;text-transform:uppercase;
-}
+/* Price grid */
+.prgd{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+.prx{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:1rem;position:relative}
+.prx.ft{border-color:rgba(201,168,76,.45)}
+.ftt{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:.6rem;font-weight:700;padding:2px 9px;border-radius:9px;white-space:nowrap}
 
-/* Cotizaciones */
-.cot-row{padding:1rem;background:var(--bg3);border-radius:var(--r);margin-bottom:0.8rem;border:1px solid var(--border);}
-.cot-row.unread{border-left:3px solid var(--gold);}
-.cot-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;}
-.cot-name{font-weight:600;font-size:0.95rem;}
-.cot-email{color:var(--dim);font-size:0.8rem;}
-.cot-total{font-family:var(--mono);font-size:1.1rem;color:var(--gold);font-weight:700;}
-.cot-date{color:var(--dimmer);font-size:0.75rem;}
-.cot-items{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;}
-.cot-item-tag{background:var(--bg4);color:var(--dim);padding:2px 8px;border-radius:4px;font-size:0.75rem;}
+/* Cot cards */
+.ccx{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:.9rem;margin-bottom:.7rem}
+.ccx.nw{border-left:3px solid var(--gold)}
+.cch{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.4rem}
+.ccn{font-weight:600;font-size:.9rem}
+.cce{color:var(--dim);font-size:.76rem}
+.cct{font-family:var(--m);font-size:1rem;color:var(--gold);font-weight:700}
+.ccd{color:var(--dimmer);font-size:.7rem}
+.cctg{display:flex;flex-wrap:wrap;gap:3px;margin-top:.4rem}
+.ctg{background:var(--bg4);color:var(--dim);padding:1px 6px;border-radius:3px;font-size:.7rem}
+
+/* Cot config */
+.ccr{display:flex;align-items:center;gap:.9rem;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.ccr:last-child{border-bottom:none}
+.ccl{flex:1;font-size:.82rem}
+.ccp{width:85px}
+.ccp input{width:100%;background:var(--bg4);border:1px solid var(--bdr);color:var(--w);padding:3px 7px;border-radius:3px;font-family:var(--m);font-size:.82rem;outline:none;text-align:right}
+.ccp input:focus{border-color:var(--gold)}
 
 /* Toast */
-.toast {
-  position:fixed;bottom:1.5rem;right:1.5rem;
-  background:var(--bg3);border:1px solid var(--border);
-  padding:0.8rem 1.2rem;border-radius:var(--r);
-  display:flex;align-items:center;gap:10px;font-size:0.85rem;
-  transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:9999;
-  box-shadow:0 10px 30px rgba(0,0,0,0.5);
-}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast.success .toast-icon{color:var(--green);}
-.toast.error .toast-icon{color:var(--red);}
-.toast.info .toast-icon{color:var(--blue);}
+.tst{position:fixed;bottom:1rem;right:1rem;background:var(--bg3);border:1px solid var(--bdr);padding:9px 14px;border-radius:var(--r);display:flex;align-items:center;gap:8px;font-size:.81rem;box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translateY(60px);opacity:0;transition:all .3s;z-index:9999}
+.tst.s{transform:translateY(0);opacity:1}
+.tst.ok .ti{color:var(--green)}.tst.er .ti{color:var(--red)}.tst.if .ti{color:var(--blue)}
 
-/* Loading */
-.loading-overlay {
-  position:fixed;inset:0;background:rgba(0,0,0,0.7);
-  display:flex;align-items:center;justify-content:center;
-  z-index:9998;display:none;
-}
-.loading-overlay.show{display:flex;}
-.spinner{width:40px;height:40px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
+/* Overlay */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9998;opacity:0;pointer-events:none;transition:opacity .2s}
+.ov.s{opacity:1;pointer-events:all}
+.spn{width:34px;height:34px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* Cotizador table config */
-.cot-config-row{
-  display:flex;align-items:center;gap:1rem;padding:0.6rem 0;
-  border-bottom:1px solid rgba(255,255,255,0.04);
-}
-.cot-config-label{flex:1;font-size:0.88rem;}
-.cot-config-cat{font-size:0.75rem;color:var(--gold);width:100px;}
-.cot-config-price{width:100px;}
-.cot-config-price input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--white);padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:0.85rem;}
-.cot-config-price input:focus{outline:none;border-color:var(--gold);}
+/* Alert box */
+.alert{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:var(--r);padding:1rem;margin-bottom:1.2rem;font-size:.82rem;line-height:1.6;color:var(--gold)}
+.alert strong{color:var(--gold2)}
 
-/* Responsive */
-@media(max-width:768px){
-  .sidebar{display:none;}
-  .content{margin-left:0;}
-  .stats-row{grid-template-columns:1fr 1fr;}
-  .grid-2,.grid-3{grid-template-columns:1fr;}
-  .portfolio-grid{grid-template-columns:1fr;}
-}
-
-/* Color preview */
-.img-preview{
-  width:100%;height:120px;object-fit:cover;border-radius:var(--r);
-  border:1px solid var(--border);margin-top:0.5rem;display:none;
-}
-.img-preview.show{display:block;}
-
-/* Section divider */
-.section-divider{height:1px;background:var(--border);margin:1.5rem 0;}
-
-/* Feature list editor */
-.feature-item{
-  display:flex;align-items:center;gap:8px;margin-bottom:0.5rem;
-}
-.feature-item input{flex:1;}
-.feature-item .remove-feat{
-  background:transparent;border:none;color:var(--dimmer);
-  cursor:pointer;padding:4px;transition:color 0.2s;
-}
-.feature-item .remove-feat:hover{color:var(--red);}
+@media(max-width:768px){.sb{display:none}.sg{grid-template-columns:1fr 1fr}.g2,.g3{grid-template-columns:1fr}.pgd,.prgd{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast">
-  <i class="fas fa-check-circle toast-icon"></i>
-  <span id="toast-msg">Guardado correctamente</span>
-</div>
+<div class="ov" id="OV"><div class="spn"></div></div>
+<div class="tst" id="TST"><i class="fas fa-circle-check ti"></i><span id="TM">OK</span></div>
 
 <!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-lock"><i class="fas fa-shield-alt"></i></div>
-    <div class="login-logo">Web<em>Elite</em></div>
-    <div class="login-sub">Panel de administración</div>
-    <label class="login-label">Email</label>
-    <input type="email" class="login-input" id="login-email" placeholder="tu@email.com" value="dilancoronado358@gmail.com">
-    <label class="login-label">Contraseña</label>
-    <input type="password" class="login-input" id="login-pass" placeholder="••••••••" value="">
-    <button class="login-btn" onclick="doLogin()">
-      <i class="fas fa-arrow-right"></i> Ingresar
-    </button>
-    <div class="login-err" id="login-err">Email o contraseña incorrectos</div>
+<div id="L">
+  <div class="lb">
+    <div class="li"><i class="fas fa-shield-halved"></i></div>
+    <div class="ll">Web<em>Elite</em></div>
+    <div class="ls">Panel de administración</div>
+    <label class="lf">Correo</label>
+    <input class="lin" type="email" id="LE" placeholder="tu@email.com">
+    <label class="lf">Contraseña</label>
+    <input class="lin" type="password" id="LP" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="lbt" onclick="doLogin()"><i class="fas fa-arrow-right-to-bracket"></i> Ingresar</button>
+    <div class="le" id="LER"></div>
   </div>
 </div>
 
 <!-- APP -->
-<div id="app">
-
-  <!-- TOP BAR -->
-  <div class="top-bar">
-    <div class="top-logo">Web<em>Elite</em> <span style="color:var(--dimmer);font-size:0.75rem;margin-left:6px;">Admin</span></div>
-    <div class="top-right">
-      <span class="top-badge"><i class="fas fa-circle" style="font-size:0.5rem;margin-right:4px;"></i> En vivo</span>
-      <a href="WebElite-Premium.html" target="_blank" class="top-btn"><i class="fas fa-eye"></i> Ver sitio</a>
-      <button class="top-save-btn" id="globalSaveBtn" onclick="saveCurrentPage()">
-        <i class="fas fa-save"></i> Guardar cambios
-      </button>
-      <button class="top-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i></button>
-    </div>
+<div id="A">
+  <div class="tb">
+    <div class="tl">Web<em>Elite</em><span>Admin</span></div>
+    <div class="td">En vivo</div>
+    <a href="WebElite-Premium.html" target="_blank" class="tbt"><i class="fas fa-eye"></i> Ver sitio</a>
+    <button class="tsv" id="SVB" onclick="savePage()"><i class="fas fa-floppy-disk"></i> Guardar</button>
+    <button class="tbt" onclick="doLogout()"><i class="fas fa-right-from-bracket"></i></button>
   </div>
-
-  <div class="main-wrapper">
-
-    <!-- SIDEBAR -->
-    <nav class="sidebar">
-      <div class="sidebar-section">Principal</div>
-      <div class="nav-item active" onclick="showPage('dashboard')"><i class="fas fa-chart-square"></i> Dashboard</div>
-      <div class="nav-item" onclick="showPage('general')"><i class="fas fa-sliders-h"></i> General</div>
-
-      <div class="sidebar-section" style="margin-top:0.5rem;">Contenido</div>
-      <div class="nav-item" onclick="showPage('hero')"><i class="fas fa-heading"></i> Hero & Urgencia</div>
-      <div class="nav-item" onclick="showPage('servicios')"><i class="fas fa-briefcase"></i> Servicios</div>
-      <div class="nav-item" onclick="showPage('portafolio')"><i class="fas fa-images"></i> Portafolio</div>
-      <div class="nav-item" onclick="showPage('proceso')"><i class="fas fa-tasks"></i> Proceso</div>
-      <div class="nav-item" onclick="showPage('porque')"><i class="fas fa-star"></i> Por qué yo</div>
-
-      <div class="sidebar-section" style="margin-top:0.5rem;">Ventas</div>
-      <div class="nav-item" onclick="showPage('precios')"><i class="fas fa-tag"></i> Planes & Precios</div>
-      <div class="nav-item" onclick="showPage('cotizador')"><i class="fas fa-calculator"></i> Cotizador</div>
-      <div class="nav-item" onclick="showPage('cotizaciones')"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones <span class="nav-badge" id="unread-badge" style="display:none">0</span></div>
-
-      <div class="sidebar-section" style="margin-top:0.5rem;">Config</div>
-      <div class="nav-item" onclick="showPage('contacto')"><i class="fas fa-address-card"></i> Contacto & Redes</div>
-      <div class="nav-item" onclick="showPage('seguridad')"><i class="fas fa-lock"></i> Seguridad</div>
+  <div class="mn">
+    <nav class="sb">
+      <div class="ss">Principal</div>
+      <div class="ni on" onclick="go('dash')"><i class="fas fa-gauge-high"></i> Dashboard</div>
+      <div class="ss">Contenido</div>
+      <div class="ni" onclick="go('hero')"><i class="fas fa-newspaper"></i> Hero &amp; Urgencia</div>
+      <div class="ni" onclick="go('gen')"><i class="fas fa-chart-bar"></i> Estadísticas</div>
+      <div class="ni" onclick="go('svc')"><i class="fas fa-briefcase"></i> Servicios</div>
+      <div class="ni" onclick="go('port')"><i class="fas fa-images"></i> Portafolio</div>
+      <div class="ni" onclick="go('proc')"><i class="fas fa-list-check"></i> Proceso</div>
+      <div class="ni" onclick="go('pq')"><i class="fas fa-star"></i> Por qué yo</div>
+      <div class="ss">Ventas</div>
+      <div class="ni" onclick="go('plans')"><i class="fas fa-tag"></i> Planes &amp; Precios</div>
+      <div class="ni" onclick="go('cconf')"><i class="fas fa-calculator"></i> Cotizador</div>
+      <div class="ni" onclick="go('cots')"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones <span class="nb" id="UB" style="display:none">0</span></div>
+      <div class="ss">Config</div>
+      <div class="ni" onclick="go('cont')"><i class="fas fa-address-card"></i> Contacto</div>
+      <div class="ni" onclick="go('pass')"><i class="fas fa-lock"></i> Contraseña</div>
     </nav>
+    <div class="ct">
 
-    <!-- CONTENT -->
-    <main class="content">
-
-      <!-- ── DASHBOARD ── -->
-      <div class="page active" id="page-dashboard">
-        <div class="page-title">Dashboard</div>
-        <div class="page-sub">Resumen de tu sitio web</div>
-
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-label">Cotizaciones totales</div>
-            <div class="stat-val" id="dash-total-cot">—</div>
-            <div class="stat-sub">Desde el inicio</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Sin leer</div>
-            <div class="stat-val" id="dash-unread" style="color:var(--red)">—</div>
-            <div class="stat-sub">Requieren atención</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Valor promedio</div>
-            <div class="stat-val" id="dash-avg">—</div>
-            <div class="stat-sub">Por cotización</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Proyectos activos</div>
-            <div class="stat-val" id="dash-servicios">—</div>
-            <div class="stat-sub">Servicios publicados</div>
-          </div>
+      <!-- DASHBOARD -->
+      <div class="pg on" id="pg-dash">
+        <div class="pt">Dashboard</div><div class="pst">Resumen de actividad</div>
+        <div id="SB_ALERT"></div>
+        <div class="sg">
+          <div class="sc"><div class="sl">Cotizaciones</div><div class="sv" id="DT">—</div><div class="ss">Total</div></div>
+          <div class="sc"><div class="sl">Sin leer</div><div class="sv" id="DU" style="color:var(--red)">—</div><div class="ss">Pendientes</div></div>
+          <div class="sc"><div class="sl">Promedio</div><div class="sv" id="DA">—</div><div class="ss">Por cotización</div></div>
+          <div class="sc"><div class="sl">Portafolio</div><div class="sv" id="DP">—</div><div class="ss">Proyectos</div></div>
         </div>
-
-        <div class="card">
-          <div class="card-title"><i class="fas fa-clock"></i> Últimas cotizaciones recibidas</div>
-          <div id="dash-recent-cots"><div style="color:var(--dim);font-size:0.85rem;">Cargando...</div></div>
-        </div>
-
-        <div class="card">
-          <div class="card-title"><i class="fas fa-rocket"></i> Accesos rápidos</div>
-          <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
-            <button class="btn btn-ghost" onclick="showPage('hero')"><i class="fas fa-heading"></i> Editar Hero</button>
-            <button class="btn btn-ghost" onclick="showPage('portafolio')"><i class="fas fa-images"></i> Editar Portafolio</button>
-            <button class="btn btn-ghost" onclick="showPage('precios')"><i class="fas fa-tag"></i> Editar Precios</button>
-            <button class="btn btn-ghost" onclick="showPage('cotizaciones')"><i class="fas fa-file-invoice-dollar"></i> Ver Cotizaciones</button>
+        <div class="c"><div class="ch"><i class="fas fa-clock-rotate-left"></i> Últimas cotizaciones</div><div id="DR">Cargando...</div></div>
+        <div class="c"><div class="ch"><i class="fas fa-bolt"></i> Accesos rápidos</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px">
+            <button class="b bg" onclick="go('hero')"><i class="fas fa-newspaper"></i> Hero</button>
+            <button class="b bg" onclick="go('port')"><i class="fas fa-images"></i> Portafolio</button>
+            <button class="b bg" onclick="go('plans')"><i class="fas fa-tag"></i> Precios</button>
+            <button class="b bg" onclick="go('cots')"><i class="fas fa-file-invoice-dollar"></i> Cotizaciones</button>
           </div>
         </div>
       </div>
 
-      <!-- ── GENERAL ── -->
-      <div class="page" id="page-general">
-        <div class="page-title">Configuración General</div>
-        <div class="page-sub">Estadísticas y datos que aparecen en la página</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-chart-bar"></i> Estadísticas (contadores animados)</div>
-          <div class="grid-2">
-            <div class="field-group">
-              <label class="field-label">Proyectos completados</label>
-              <input class="field-input" id="g-stat_proyectos" type="number">
-            </div>
-            <div class="field-group">
-              <label class="field-label">% Clientes satisfechos</label>
-              <input class="field-input" id="g-stat_satisfechos" type="number">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Años de experiencia</label>
-              <input class="field-input" id="g-stat_experiencia" type="number">
-            </div>
+      <!-- HERO -->
+      <div class="pg" id="pg-hero">
+        <div class="pt">Hero &amp; Urgencia</div><div class="pst">Lo primero que ven tus visitantes</div>
+        <div class="c"><div class="ch"><i class="fas fa-triangle-exclamation"></i> Barra de urgencia</div>
+          <div class="fg"><label class="fl">Texto (usa &lt;strong&gt; para negritas)</label><textarea class="fi" id="C-urgency_texto"></textarea></div>
+        </div>
+        <div class="c"><div class="ch"><i class="fas fa-heading"></i> Hero principal</div>
+          <div class="fg"><label class="fl">Título</label><textarea class="fi" style="min-height:52px" id="C-hero_titulo"></textarea></div>
+          <div class="fg"><label class="fl">Subtítulo</label><textarea class="fi" id="C-hero_subtitulo"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ESTADÍSTICAS -->
+      <div class="pg" id="pg-gen">
+        <div class="pt">Estadísticas</div><div class="pst">Contadores animados en la página</div>
+        <div class="c"><div class="ch"><i class="fas fa-chart-bar"></i> Contadores</div>
+          <div class="g3">
+            <div class="fg"><label class="fl">Proyectos</label><input class="fi" type="number" id="C-stat_proyectos"></div>
+            <div class="fg"><label class="fl">% Satisfechos</label><input class="fi" type="number" id="C-stat_satisfechos"></div>
+            <div class="fg"><label class="fl">Años exp.</label><input class="fi" type="number" id="C-stat_experiencia"></div>
           </div>
         </div>
       </div>
 
-      <!-- ── HERO ── -->
-      <div class="page" id="page-hero">
-        <div class="page-title">Hero & Urgencia</div>
-        <div class="page-sub">La primera sección que ven tus visitantes</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-exclamation-triangle"></i> Barra de urgencia (arriba)</div>
-          <div class="field-group">
-            <label class="field-label">Texto de urgencia (soporta HTML básico)</label>
-            <textarea class="field-textarea" id="g-urgency_texto"></textarea>
+      <!-- SERVICIOS -->
+      <div class="pg" id="pg-svc">
+        <div class="pt">Servicios</div><div class="pst">Edita los servicios que ofreces</div>
+        <div id="SVC"></div>
+      </div>
+
+      <!-- PORTAFOLIO -->
+      <div class="pg" id="pg-port">
+        <div class="pt">Portafolio</div><div class="pst">Proyectos en tu sitio</div>
+        <div style="margin-bottom:.9rem"><button class="b bp" onclick="addPort()"><i class="fas fa-plus"></i> Agregar proyecto</button></div>
+        <div class="pgd" id="PGD"></div>
+      </div>
+
+      <!-- PROCESO -->
+      <div class="pg" id="pg-proc">
+        <div class="pt">Proceso de Trabajo</div><div class="pst">Los 4 pasos de tu metodología</div>
+        <div class="c"><div class="ch"><i class="fas fa-heading"></i> Título</div>
+          <div class="fg"><label class="fl">Título de sección</label><input class="fi" id="C-proceso_titulo"></div>
+        </div>
+        <div id="PROC"></div>
+      </div>
+
+      <!-- POR QUÉ YO -->
+      <div class="pg" id="pg-pq">
+        <div class="pt">Por qué elegirme</div><div class="pst">Diferenciadores clave</div>
+        <div class="c"><div class="ch"><i class="fas fa-heading"></i> Título</div>
+          <div class="fg"><label class="fl">Título de sección</label><textarea class="fi" style="min-height:52px" id="C-why_titulo"></textarea></div>
+        </div>
+        <div id="PQ"></div>
+      </div>
+
+      <!-- PRECIOS -->
+      <div class="pg" id="pg-plans">
+        <div class="pt">Planes &amp; Precios</div><div class="pst">Edita los planes</div>
+        <div class="prgd" id="PLG"></div>
+      </div>
+
+      <!-- COTIZADOR CONFIG -->
+      <div class="pg" id="pg-cconf">
+        <div class="pt">Precios del Cotizador</div><div class="pst">Valores del cotizador interactivo</div>
+        <div class="c"><div class="ch"><i class="fas fa-layer-group"></i> Tipos de proyecto</div><div id="CC-tipo"></div></div>
+        <div class="c"><div class="ch"><i class="fas fa-palette"></i> Diseño</div><div id="CC-diseno"></div></div>
+        <div class="c"><div class="ch"><i class="fas fa-bolt"></i> Tiempos de entrega</div><div id="CC-tiempo"></div></div>
+        <div class="c"><div class="ch"><i class="fas fa-puzzle-piece"></i> Funcionalidades</div><div id="CC-func"></div></div>
+      </div>
+
+      <!-- COTIZACIONES -->
+      <div class="pg" id="pg-cots">
+        <div class="pt">Cotizaciones recibidas</div><div class="pst">Solicitudes de tus visitantes</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem;flex-wrap:wrap;gap:7px">
+          <div style="display:flex;gap:5px">
+            <button class="b bg sm" id="FA" onclick="fltC('all')">Todas</button>
+            <button class="b bg sm" id="FN" onclick="fltC('new')">Sin leer</button>
           </div>
+          <button class="b bg sm" onclick="loadCots()"><i class="fas fa-rotate"></i> Actualizar</button>
         </div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-heading"></i> Sección Hero</div>
-          <div class="field-group">
-            <label class="field-label">Título principal</label>
-            <textarea class="field-textarea" id="g-hero_titulo" style="min-height:60px;"></textarea>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Subtítulo / descripción</label>
-            <textarea class="field-textarea" id="g-hero_subtitulo"></textarea>
-          </div>
-        </div>
+        <div id="CL"></div>
       </div>
 
-      <!-- ── SERVICIOS ── -->
-      <div class="page" id="page-servicios">
-        <div class="page-title">Servicios</div>
-        <div class="page-sub">Edita los 6 servicios que ofreces</div>
-        <div id="servicios-list"></div>
-      </div>
-
-      <!-- ── PORTAFOLIO ── -->
-      <div class="page" id="page-portafolio">
-        <div class="page-title">Portafolio</div>
-        <div class="page-sub">Gestiona los proyectos de tu portafolio</div>
-        <div style="margin-bottom:1rem;">
-          <button class="btn btn-primary" onclick="addPortafolioItem()"><i class="fas fa-plus"></i> Agregar proyecto</button>
-        </div>
-        <div class="portfolio-grid" id="portafolio-grid"></div>
-      </div>
-
-      <!-- ── PROCESO ── -->
-      <div class="page" id="page-proceso">
-        <div class="page-title">Proceso de Trabajo</div>
-        <div class="page-sub">Los 4 pasos de tu metodología</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-heading"></i> Título de sección</div>
-          <div class="field-group">
-            <label class="field-label">Título</label>
-            <input class="field-input" id="g-proceso_titulo">
-          </div>
-        </div>
-        <div id="proceso-list"></div>
-      </div>
-
-      <!-- ── POR QUÉ YO ── -->
-      <div class="page" id="page-porque">
-        <div class="page-title">Por qué yo</div>
-        <div class="page-sub">Tus diferenciadores clave</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-heading"></i> Título</div>
-          <div class="field-group">
-            <label class="field-label">Título de sección</label>
-            <textarea class="field-textarea" id="g-why_titulo" style="min-height:60px;"></textarea>
-          </div>
-        </div>
-        <div id="porque-list"></div>
-      </div>
-
-      <!-- ── PRECIOS ── -->
-      <div class="page" id="page-precios">
-        <div class="page-title">Planes & Precios</div>
-        <div class="page-sub">Edita los 3 planes de tu sección de precios</div>
-        <div class="grid-3" id="planes-grid"></div>
-      </div>
-
-      <!-- ── COTIZADOR ── -->
-      <div class="page" id="page-cotizador">
-        <div class="page-title">Configuración del Cotizador</div>
-        <div class="page-sub">Edita las opciones y precios del cotizador interactivo</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-layer-group"></i> Tipos de proyecto</div>
-          <div id="cot-tipo-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-palette"></i> Niveles de diseño</div>
-          <div id="cot-diseno-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-bolt"></i> Tiempos de entrega</div>
-          <div id="cot-tiempo-list"></div>
-        </div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-puzzle-piece"></i> Funcionalidades adicionales</div>
-          <div id="cot-func-list"></div>
-        </div>
-      </div>
-
-      <!-- ── COTIZACIONES ── -->
-      <div class="page" id="page-cotizaciones">
-        <div class="page-title">Cotizaciones recibidas</div>
-        <div class="page-sub">Solicitudes de presupuesto de tus visitantes</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-          <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-ghost btn-sm" onclick="filterCots('all')" id="filter-all">Todas</button>
-            <button class="btn btn-ghost btn-sm" onclick="filterCots('unread')" id="filter-unread">Sin leer</button>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="loadCotizaciones()"><i class="fas fa-sync"></i> Actualizar</button>
-        </div>
-        <div id="cotizaciones-list"></div>
-      </div>
-
-      <!-- ── CONTACTO ── -->
-      <div class="page" id="page-contacto">
-        <div class="page-title">Contacto & Redes</div>
-        <div class="page-sub">Datos de contacto que aparecen en tu web</div>
-        <div class="card">
-          <div class="card-title"><i class="fas fa-address-card"></i> Información de contacto</div>
-          <div class="grid-2">
-            <div class="field-group">
-              <label class="field-label">Email</label>
-              <input class="field-input" id="g-email_contacto">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Teléfono</label>
-              <input class="field-input" id="g-telefono">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Número WhatsApp (sin + ni espacios)</label>
-              <input class="field-input" id="g-whatsapp_numero" placeholder="593969930639">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Mensaje automático WhatsApp</label>
-              <input class="field-input" id="g-whatsapp_mensaje">
-            </div>
+      <!-- CONTACTO -->
+      <div class="pg" id="pg-cont">
+        <div class="pt">Contacto</div><div class="pst">Datos visibles en tu web</div>
+        <div class="c"><div class="ch"><i class="fas fa-address-card"></i> Información</div>
+          <div class="g2">
+            <div class="fg"><label class="fl">Email</label><input class="fi" id="C-email_contacto"></div>
+            <div class="fg"><label class="fl">Teléfono</label><input class="fi" id="C-telefono"></div>
+            <div class="fg"><label class="fl">WhatsApp (solo números)</label><input class="fi" id="C-whatsapp_numero"></div>
+            <div class="fg"><label class="fl">Mensaje automático WA</label><input class="fi" id="C-whatsapp_mensaje"></div>
           </div>
         </div>
       </div>
 
-      <!-- ── SEGURIDAD ── -->
-      <div class="page" id="page-seguridad">
-        <div class="page-title">Seguridad</div>
-        <div class="page-sub">Cambia tu contraseña de acceso al panel</div>
-        <div class="card" style="max-width:420px;">
-          <div class="card-title"><i class="fas fa-lock"></i> Cambiar contraseña</div>
-          <div class="field-group">
-            <label class="field-label">Contraseña actual</label>
-            <input type="password" class="field-input" id="sec-current">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Nueva contraseña</label>
-            <input type="password" class="field-input" id="sec-new">
-          </div>
-          <div class="field-group">
-            <label class="field-label">Confirmar nueva contraseña</label>
-            <input type="password" class="field-input" id="sec-confirm">
-          </div>
-          <button class="btn btn-primary" onclick="changePassword()"><i class="fas fa-save"></i> Actualizar contraseña</button>
+      <!-- CONTRASEÑA -->
+      <div class="pg" id="pg-pass">
+        <div class="pt">Cambiar contraseña</div><div class="pst">Acceso al panel admin</div>
+        <div class="c" style="max-width:360px"><div class="ch"><i class="fas fa-lock"></i> Nueva contraseña</div>
+          <div class="fg"><label class="fl">Contraseña actual</label><input class="fi" type="password" id="PC"></div>
+          <div class="fg"><label class="fl">Nueva contraseña</label><input class="fi" type="password" id="PN"></div>
+          <div class="fg"><label class="fl">Confirmar nueva</label><input class="fi" type="password" id="PCO"></div>
+          <button class="b bp" onclick="chgPass()"><i class="fas fa-save"></i> Actualizar</button>
         </div>
       </div>
 
-    </main>
+    </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ══════════════════════════════════════
-// SUPABASE CONFIG
-// ══════════════════════════════════════
-const SUPABASE_URL = 'https://doavapomeebmidqgltia.supabase.co';
-const SERVICE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvYXZhcG9tZWVibWlkcWdsdGlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQwMzYyMiwiZXhwIjoyMDg3OTc5NjIyfQ.Jrih4qm3zAqfA_wLXS_HSCxV1HQcPTF8rgCSyfIbMeA';
-
-const sb = window.supabase.createClient(SUPABASE_URL, SERVICE_KEY);
-
-// ══════════════════════════════════════
-// AUTH
-// ══════════════════════════════════════
-let currentUser = null;
-
-async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-pass').value.trim();
-  const err   = document.getElementById('login-err');
-  err.style.display = 'none';
-  showLoading(true);
-  try {
-    const { data, error } = await sb.from('admin_users')
-      .select('*').eq('email', email).eq('password_hash', pass).single();
-    if (error || !data) throw new Error('Invalid');
-    currentUser = data;
-    sessionStorage.setItem('we_admin', JSON.stringify(data));
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').classList.add('visible');
-    await initApp();
-  } catch(e) {
-    err.style.display = 'block';
-  } finally { showLoading(false); }
-}
-
-function logout() {
-  sessionStorage.removeItem('we_admin');
-  location.reload();
-}
-
-// Enter key login
-document.getElementById('login-pass').addEventListener('keydown', e => {
-  if(e.key === 'Enter') doLogin();
-});
-
-// Check session
-const savedUser = sessionStorage.getItem('we_admin');
-if (savedUser) {
-  currentUser = JSON.parse(savedUser);
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').classList.add('visible');
-  initApp();
-}
-
-// ══════════════════════════════════════
-// INIT
-// ══════════════════════════════════════
-let configData = {};
-let serviciosData = [];
-let portafolioData = [];
-let planesData = [];
-let cotizadorData = [];
-let processoData = [];
-let porqueData = [];
-let currentPage = 'dashboard';
-
-async function initApp() {
-  showLoading(true);
-  try {
-    await Promise.all([
-      loadConfig(),
-      loadServicios(),
-      loadPortafolio(),
-      loadPlanes(),
-      loadCotizadorConfig(),
-    ]);
-    await loadDashboard();
-  } finally { showLoading(false); }
-}
-
-// ══════════════════════════════════════
-// NAVIGATION
-// ══════════════════════════════════════
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if(n.getAttribute('onclick')?.includes("'" + name + "'")) n.classList.add('active');
-  });
-  currentPage = name;
-  // Render page-specific content
-  if(name === 'servicios') renderServicios();
-  if(name === 'portafolio') renderPortafolio();
-  if(name === 'precios') renderPlanes();
-  if(name === 'cotizador') renderCotizador();
-  if(name === 'cotizaciones') loadCotizaciones();
-  if(name === 'proceso') renderProceso();
-  if(name === 'porque') renderPorque();
-  if(name === 'hero' || name === 'general' || name === 'contacto') fillConfigFields();
-}
-
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════
 // CONFIG
-// ══════════════════════════════════════
-async function loadConfig() {
-  const { data } = await sb.from('config').select('*');
-  configData = {};
-  if(data) data.forEach(r => configData[r.id] = r.valor);
-  fillConfigFields();
-}
+// ════════════════════════════════════════════════
+const SB_URL = 'https://doavapomeebmidqgltia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvYXZhcG9tZWVibWlkcWdsdGlhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjQwMzYyMiwiZXhwIjoyMDg3OTc5NjIyfQ.Jrih4qm3zAqfA_wLXS_HSCxV1HQcPTF8rgCSyfIbMeA';
 
-function fillConfigFields() {
-  Object.keys(configData).forEach(key => {
-    const el = document.getElementById('g-' + key);
-    if(el) el.value = configData[key] || '';
-  });
-}
+// ════════════════════════════════════════════════
+// AUTH - funciona sin Supabase
+// ════════════════════════════════════════════════
+const DEF = { email: 'dilancoronado358@gmail.com', pass: 'Admin2024!' };
+function creds() { try { return JSON.parse(localStorage.getItem('we_cr') || 'null') || DEF; } catch(e) { return DEF; } }
 
-async function saveConfig() {
-  const updates = [];
-  document.querySelectorAll('[id^="g-"]').forEach(el => {
-    const key = el.id.replace('g-', '');
-    if(configData[key] !== undefined || el.value) {
-      updates.push({ id: key, valor: el.value, updated_at: new Date().toISOString() });
-    }
-  });
-  if(updates.length === 0) return;
-  for(const u of updates) {
-    await sb.from('config').upsert(u, { onConflict: 'id' });
+function doLogin() {
+  const em = document.getElementById('LE').value.trim();
+  const pw = document.getElementById('LP').value.trim();
+  const err = document.getElementById('LER');
+  err.textContent = '';
+  if (!em || !pw) { err.textContent = 'Completa ambos campos.'; return; }
+  const c = creds();
+  if (em === c.email && pw === c.pass) {
+    sessionStorage.setItem('wa', '1');
+    document.getElementById('L').classList.add('h');
+    document.getElementById('A').classList.add('s');
+    startApp();
+  } else {
+    err.textContent = 'Email o contraseña incorrectos.';
+    document.getElementById('LP').value = '';
   }
-  await loadConfig();
 }
 
-// ══════════════════════════════════════
-// SERVICIOS
-// ══════════════════════════════════════
-async function loadServicios() {
-  const { data } = await sb.from('servicios').select('*').order('orden');
-  serviciosData = data || [];
-}
+function doLogout() { sessionStorage.removeItem('wa'); location.reload(); }
 
-function renderServicios() {
-  const container = document.getElementById('servicios-list');
-  container.innerHTML = serviciosData.map((s, i) => `
-    <div class="card">
-      <div class="card-title"><i class="${s.icono}"></i> Servicio ${s.numero}: ${s.titulo}</div>
-      <div class="grid-2">
-        <div class="field-group">
-          <label class="field-label">Ícono (clase Font Awesome)</label>
-          <input class="field-input" id="svc-icono-${s.id}" value="${s.icono}" placeholder="fas fa-laptop-code">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Número visible</label>
-          <input class="field-input" id="svc-num-${s.id}" value="${s.numero}">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Título del servicio</label>
-        <input class="field-input" id="svc-titulo-${s.id}" value="${s.titulo}">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Descripción</label>
-        <textarea class="field-textarea" id="svc-desc-${s.id}">${s.descripcion}</textarea>
-      </div>
-      <div class="toggle-wrap">
-        <label class="toggle"><input type="checkbox" id="svc-activo-${s.id}" ${s.activo?'checked':''}><span class="toggle-slider"></span></label>
-        <span style="font-size:0.82rem;color:var(--dim);">Visible en el sitio</span>
-      </div>
-    </div>
-  `).join('');
-}
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let sb = null;
+let sbOK = false;
+let CFG = {}, SVCS = [], PORT = [], PLANS = [], COTCFG = [], COTS = [];
+let PAGE = 'dash', CFLT = 'all';
 
-async function saveServicios() {
-  for(const s of serviciosData) {
-    const titulo = document.getElementById(`svc-titulo-${s.id}`)?.value;
-    const desc   = document.getElementById(`svc-desc-${s.id}`)?.value;
-    const icono  = document.getElementById(`svc-icono-${s.id}`)?.value;
-    const num    = document.getElementById(`svc-num-${s.id}`)?.value;
-    const activo = document.getElementById(`svc-activo-${s.id}`)?.checked;
-    if(titulo !== undefined) {
-      await sb.from('servicios').update({
-        titulo, descripcion: desc, icono, numero: num, activo, updated_at: new Date().toISOString()
-      }).eq('id', s.id);
-    }
-  }
-  await loadServicios();
-}
+// Default data (used if Supabase not available)
+const DEF_CFG = {
+  urgency_texto: '🔥 Solo quedan <strong>2 proyectos disponibles</strong> para este mes — Agenda tu llamada ahora 🔥',
+  hero_titulo: 'Sitios web que convierten visitantes en clientes',
+  hero_subtitulo: 'Diseño y desarrollo web premium para marcas ambiciosas.',
+  stat_proyectos: '47', stat_satisfechos: '98', stat_experiencia: '5',
+  why_titulo: 'No soy una agencia. Soy tu socio digital',
+  proceso_titulo: 'Del briefing al lanzamiento exitoso',
+  email_contacto: 'dilancoronado358@gmail.com', telefono: '+593 96 993 0639',
+  whatsapp_numero: '593969930639', whatsapp_mensaje: 'Hola, necesito más información'
+};
 
-// ══════════════════════════════════════
-// PORTAFOLIO
-// ══════════════════════════════════════
-async function loadPortafolio() {
-  const { data } = await sb.from('portafolio').select('*').order('orden');
-  portafolioData = data || [];
-}
-
-function renderPortafolio() {
-  const grid = document.getElementById('portafolio-grid');
-  grid.innerHTML = portafolioData.map(p => `
-    <div class="portfolio-admin-card" id="port-card-${p.id}">
-      <img src="${p.imagen_url}" class="portfolio-admin-img" onerror="this.src='https://via.placeholder.com/400x140/1a1a1a/888?text=Sin+imagen'">
-      <div class="portfolio-admin-body">
-        <div class="field-group">
-          <label class="field-label">Tag / categoría</label>
-          <input class="field-input" id="port-tag-${p.id}" value="${p.tag}">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Título</label>
-          <input class="field-input" id="port-titulo-${p.id}" value="${p.titulo}">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Descripción</label>
-          <textarea class="field-textarea" style="min-height:60px;" id="port-desc-${p.id}">${p.descripcion}</textarea>
-        </div>
-        <div class="field-group">
-          <label class="field-label">URL de imagen</label>
-          <input class="field-input" id="port-img-${p.id}" value="${p.imagen_url}" onchange="previewPortImg(${p.id})">
-        </div>
-        <div class="portfolio-admin-actions" style="margin-top:0.8rem;">
-          <button class="btn btn-primary btn-sm" onclick="savePortItem(${p.id})"><i class="fas fa-save"></i> Guardar</button>
-          <button class="btn btn-danger btn-sm" onclick="deletePortItem(${p.id})"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function previewPortImg(id) {
-  const url = document.getElementById(`port-img-${id}`).value;
-  document.querySelector(`#port-card-${id} .portfolio-admin-img`).src = url;
-}
-
-async function savePortItem(id) {
-  const tag    = document.getElementById(`port-tag-${id}`).value;
-  const titulo = document.getElementById(`port-titulo-${id}`).value;
-  const desc   = document.getElementById(`port-desc-${id}`).value;
-  const img    = document.getElementById(`port-img-${id}`).value;
-  await sb.from('portafolio').update({ tag, titulo, descripcion: desc, imagen_url: img, updated_at: new Date().toISOString() }).eq('id', id);
-  await loadPortafolio();
-  showToast('Proyecto guardado', 'success');
-}
-
-async function deletePortItem(id) {
-  if(!confirm('¿Eliminar este proyecto del portafolio?')) return;
-  await sb.from('portafolio').delete().eq('id', id);
-  await loadPortafolio();
-  renderPortafolio();
-  showToast('Proyecto eliminado', 'info');
-}
-
-async function addPortafolioItem() {
-  const { data } = await sb.from('portafolio').insert([{
-    tag: 'Nueva categoría', titulo: 'Nuevo Proyecto', descripcion: 'Descripción del proyecto',
-    imagen_url: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=800&q=80',
-    orden: portafolioData.length + 1, activo: true
-  }]).select();
-  await loadPortafolio();
-  renderPortafolio();
-  showToast('Proyecto agregado', 'success');
-}
-
-// ══════════════════════════════════════
-// PLANES
-// ══════════════════════════════════════
-async function loadPlanes() {
-  const { data } = await sb.from('planes').select('*').order('orden');
-  planesData = data || [];
-}
-
-function renderPlanes() {
-  const grid = document.getElementById('planes-grid');
-  grid.innerHTML = planesData.map(p => `
-    <div class="price-admin-card ${p.destacado?'featured':''}">
-      ${p.destacado ? '<div class="featured-badge">Más Popular</div>' : ''}
-      <div class="field-group" style="margin-top:${p.destacado?'1rem':'0'}">
-        <label class="field-label">Nombre del plan</label>
-        <input class="field-input" id="plan-nombre-${p.id}" value="${p.nombre}">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Precio (USD)</label>
-        <input class="field-input" id="plan-precio-${p.id}" value="${p.precio}" type="number">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Período / nota</label>
-        <input class="field-input" id="plan-periodo-${p.id}" value="${p.periodo}">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Descripción corta</label>
-        <textarea class="field-textarea" style="min-height:60px;" id="plan-desc-${p.id}">${p.descripcion}</textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Características incluidas (una por línea)</label>
-        <textarea class="field-textarea" id="plan-feat-${p.id}" style="min-height:100px;">${(p.features||[]).join('\n')}</textarea>
-      </div>
-      <div class="field-group">
-        <label class="field-label">No incluidas (una por línea)</label>
-        <textarea class="field-textarea" id="plan-dis-${p.id}" style="min-height:60px;">${(p.features_disabled||[]).join('\n')}</textarea>
-      </div>
-      <div class="toggle-wrap" style="margin-bottom:1rem;">
-        <label class="toggle"><input type="checkbox" id="plan-dest-${p.id}" ${p.destacado?'checked':''}><span class="toggle-slider"></span></label>
-        <span style="font-size:0.82rem;color:var(--dim);">Marcar como "Más Popular"</span>
-      </div>
-      <button class="btn btn-primary" style="width:100%;" onclick="savePlan(${p.id})"><i class="fas fa-save"></i> Guardar plan</button>
-    </div>
-  `).join('');
-}
-
-async function savePlan(id) {
-  const nombre   = document.getElementById(`plan-nombre-${id}`).value;
-  const precio   = parseInt(document.getElementById(`plan-precio-${id}`).value);
-  const periodo  = document.getElementById(`plan-periodo-${id}`).value;
-  const desc     = document.getElementById(`plan-desc-${id}`).value;
-  const featRaw  = document.getElementById(`plan-feat-${id}`).value;
-  const disRaw   = document.getElementById(`plan-dis-${id}`).value;
-  const destacado = document.getElementById(`plan-dest-${id}`).checked;
-  const features = featRaw.split('\n').map(s=>s.trim()).filter(Boolean);
-  const features_disabled = disRaw.split('\n').map(s=>s.trim()).filter(Boolean);
-  await sb.from('planes').update({ nombre, precio, periodo, descripcion: desc, features, features_disabled, destacado, updated_at: new Date().toISOString() }).eq('id', id);
-  await loadPlanes();
-  showToast('Plan actualizado', 'success');
-}
-
-// ══════════════════════════════════════
-// COTIZADOR CONFIG
-// ══════════════════════════════════════
-async function loadCotizadorConfig() {
-  const { data } = await sb.from('cotizador_config').select('*').order('categoria');
-  cotizadorData = data || [];
-}
-
-function renderCotizador() {
-  const cats = { tipo:'cot-tipo-list', diseno:'cot-diseno-list', tiempo:'cot-tiempo-list', func:'cot-func-list' };
-  Object.keys(cats).forEach(cat => {
-    const items = cotizadorData.filter(c => c.categoria === cat);
-    document.getElementById(cats[cat]).innerHTML = items.map(item => `
-      <div class="cot-config-row">
-        <span class="cot-config-label">${item.label}</span>
-        <div class="cot-config-price">
-          <input type="number" value="${item.precio}" id="cot-price-${item.id}" onchange="saveCotItem('${item.id}', this.value)">
-        </div>
-        <span style="font-size:0.75rem;color:var(--dim);width:60px;">USD</span>
-      </div>
-    `).join('') || '<div style="color:var(--dim);font-size:0.82rem;padding:0.5rem 0;">Sin datos</div>';
-  });
-}
-
-async function saveCotItem(id, price) {
-  await sb.from('cotizador_config').update({ precio: parseInt(price), updated_at: new Date().toISOString() }).eq('id', id);
-  await loadCotizadorConfig();
-  showToast('Precio actualizado', 'success');
-}
-
-// ══════════════════════════════════════
-// PROCESO
-// ══════════════════════════════════════
-const procesoDefaults = [
-  { id:'proc1', icon:'fas fa-comments', titulo:'Consultoría Inicial', desc:'Analizamos tus objetivos, audiencia ideal y competencia. Definimos juntos la estrategia perfecta para tu proyecto.' },
-  { id:'proc2', icon:'fas fa-pencil-ruler', titulo:'Diseño Exclusivo', desc:'Wireframes, mockups y prototipo interactivo. Ves exactamente cómo quedará tu sitio antes de escribir una línea de código.' },
-  { id:'proc3', icon:'fas fa-code', titulo:'Desarrollo Avanzado', desc:'Código limpio, optimizado y escalable. Pruebas exhaustivas en todos los dispositivos y navegadores.' },
-  { id:'proc4', icon:'fas fa-rocket', titulo:'Lanzamiento & Soporte', desc:'Despliegue profesional, configuración SEO inicial y 30 días de soporte incluido para garantizar el éxito.' }
+const DEF_SVCS = [
+  { id:1, numero:'01', icono:'fas fa-laptop-code', titulo:'Desarrollo Web a Medida', descripcion:'Sitios únicos construidos desde cero. Sin plantillas, sin límites.', activo:true, orden:1 },
+  { id:2, numero:'02', icono:'fas fa-shopping-bag', titulo:'E-Commerce Premium', descripcion:'Tiendas online optimizadas para vender.', activo:true, orden:2 },
+  { id:3, numero:'03', icono:'fas fa-search', titulo:'Optimización SEO', descripcion:'Aparecer en Google no es suerte, es estrategia.', activo:true, orden:3 },
+  { id:4, numero:'04', icono:'fas fa-palette', titulo:'Diseño UI/UX', descripcion:'Interfaces que deleitan y convierten.', activo:true, orden:4 },
+  { id:5, numero:'05', icono:'fas fa-mobile-alt', titulo:'Diseño Responsive', descripcion:'Perfecto en todos los dispositivos.', activo:true, orden:5 },
+  { id:6, numero:'06', icono:'fas fa-tools', titulo:'Mantenimiento & Soporte', descripcion:'Tu sitio siempre actualizado y funcionando.', activo:true, orden:6 }
 ];
 
-function renderProceso() {
-  const container = document.getElementById('proceso-list');
-  container.innerHTML = procesoDefaults.map((p, i) => `
-    <div class="card">
-      <div class="card-title"><i class="${p.icon}"></i> Paso ${i+1}</div>
-      <div class="grid-2">
-        <div class="field-group">
-          <label class="field-label">Ícono</label>
-          <input class="field-input" id="proc-icon-${p.id}" value="${configData['proc_icon_'+p.id] || p.icon}">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Título</label>
-          <input class="field-input" id="proc-titulo-${p.id}" value="${configData['proc_titulo_'+p.id] || p.titulo}">
-        </div>
-      </div>
-      <div class="field-group">
-        <label class="field-label">Descripción</label>
-        <textarea class="field-textarea" id="proc-desc-${p.id}">${configData['proc_desc_'+p.id] || p.desc}</textarea>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function saveProceso() {
-  const updates = [];
-  procesoDefaults.forEach(p => {
-    updates.push({ id: 'proc_icon_'+p.id, valor: document.getElementById(`proc-icon-${p.id}`)?.value || p.icon, updated_at: new Date().toISOString() });
-    updates.push({ id: 'proc_titulo_'+p.id, valor: document.getElementById(`proc-titulo-${p.id}`)?.value || p.titulo, updated_at: new Date().toISOString() });
-    updates.push({ id: 'proc_desc_'+p.id, valor: document.getElementById(`proc-desc-${p.id}`)?.value || p.desc, updated_at: new Date().toISOString() });
-  });
-  for(const u of updates) await sb.from('config').upsert(u, { onConflict: 'id' });
-  await loadConfig();
-}
-
-// ══════════════════════════════════════
-// POR QUÉ YO
-// ══════════════════════════════════════
-const porqueDefaults = [
-  { id:'pq1', titulo:'Trato directo, sin intermediarios', desc:'Hablas directamente conmigo en cada etapa. Sin account managers, sin malentendidos, sin sorpresas.' },
-  { id:'pq2', titulo:'Entrega a tiempo, garantizada', desc:'Cada proyecto tiene plazos claros y los cumplo. Si me retraso, trabajo gratis hasta terminarlo.' },
-  { id:'pq3', titulo:'Diseño orientado a resultados', desc:'Cada decisión de diseño tiene un "por qué" basado en conversión y experiencia de usuario.' },
-  { id:'pq4', titulo:'Soporte post-lanzamiento incluido', desc:'30 días de soporte gratuito después de entregar tu proyecto. No desaparezco una vez cobrado.' }
+const DEF_PORT = [
+  { id:1, tag:'E-Commerce', titulo:'Luxury Brand E-Commerce', descripcion:'+140% en conversiones.', imagen_url:'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80', orden:1, activo:true },
+  { id:2, tag:'Plataforma Corporativa', titulo:'Corporate Business Platform', descripcion:'Dashboard con reporting en tiempo real.', imagen_url:'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?auto=format&fit=crop&w=800&q=80', orden:2, activo:true },
+  { id:3, tag:'Agencia Creativa', titulo:'Creative Agency Website', descripcion:'Portfolio con animaciones personalizadas.', imagen_url:'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=800&q=80', orden:3, activo:true }
 ];
 
-function renderPorque() {
-  const container = document.getElementById('porque-list');
-  container.innerHTML = porqueDefaults.map((p, i) => `
-    <div class="card">
-      <div class="card-title"><i class="fas fa-check"></i> Diferenciador ${i+1}</div>
-      <div class="field-group">
-        <label class="field-label">Título</label>
-        <input class="field-input" id="pq-titulo-${p.id}" value="${configData['pq_titulo_'+p.id] || p.titulo}">
-      </div>
-      <div class="field-group">
-        <label class="field-label">Descripción</label>
-        <textarea class="field-textarea" id="pq-desc-${p.id}">${configData['pq_desc_'+p.id] || p.desc}</textarea>
-      </div>
-    </div>
-  `).join('');
-}
+const DEF_PLANS = [
+  { id:1, nombre:'Básico', precio:499, periodo:'Pago único · 7 días', descripcion:'Ideal para emprendedores y pequeños negocios.', features:['Hasta 5 páginas','Diseño responsive','Formulario de contacto','SEO básico','15 días soporte'], features_disabled:['E-Commerce','Integraciones avanzadas'], destacado:false, orden:1 },
+  { id:2, nombre:'Profesional', precio:999, periodo:'Pago único · 14 días', descripcion:'Para negocios que necesitan convertir y vender.', features:['Hasta 10 páginas','Diseño UI/UX personalizado','Animaciones premium','SEO avanzado','30 días soporte'], features_disabled:['E-Commerce completo'], destacado:true, orden:2 },
+  { id:3, nombre:'E-Commerce', precio:1899, periodo:'Pago único · 21 días', descripcion:'Tienda completa lista para vender.', features:['Páginas ilimitadas','Tienda completa','Pasarelas de pago','CRM integrado','60 días soporte'], features_disabled:[], destacado:false, orden:3 }
+];
 
-async function savePorque() {
-  const updates = [];
-  porqueDefaults.forEach(p => {
-    updates.push({ id: 'pq_titulo_'+p.id, valor: document.getElementById(`pq-titulo-${p.id}`)?.value || p.titulo, updated_at: new Date().toISOString() });
-    updates.push({ id: 'pq_desc_'+p.id, valor: document.getElementById(`pq-desc-${p.id}`)?.value || p.desc, updated_at: new Date().toISOString() });
-  });
-  for(const u of updates) await sb.from('config').upsert(u, { onConflict: 'id' });
-  await loadConfig();
-}
+const DEF_COTCFG = [
+  { id:'tipo_landing', label:'Landing Page', precio:350, categoria:'tipo' },
+  { id:'tipo_corporativo', label:'Sitio Corporativo', precio:699, categoria:'tipo' },
+  { id:'tipo_ecommerce', label:'Tienda E-Commerce', precio:1299, categoria:'tipo' },
+  { id:'tipo_plataforma', label:'Plataforma / App Web', precio:2499, categoria:'tipo' },
+  { id:'diseno_plantilla', label:'Plantilla adaptada', precio:0, categoria:'diseno' },
+  { id:'diseno_semi', label:'Semi-personalizado', precio:250, categoria:'diseno' },
+  { id:'diseno_custom', label:'100% a medida', precio:550, categoria:'diseno' },
+  { id:'tiempo_urgente', label:'Urgente (<1 semana)', precio:350, categoria:'tiempo' },
+  { id:'tiempo_normal', label:'Normal (2-3 semanas)', precio:0, categoria:'tiempo' },
+  { id:'tiempo_flexible', label:'Flexible (+1 mes)', precio:-100, categoria:'tiempo' },
+  { id:'func_seo', label:'SEO Avanzado', precio:199, categoria:'func' },
+  { id:'func_blog', label:'Blog / CMS', precio:149, categoria:'func' },
+  { id:'func_multiidioma', label:'Multi-idioma', precio:299, categoria:'func' },
+  { id:'func_chat', label:'Chat en vivo', precio:99, categoria:'func' },
+  { id:'func_reservas', label:'Sistema de reservas', precio:249, categoria:'func' },
+  { id:'func_crm', label:'Integración CRM', precio:349, categoria:'func' },
+  { id:'func_pagos', label:'Pasarela de pagos', precio:199, categoria:'func' },
+  { id:'func_analitica', label:'Analítica avanzada', precio:99, categoria:'func' },
+  { id:'func_animaciones', label:'Animaciones premium', precio:199, categoria:'func' },
+  { id:'func_mantenimiento', label:'Mantenimiento mensual', precio:89, categoria:'func' }
+];
 
-// ══════════════════════════════════════
-// COTIZACIONES
-// ══════════════════════════════════════
-let allCotizaciones = [];
-let cotFilter = 'all';
-
-async function loadCotizaciones() {
-  showLoading(true);
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+async function startApp() {
+  load(1);
+  // Try Supabase
   try {
-    const { data } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
-    allCotizaciones = data || [];
-    const unread = allCotizaciones.filter(c => !c.leida).length;
-    const badge = document.getElementById('unread-badge');
-    if(unread > 0) { badge.textContent = unread; badge.style.display = 'inline-block'; }
-    else badge.style.display = 'none';
-    document.getElementById('dash-unread').textContent = unread;
-    renderCotizaciones();
-  } finally { showLoading(false); }
+    sb = window.supabase.createClient(SB_URL, SB_KEY);
+    // Quick test
+    const { error } = await sb.from('config').select('id').limit(1);
+    if (error) throw error;
+    sbOK = true;
+    await Promise.all([loadCFG(), loadSVCS(), loadPORT(), loadPLANS(), loadCOTCFG()]);
+    document.getElementById('SB_ALERT').innerHTML = '';
+  } catch(e) {
+    sbOK = false;
+    // Use local defaults
+    CFG = {...DEF_CFG}; SVCS = [...DEF_SVCS]; PORT = [...DEF_PORT];
+    PLANS = [...DEF_PLANS]; COTCFG = [...DEF_COTCFG];
+    document.getElementById('SB_ALERT').innerHTML = `
+      <div class="alert">
+        <strong>⚠️ Supabase no conectado</strong> — Las tablas aún no existen.<br>
+        El admin funciona en modo local. Para conectar con Supabase:<br>
+        1. Ve a <strong>supabase.com</strong> → tu proyecto → <strong>SQL Editor</strong><br>
+        2. Pega y ejecuta el SQL que te di<br>
+        3. Recarga esta página
+      </div>`;
+  }
+  await loadDash();
+  fillCFG();
+  load(0);
 }
 
-function filterCots(f) {
-  cotFilter = f;
-  document.querySelectorAll('[id^="filter-"]').forEach(b => b.classList.remove('btn-primary'));
-  document.getElementById('filter-' + f).classList.add('btn-primary');
-  renderCotizaciones();
+// ════════════════════════════════════════════════
+// NAV
+// ════════════════════════════════════════════════
+function go(p) {
+  document.querySelectorAll('.pg').forEach(x => x.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(x => x.classList.remove('on'));
+  const el = document.getElementById('pg-' + p);
+  if (el) el.classList.add('on');
+  document.querySelectorAll('.ni').forEach(x => { if (x.getAttribute('onclick')?.includes("'" + p + "'")) x.classList.add('on'); });
+  PAGE = p;
+  if (p === 'svc')   { renderSVC(); fillCFG(); }
+  if (p === 'port')  renderPORT();
+  if (p === 'plans') renderPLANS();
+  if (p === 'cconf') renderCCONF();
+  if (p === 'cots')  loadCots();
+  if (p === 'proc')  { renderPROC(); fillCFG(); }
+  if (p === 'pq')    { renderPQ(); fillCFG(); }
+  if (['hero','gen','cont'].includes(p)) fillCFG();
 }
 
-function renderCotizaciones() {
-  const list = document.getElementById('cotizaciones-list');
-  let items = cotFilter === 'unread' ? allCotizaciones.filter(c=>!c.leida) : allCotizaciones;
-  if(items.length === 0) {
-    list.innerHTML = '<div class="card" style="text-align:center;color:var(--dim);padding:3rem;">No hay cotizaciones ' + (cotFilter==='unread'?'sin leer':'aún') + '</div>';
+// ════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════
+async function loadCFG() {
+  const { data, error } = await sb.from('config').select('*');
+  if (error) throw error;
+  CFG = {};
+  (data || []).forEach(r => CFG[r.id] = r.valor);
+}
+
+function fillCFG() {
+  Object.keys(CFG).forEach(k => {
+    const el = document.getElementById('C-' + k);
+    if (el) el.value = CFG[k] || '';
+  });
+}
+
+async function saveCFG() {
+  const ups = [];
+  document.querySelectorAll('[id^="C-"]').forEach(el => {
+    const key = el.id.replace('C-', '');
+    if (key) ups.push({ id: key, valor: el.value || '', updated_at: new Date().toISOString() });
+  });
+  if (!sbOK) { ups.forEach(u => CFG[u.id] = u.valor); return; }
+  for (const u of ups) {
+    const { error } = await sb.from('config').upsert(u, { onConflict: 'id' });
+    if (error) throw error;
+  }
+  await loadCFG();
+}
+
+// ════════════════════════════════════════════════
+// SERVICIOS
+// ════════════════════════════════════════════════
+async function loadSVCS() {
+  const { data, error } = await sb.from('servicios').select('*').order('orden');
+  if (error) throw error;
+  SVCS = data || [];
+}
+
+function renderSVC() {
+  document.getElementById('SVC').innerHTML = SVCS.map(s => `
+    <div class="c">
+      <div class="ch"><i class="${s.icono || 'fas fa-star'}"></i>&nbsp;Servicio ${s.numero}</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Número</label><input class="fi" id="SV-n-${s.id}" value="${x(s.numero)}"></div>
+        <div class="fg"><label class="fl">Ícono Font Awesome</label><input class="fi" id="SV-i-${s.id}" value="${x(s.icono)}" placeholder="fas fa-star"></div>
+      </div>
+      <div class="fg"><label class="fl">Título</label><input class="fi" id="SV-t-${s.id}" value="${x(s.titulo)}"></div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="fi" id="SV-d-${s.id}">${x(s.descripcion)}</textarea></div>
+      <div class="tw2"><label class="tog"><input type="checkbox" id="SV-a-${s.id}" ${s.activo ? 'checked' : ''}><span class="tsl"></span></label><span style="font-size:.78rem;color:var(--dim)">Visible en sitio</span></div>
+    </div>`).join('') || '<div class="c" style="color:var(--dim)">Sin servicios. Ejecuta el SQL primero.</div>';
+}
+
+async function saveSVC() {
+  for (const s of SVCS) {
+    const t = v(`SV-t-${s.id}`); if (t === null) continue;
+    const d = v(`SV-d-${s.id}`), ic = v(`SV-i-${s.id}`), n = v(`SV-n-${s.id}`);
+    const a = document.getElementById(`SV-a-${s.id}`)?.checked ?? s.activo;
+    if (!sbOK) { s.titulo = t; s.descripcion = d; s.icono = ic; s.numero = n; s.activo = a; continue; }
+    const { error } = await sb.from('servicios').update({ titulo: t, descripcion: d, icono: ic, numero: n, activo: a, updated_at: new Date().toISOString() }).eq('id', s.id);
+    if (error) throw error;
+  }
+  if (sbOK) await loadSVCS();
+}
+
+// ════════════════════════════════════════════════
+// PORTAFOLIO
+// ════════════════════════════════════════════════
+async function loadPORT() {
+  const { data, error } = await sb.from('portafolio').select('*').order('orden');
+  if (error) throw error;
+  PORT = data || [];
+}
+
+function renderPORT() {
+  document.getElementById('PGD').innerHTML = PORT.map(p => `
+    <div class="pcx">
+      <img class="pix" id="PI-${p.id}" src="${x(p.imagen_url)}" onerror="this.src='https://placehold.co/400x120/1a1a1a/555?text=Imagen'">
+      <div class="pbx">
+        <div class="fg"><label class="fl">Tag</label><input class="fi" id="PT-${p.id}" value="${x(p.tag)}"></div>
+        <div class="fg"><label class="fl">Título</label><input class="fi" id="PTI-${p.id}" value="${x(p.titulo)}"></div>
+        <div class="fg"><label class="fl">Descripción</label><textarea class="fi" style="min-height:52px" id="PD-${p.id}">${x(p.descripcion)}</textarea></div>
+        <div class="fg"><label class="fl">URL imagen</label><input class="fi" id="PI2-${p.id}" value="${x(p.imagen_url)}" oninput="document.getElementById('PI-${p.id}').src=this.value"></div>
+        <div style="display:flex;gap:5px;margin-top:7px">
+          <button class="b bp sm" onclick="savePORTitem(${p.id})"><i class="fas fa-floppy-disk"></i> Guardar</button>
+          <button class="b br sm" onclick="delPORTitem(${p.id})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--dim);padding:1rem">Sin proyectos aún.</div>';
+}
+
+async function savePORTitem(id) {
+  const data = { tag: v(`PT-${id}`), titulo: v(`PTI-${id}`), descripcion: v(`PD-${id}`), imagen_url: v(`PI2-${id}`), updated_at: new Date().toISOString() };
+  if (!sbOK) { const p = PORT.find(p => p.id === id); if (p) Object.assign(p, data); renderPORT(); toast('Guardado (local)', 'ok'); return; }
+  const { error } = await sb.from('portafolio').update(data).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'er'); return; }
+  await loadPORT(); renderPORT(); toast('Proyecto guardado', 'ok');
+}
+
+async function delPORTitem(id) {
+  if (!confirm('¿Eliminar este proyecto?')) return;
+  if (!sbOK) { PORT = PORT.filter(p => p.id !== id); renderPORT(); toast('Eliminado (local)', 'if'); return; }
+  await sb.from('portafolio').delete().eq('id', id);
+  await loadPORT(); renderPORT(); toast('Eliminado', 'if');
+}
+
+async function addPort() {
+  const np = { id: Date.now(), tag: 'Nueva categoría', titulo: 'Nuevo proyecto', descripcion: 'Descripción', imagen_url: 'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&w=800&q=80', orden: PORT.length + 1, activo: true };
+  if (!sbOK) { PORT.push(np); renderPORT(); toast('Agregado (local)', 'ok'); return; }
+  const { error } = await sb.from('portafolio').insert([{ tag: np.tag, titulo: np.titulo, descripcion: np.descripcion, imagen_url: np.imagen_url, orden: np.orden, activo: true }]);
+  if (error) { toast('Error: ' + error.message, 'er'); return; }
+  await loadPORT(); renderPORT(); toast('Proyecto agregado', 'ok');
+}
+
+// ════════════════════════════════════════════════
+// PLANES
+// ════════════════════════════════════════════════
+async function loadPLANS() {
+  const { data, error } = await sb.from('planes').select('*').order('orden');
+  if (error) throw error;
+  PLANS = data || [];
+}
+
+function renderPLANS() {
+  document.getElementById('PLG').innerHTML = PLANS.map(p => `
+    <div class="prx ${p.destacado ? 'ft' : ''}">
+      ${p.destacado ? '<div class="ftt">Más Popular</div>' : ''}
+      <div style="margin-top:${p.destacado ? '.9rem' : '0'}">
+        <div class="fg"><label class="fl">Nombre</label><input class="fi" id="PL-n-${p.id}" value="${x(p.nombre)}"></div>
+        <div class="fg"><label class="fl">Precio USD</label><input class="fi" type="number" id="PL-p-${p.id}" value="${p.precio}"></div>
+        <div class="fg"><label class="fl">Período</label><input class="fi" id="PL-pe-${p.id}" value="${x(p.periodo)}"></div>
+        <div class="fg"><label class="fl">Descripción</label><textarea class="fi" style="min-height:52px" id="PL-d-${p.id}">${x(p.descripcion)}</textarea></div>
+        <div class="fg"><label class="fl">Incluidas (una por línea)</label><textarea class="fi" style="min-height:80px" id="PL-f-${p.id}">${(p.features || []).join('\n')}</textarea></div>
+        <div class="fg"><label class="fl">No incluidas (una por línea)</label><textarea class="fi" style="min-height:44px" id="PL-fd-${p.id}">${(p.features_disabled || []).join('\n')}</textarea></div>
+        <div class="tw2" style="margin-bottom:.7rem"><label class="tog"><input type="checkbox" id="PL-dest-${p.id}" ${p.destacado ? 'checked' : ''}><span class="tsl"></span></label><span style="font-size:.76rem;color:var(--dim)">Destacar</span></div>
+        <button class="b bp" style="width:100%" onclick="savePLAN(${p.id})"><i class="fas fa-floppy-disk"></i> Guardar plan</button>
+      </div>
+    </div>`).join('') || '<div style="color:var(--dim);padding:1rem">Sin planes. Ejecuta el SQL primero.</div>';
+}
+
+async function savePLAN(id) {
+  const features = (v(`PL-f-${id}`) || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const fd = (v(`PL-fd-${id}`) || '').split('\n').map(s => s.trim()).filter(Boolean);
+  const dest = document.getElementById(`PL-dest-${id}`)?.checked;
+  const data = { nombre: v(`PL-n-${id}`), precio: parseInt(v(`PL-p-${id}`) || 0), periodo: v(`PL-pe-${id}`), descripcion: v(`PL-d-${id}`), features, features_disabled: fd, destacado: dest, updated_at: new Date().toISOString() };
+  if (!sbOK) { const pl = PLANS.find(p => p.id === id); if (pl) Object.assign(pl, data); renderPLANS(); toast('Guardado (local)', 'ok'); return; }
+  const { error } = await sb.from('planes').update(data).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'er'); return; }
+  await loadPLANS(); renderPLANS(); toast('Plan guardado', 'ok');
+}
+
+// ════════════════════════════════════════════════
+// COTIZADOR CONFIG
+// ════════════════════════════════════════════════
+async function loadCOTCFG() {
+  const { data, error } = await sb.from('cotizador_config').select('*').order('categoria');
+  if (error) throw error;
+  COTCFG = data || [];
+}
+
+function renderCCONF() {
+  const map = { tipo: 'CC-tipo', diseno: 'CC-diseno', tiempo: 'CC-tiempo', func: 'CC-func' };
+  Object.entries(map).forEach(([cat, elId]) => {
+    const items = COTCFG.filter(c => c.categoria === cat);
+    document.getElementById(elId).innerHTML = items.map(it => `
+      <div class="ccr">
+        <span class="ccl">${x(it.label)}</span>
+        <div class="ccp"><input type="number" value="${it.precio}" onchange="saveCOTprice('${it.id}',this.value)"></div>
+        <span style="font-size:.7rem;color:var(--dimmer);width:24px">USD</span>
+      </div>`).join('') || '<div style="color:var(--dim);padding:7px 0;font-size:.8rem">Sin datos — ejecuta el SQL.</div>';
+  });
+}
+
+async function saveCOTprice(id, price) {
+  if (!sbOK) { const it = COTCFG.find(c => c.id === id); if (it) it.precio = parseInt(price); toast('Guardado (local)', 'ok'); return; }
+  const { error } = await sb.from('cotizador_config').update({ precio: parseInt(price), updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('Error: ' + error.message, 'er'); return; }
+  await loadCOTCFG(); toast('Precio actualizado', 'ok');
+}
+
+// ════════════════════════════════════════════════
+// PROCESO & POR QUÉ YO
+// ════════════════════════════════════════════════
+const PROC_DEF = [
+  { k:'1', icon:'fas fa-comments',    titulo:'Consultoría Inicial',  desc:'Analizamos tus objetivos y definimos la estrategia perfecta.' },
+  { k:'2', icon:'fas fa-pencil-ruler', titulo:'Diseño Exclusivo',    desc:'Wireframes y prototipo antes de escribir código.' },
+  { k:'3', icon:'fas fa-code',         titulo:'Desarrollo Avanzado', desc:'Código limpio. Pruebas en todos los dispositivos.' },
+  { k:'4', icon:'fas fa-rocket',       titulo:'Lanzamiento & Soporte', desc:'Despliegue y 30 días de soporte incluido.' }
+];
+
+function renderPROC() {
+  document.getElementById('PROC').innerHTML = PROC_DEF.map((p, i) => `
+    <div class="c">
+      <div class="ch"><i class="${p.icon}"></i>&nbsp;Paso ${i + 1}</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Ícono</label><input class="fi" id="PR-ic-${p.k}" value="${x(CFG['proc_icon_' + p.k] || p.icon)}"></div>
+        <div class="fg"><label class="fl">Título</label><input class="fi" id="PR-ti-${p.k}" value="${x(CFG['proc_titulo_' + p.k] || p.titulo)}"></div>
+      </div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="fi" id="PR-de-${p.k}">${x(CFG['proc_desc_' + p.k] || p.desc)}</textarea></div>
+    </div>`).join('');
+}
+
+async function savePROC() {
+  const ups = [];
+  PROC_DEF.forEach(p => {
+    ups.push({ id: `proc_icon_${p.k}`, valor: v(`PR-ic-${p.k}`) || p.icon });
+    ups.push({ id: `proc_titulo_${p.k}`, valor: v(`PR-ti-${p.k}`) || p.titulo });
+    ups.push({ id: `proc_desc_${p.k}`, valor: v(`PR-de-${p.k}`) || p.desc });
+  });
+  if (!sbOK) { ups.forEach(u => CFG[u.id] = u.valor); return; }
+  for (const u of ups) await sb.from('config').upsert({ ...u, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  await loadCFG();
+}
+
+const PQ_DEF = [
+  { k:'1', titulo:'Trato directo, sin intermediarios', desc:'Hablas conmigo en cada etapa.' },
+  { k:'2', titulo:'Entrega a tiempo, garantizada',     desc:'Si me retraso, trabajo gratis.' },
+  { k:'3', titulo:'Diseño orientado a resultados',     desc:'Basado en conversión y datos reales.' },
+  { k:'4', titulo:'Soporte post-lanzamiento incluido', desc:'30 días gratis tras lanzar.' }
+];
+
+function renderPQ() {
+  document.getElementById('PQ').innerHTML = PQ_DEF.map((p, i) => `
+    <div class="c">
+      <div class="ch"><i class="fas fa-check"></i>&nbsp;Diferenciador ${i + 1}</div>
+      <div class="fg"><label class="fl">Título</label><input class="fi" id="PQT-${p.k}" value="${x(CFG['pq_titulo_' + p.k] || p.titulo)}"></div>
+      <div class="fg"><label class="fl">Descripción</label><textarea class="fi" id="PQD-${p.k}">${x(CFG['pq_desc_' + p.k] || p.desc)}</textarea></div>
+    </div>`).join('');
+}
+
+async function savePQ() {
+  const ups = [];
+  PQ_DEF.forEach(p => {
+    ups.push({ id: `pq_titulo_${p.k}`, valor: v(`PQT-${p.k}`) || p.titulo });
+    ups.push({ id: `pq_desc_${p.k}`, valor: v(`PQD-${p.k}`) || p.desc });
+  });
+  if (!sbOK) { ups.forEach(u => CFG[u.id] = u.valor); return; }
+  for (const u of ups) await sb.from('config').upsert({ ...u, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+  await loadCFG();
+}
+
+// ════════════════════════════════════════════════
+// COTIZACIONES
+// ════════════════════════════════════════════════
+async function loadCots() {
+  if (!sbOK) {
+    document.getElementById('CL').innerHTML = '<div class="c" style="color:var(--dim);text-align:center;padding:2rem">Conecta Supabase para ver cotizaciones.</div>';
     return;
   }
-  list.innerHTML = items.map(c => {
-    const date = new Date(c.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    const items_str = Object.keys(c.desglose||{}).map(k=>`<span class="cot-item-tag">${k}</span>`).join('');
-    return `
-      <div class="cot-row ${!c.leida?'unread':''}" id="cot-${c.id}">
-        <div class="cot-header">
-          <div>
-            <div class="cot-name">${c.nombre} ${!c.leida?'<span class="badge badge-gold" style="margin-left:6px;">Nuevo</span>':''}</div>
-            <div class="cot-email">${c.email}${c.empresa?' · '+c.empresa:''}</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="cot-total">$${c.total.toLocaleString()}</div>
-            <div class="cot-date">${date}</div>
-          </div>
-        </div>
-        <div class="cot-items">${items_str || '<span class="cot-item-tag">Sin desglose</span>'}</div>
-        <div style="display:flex;gap:0.5rem;margin-top:0.8rem;">
-          ${!c.leida?`<button class="btn btn-success btn-sm" onclick="markRead(${c.id})"><i class="fas fa-check"></i> Marcar leída</button>`:''}
-          <a href="mailto:${c.email}?subject=Re: Tu cotización WebElite" class="btn btn-ghost btn-sm"><i class="fas fa-envelope"></i> Responder</a>
-          <button class="btn btn-danger btn-sm" onclick="deleteCot(${c.id})"><i class="fas fa-trash"></i></button>
-        </div>
+  load(1);
+  try {
+    const { data, error } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    COTS = data || [];
+    const u = COTS.filter(c => !c.leida).length;
+    const b = document.getElementById('UB');
+    b.textContent = u; b.style.display = u > 0 ? 'inline-block' : 'none';
+    renderCOTS();
+  } catch(e) {
+    document.getElementById('CL').innerHTML = `<div class="c" style="color:var(--red)">Error: ${e.message}</div>`;
+  } finally { load(0); }
+}
+
+function fltC(f) {
+  CFLT = f;
+  document.getElementById('FA').className = 'b sm ' + (f === 'all' ? 'bp' : 'bg');
+  document.getElementById('FN').className = 'b sm ' + (f === 'new' ? 'bp' : 'bg');
+  renderCOTS();
+}
+
+function renderCOTS() {
+  const el = document.getElementById('CL');
+  const items = CFLT === 'new' ? COTS.filter(c => !c.leida) : COTS;
+  if (!items.length) { el.innerHTML = '<div class="c" style="text-align:center;color:var(--dim);padding:2rem">No hay cotizaciones ' + (CFLT === 'new' ? 'sin leer' : 'aún') + '</div>'; return; }
+  el.innerHTML = items.map(c => {
+    const dt = new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `<div class="ccx ${!c.leida ? 'nw' : ''}">
+      <div class="cch">
+        <div><div class="ccn">${x(c.nombre)} ${!c.leida ? '<span class="bx bxo">Nuevo</span>' : ''}</div><div class="cce">${x(c.email)}${c.empresa ? ' · ' + x(c.empresa) : ''}</div></div>
+        <div style="text-align:right"><div class="cct">$${(c.total || 0).toLocaleString()}</div><div class="ccd">${dt}</div></div>
       </div>
-    `;
+      <div style="display:flex;gap:5px;margin-top:8px;flex-wrap:wrap">
+        ${!c.leida ? `<button class="b bs sm" onclick="markRead(${c.id})"><i class="fas fa-check"></i> Leída</button>` : ''}
+        <a href="mailto:${x(c.email)}?subject=Tu cotización WebElite" class="b bg sm"><i class="fas fa-envelope"></i> Responder</a>
+        <button class="b br sm" onclick="delCot(${c.id})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
   }).join('');
 }
 
-async function markRead(id) {
-  await sb.from('cotizaciones').update({ leida: true }).eq('id', id);
-  await loadCotizaciones();
-  showToast('Marcada como leída', 'success');
-}
+async function markRead(id) { await sb.from('cotizaciones').update({ leida: true }).eq('id', id); await loadCots(); toast('Marcada como leída', 'ok'); }
+async function delCot(id) { if (!confirm('¿Eliminar?')) return; await sb.from('cotizaciones').delete().eq('id', id); await loadCots(); toast('Eliminada', 'if'); }
 
-async function deleteCot(id) {
-  if(!confirm('¿Eliminar esta cotización?')) return;
-  await sb.from('cotizaciones').delete().eq('id', id);
-  await loadCotizaciones();
-  showToast('Cotización eliminada', 'info');
-}
-
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════
-async function loadDashboard() {
-  const { data: cots } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
-  allCotizaciones = cots || [];
-  const total = cots?.length || 0;
-  const unread = cots?.filter(c=>!c.leida).length || 0;
-  const avg = total > 0 ? Math.round(cots.reduce((s,c)=>s+c.total,0)/total) : 0;
-  const actServicios = serviciosData.filter(s=>s.activo).length;
-
-  document.getElementById('dash-total-cot').textContent = total;
-  document.getElementById('dash-unread').textContent = unread;
-  document.getElementById('dash-avg').textContent = avg > 0 ? '$'+avg.toLocaleString() : '—';
-  document.getElementById('dash-servicios').textContent = actServicios;
-
-  const unreadBadge = document.getElementById('unread-badge');
-  if(unread > 0) { unreadBadge.textContent = unread; unreadBadge.style.display = 'inline-block'; }
-  else unreadBadge.style.display = 'none';
-
-  const recentEl = document.getElementById('dash-recent-cots');
-  const recent = allCotizaciones.slice(0,5);
-  if(recent.length === 0) {
-    recentEl.innerHTML = '<div style="color:var(--dim);font-size:0.85rem;padding:1rem 0;">Aún no hay cotizaciones</div>';
-    return;
-  }
-  recentEl.innerHTML = `<table><thead><tr><th>Nombre</th><th>Email</th><th>Total</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>` +
-    recent.map(c => {
-      const d = new Date(c.created_at).toLocaleDateString('es-ES',{day:'2-digit',month:'short'});
-      return `<tr>
-        <td>${c.nombre}</td>
-        <td style="color:var(--dim)">${c.email}</td>
-        <td class="td-gold">$${c.total.toLocaleString()}</td>
-        <td style="color:var(--dimmer)">${d}</td>
-        <td>${c.leida ? '<span class="badge badge-green">Leída</span>' : '<span class="badge badge-gold">Nueva</span>'}</td>
-      </tr>`;
-    }).join('') + '</tbody></table>';
+// ════════════════════════════════════════════════
+async function loadDash() {
+  document.getElementById('DP').textContent = PORT.length;
+  document.getElementById('DT').textContent = '—';
+  document.getElementById('DU').textContent = '—';
+  document.getElementById('DA').textContent = '—';
+  document.getElementById('DR').innerHTML = '<div style="color:var(--dim);font-size:.82rem">Conecta Supabase para ver cotizaciones en tiempo real.</div>';
+  if (!sbOK) return;
+  try {
+    const { data } = await sb.from('cotizaciones').select('*').order('created_at', { ascending: false });
+    COTS = data || [];
+    const total = COTS.length;
+    const unread = COTS.filter(c => !c.leida).length;
+    const avg = total > 0 ? Math.round(COTS.reduce((s, c) => s + (c.total || 0), 0) / total) : 0;
+    document.getElementById('DT').textContent = total;
+    document.getElementById('DU').textContent = unread;
+    document.getElementById('DA').textContent = avg > 0 ? '$' + avg.toLocaleString() : '$0';
+    document.getElementById('DP').textContent = PORT.length;
+    const b = document.getElementById('UB');
+    b.textContent = unread; b.style.display = unread > 0 ? 'inline-block' : 'none';
+    const recent = COTS.slice(0, 5);
+    document.getElementById('DR').innerHTML = recent.length === 0
+      ? '<div style="color:var(--dim);font-size:.82rem">Aún no hay cotizaciones.</div>'
+      : `<div class="tw"><table><thead><tr><th>Nombre</th><th>Email</th><th>Total</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>
+         ${recent.map(c => {
+           const d = new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+           return `<tr><td>${x(c.nombre)}</td><td style="color:var(--dim)">${x(c.email)}</td><td class="tg">$${(c.total || 0).toLocaleString()}</td><td style="color:var(--dimmer)">${d}</td><td>${c.leida ? '<span class="bx bxg">Leída</span>' : '<span class="bx bxo">Nueva</span>'}</td></tr>`;
+         }).join('')}</tbody></table></div>`;
+  } catch(e) { console.warn('Dashboard error:', e); }
 }
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════
 // GLOBAL SAVE
-// ══════════════════════════════════════
-async function saveCurrentPage() {
-  const btn = document.getElementById('globalSaveBtn');
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+// ════════════════════════════════════════════════
+async function savePage() {
+  const btn = document.getElementById('SVB');
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
   btn.disabled = true;
   try {
-    if(['hero','general','contacto','proceso','porque'].includes(currentPage)) await saveConfig();
-    if(currentPage === 'proceso') await saveProceso();
-    if(currentPage === 'porque') await savePorque();
-    if(currentPage === 'servicios') await saveServicios();
-    if(currentPage === 'portafolio') showToast('Usa el botón "Guardar" en cada proyecto', 'info');
-    if(currentPage === 'precios') showToast('Usa el botón "Guardar plan" en cada card', 'info');
-    if(currentPage === 'cotizador') showToast('Los precios se guardan automáticamente', 'info');
-    if(currentPage === 'seguridad') { await changePassword(); return; }
-    showToast('Cambios guardados correctamente', 'success');
-    btn.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
-    btn.classList.add('saved');
-    setTimeout(()=>{
-      btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
-      btn.classList.remove('saved');
-      btn.disabled = false;
-    }, 2500);
+    if (['hero', 'gen', 'cont'].includes(PAGE)) await saveCFG();
+    else if (PAGE === 'proc') { await saveCFG(); await savePROC(); }
+    else if (PAGE === 'pq')   { await saveCFG(); await savePQ(); }
+    else if (PAGE === 'svc')  await saveSVC();
+    else if (PAGE === 'port') { toast('Usa el botón "Guardar" en cada proyecto', 'if'); btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar'; btn.disabled = false; return; }
+    else if (PAGE === 'plans') { toast('Usa el botón "Guardar plan" en cada card', 'if'); btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar'; btn.disabled = false; return; }
+    else if (PAGE === 'cconf') { toast('Los precios se guardan automáticamente', 'if'); btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar'; btn.disabled = false; return; }
+    else if (PAGE === 'pass') { chgPass(); btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar'; btn.disabled = false; return; }
+    toast(sbOK ? '¡Guardado en Supabase!' : 'Guardado localmente (sin Supabase)', 'ok');
+    btn.innerHTML = '<i class="fas fa-check"></i> ¡Listo!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar'; btn.classList.remove('ok'); btn.disabled = false; }, 2200);
   } catch(e) {
-    showToast('Error al guardar: ' + e.message, 'error');
-    btn.innerHTML = '<i class="fas fa-save"></i> Guardar cambios';
+    toast('Error: ' + e.message, 'er');
+    btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Guardar';
     btn.disabled = false;
   }
 }
 
-// ══════════════════════════════════════
-// SEGURIDAD
-// ══════════════════════════════════════
-async function changePassword() {
-  const current  = document.getElementById('sec-current').value;
-  const newPass  = document.getElementById('sec-new').value;
-  const confirm  = document.getElementById('sec-confirm').value;
-  if(!current || !newPass || !confirm) { showToast('Completa todos los campos', 'error'); return; }
-  if(newPass !== confirm) { showToast('Las contraseñas no coinciden', 'error'); return; }
-  const { data } = await sb.from('admin_users').select('*').eq('email', currentUser.email).eq('password_hash', current).single();
-  if(!data) { showToast('Contraseña actual incorrecta', 'error'); return; }
-  await sb.from('admin_users').update({ password_hash: newPass }).eq('id', currentUser.id);
-  ['sec-current','sec-new','sec-confirm'].forEach(id => document.getElementById(id).value = '');
-  showToast('Contraseña actualizada', 'success');
+// ════════════════════════════════════════════════
+// CONTRASEÑA
+// ════════════════════════════════════════════════
+function chgPass() {
+  const cur = document.getElementById('PC').value;
+  const nw = document.getElementById('PN').value;
+  const co = document.getElementById('PCO').value;
+  const c = creds();
+  if (!cur || !nw || !co) { toast('Completa todos los campos', 'er'); return; }
+  if (cur !== c.pass) { toast('Contraseña actual incorrecta', 'er'); return; }
+  if (nw !== co) { toast('Las contraseñas no coinciden', 'er'); return; }
+  if (nw.length < 6) { toast('Mínimo 6 caracteres', 'er'); return; }
+  localStorage.setItem('we_cr', JSON.stringify({ email: c.email, pass: nw }));
+  ['PC', 'PN', 'PCO'].forEach(id => document.getElementById(id).value = '');
+  toast('Contraseña actualizada', 'ok');
 }
 
-// ══════════════════════════════════════
-// UI HELPERS
-// ══════════════════════════════════════
-function showLoading(v) { document.getElementById('loadingOverlay').classList.toggle('show', v); }
+// ════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════
+function v(id) { return document.getElementById(id)?.value ?? null; }
+function x(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function load(on) { document.getElementById('OV').classList.toggle('s', !!on); }
+let _tt;
+function toast(msg, type = 'ok') {
+  const t = document.getElementById('TST');
+  const ic = { ok: 'fa-circle-check', er: 'fa-circle-xmark', if: 'fa-circle-info' };
+  t.className = 'tst s ' + type;
+  t.querySelector('.ti').className = 'fas ' + (ic[type] || 'fa-circle-info') + ' ti';
+  document.getElementById('TM').textContent = msg;
+  clearTimeout(_tt);
+  _tt = setTimeout(() => t.classList.remove('s'), 3600);
+}
 
-let toastTimer;
-function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  const icon = t.querySelector('.toast-icon');
-  t.className = 'toast show ' + type;
-  document.getElementById('toast-msg').textContent = msg;
-  const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle' };
-  icon.className = `fas ${icons[type]||'fa-info-circle'} toast-icon`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+// START
+if (sessionStorage.getItem('wa')) {
+  document.getElementById('L').classList.add('h');
+  document.getElementById('A').classList.add('s');
+  document.addEventListener('DOMContentLoaded', startApp);
 }
 </script>
 </body>
