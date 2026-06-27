@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Turnos - Renovación Montufareña</title>
+  <meta name="description"
+    content="Sistema de gestión de turnos médicos para la Unidad de Salud Renovación Montufareña">
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- =====================================================
+       MODAL DE LOGIN (se muestra al cargar la página)
+       ===================================================== -->
+  <div id="overlay">
+    <div class="modal">
+      <h2>Bienvenido</h2>
+
+      <!-- Paso 1: Elegir rol -->
+      <div id="step-role" class="login-step active">
+        <p style="color:#757575; margin-bottom:1.2rem;">Selecciona tu perfil para ingresar:</p>
+        <div class="role-selection">
+          <button id="btnRoleDoctor" class="role-btn">👨‍⚕️ Soy Profesional Médico</button>
+          <button id="btnRoleTurnero" class="role-btn">📝 Soy Recepción / Turnero</button>
+        </div>
+      </div>
+
+      <!-- Paso 2A: Login Turnero -->
+      <div id="step-turnero" class="login-step">
+        <div class="form-group">
+          <label for="userNameInput">Tu nombre (Recepción / Turnero):</label>
+          <input type="text" id="userNameInput" placeholder="Ej: María, Recepción 1..." autocomplete="off">
+        </div>
+        <button id="btnIngresarTurnero" class="btn-large">Ingresar</button>
+        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
+      </div>
+
+      <!-- Paso 2B: Login Doctor -->
+      <div id="step-doctor" class="login-step">
+        <div class="form-group">
+          <label for="doctorLoginSelect">Selecciona tu nombre:</label>
+          <select id="doctorLoginSelect">
+            <option value="">-- Seleccionar Profesional --</option>
+          </select>
+        </div>
+        <button id="btnIngresarDoctor" class="btn-large">Ingresar a mi Panel</button>
+        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================
+       HEADER
+       ===================================================== -->
+  <header>
+    <div class="header-logo">
+      <img
+        src="https://res.cloudinary.com/dtmqftcsr/image/upload/v1777329849/LOGO_RENOVACIO%CC%81N_MONTUFAREN%CC%83A_fegxxf.png"
+        alt="Logo Renovación Montufareña">
+      <h1>Sistema de Turnos</h1>
+    </div>
+    <div class="user-info" id="userInfoDisplay" style="display:none;">
+      <span id="roleBadge"></span>
+      <strong id="displayUserName"></strong>
+      <button class="logout-btn" onclick="app.logout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- =====================================================
+       CONTENIDO PRINCIPAL
+       ===================================================== -->
+  <main>
+
+    <!-- VISTA: Dar Turno (Turnero) -->
+    <div id="view-darTurno" class="view">
+      <div class="card">
+        <h2>Asignar Nuevo Turno</h2>
+
+        <div class="form-group full-width">
+          <label for="doctorSelectTurno">Asignar al Profesional:</label>
+          <select id="doctorSelectTurno" onchange="app.onDoctorSelectTurno()">
+            <option value="">-- Elige un profesional --</option>
+          </select>
+        </div>
+
+        <div id="turnPreview" class="turn-display" style="display:none;">
+          Siguiente Turno a Asignar:
+          <span id="nextTurnNumber">#--</span>
+        </div>
+
+        <h3>Datos del Paciente</h3>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="pacienteNameInput">Nombres y Apellidos Completos:</label>
+            <input type="text" id="pacienteNameInput" placeholder="Ej: Juan Carlos Pérez López">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteCedula">Número de Cédula:</label>
+            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteEdad">Edad (años):</label>
+            <input type="number" id="pacienteEdad" placeholder="Ej: 35" min="0" max="120">
+          </div>
+
+          <div class="form-group">
+            <label for="pacientePeso">Peso:</label>
+            <input type="text" id="pacientePeso" placeholder="Ej: 70 kg">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteEstatura">Estatura:</label>
+            <input type="text" id="pacienteEstatura" placeholder="Ej: 1.70 m">
+          </div>
+
+          <div class="form-group">
+            <label for="pacientePresion">Presión Arterial:</label>
+            <input type="text" id="pacientePresion" placeholder="Ej: 120/80 mmHg">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteTemperatura">Temperatura:</label>
+            <input type="text" id="pacienteTemperatura" placeholder="Ej: 36.5 °C">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteFrecuencia">Frecuencia Cardíaca:</label>
+            <input type="text" id="pacienteFrecuencia" placeholder="Ej: 72 lpm">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteSaturacion">Saturación O₂:</label>
+            <input type="text" id="pacienteSaturacion" placeholder="Ej: 98%">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteCelular">Número de Celular:</label>
+            <input type="tel" id="pacienteCelular" placeholder="Ej: 099xxxxxxx">
+          </div>
+
+          <div class="form-group">
+            <label for="pacienteCorreo">Correo Electrónico:</label>
+            <input type="email" id="pacienteCorreo" placeholder="Ej: correo@ejemplo.com">
+          </div>
+        </div>
+
+        <button id="btnDarTurno" class="btn-large" onclick="app.darTurno()" disabled>
+          Registrar Paciente y Dar Turno
+        </button>
+      </div>
+
+      <div class="card" style="margin-top:1rem;">
+        <h2>Turnos Asignados en esta Sesión</h2>
+        <ul class="patient-list" id="turneroHistoryList">
+          <li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has asignado turnos aún.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- VISTA: Panel del Doctor -->
+    <div id="view-misPacientes" class="view">
+      <div class="next-patient">
+        <h3>Próximo Paciente a Atender</h3>
+        <div class="big-number" id="currentPatientNumber">--</div>
+        <div id="currentPatientName" style="margin-top:.5rem; font-size:1.1rem; opacity:.9;">
+          Esperando pacientes...
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h2 style="margin-bottom:0;">Lista de Espera</h2>
+          <button onclick="app.cargarPacientes()"
+            style="background:#1976d2;color:white;border:none;border-radius:8px;padding:.5rem 1rem;cursor:pointer;font-weight:600;">🔄
+            Actualizar</button>
+        </div>
+        <ul class="patient-list" id="patientList">
+          <li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>
+        </ul>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Contenedor de notificaciones -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Lógica de la aplicación -->
+  <script src="app.js"></script>
+
+</body>
+
+</html>
