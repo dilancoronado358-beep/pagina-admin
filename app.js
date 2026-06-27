@@ -144,14 +144,7 @@ const app = {
     this.cerrarOverlay('📝 Recepción:', nombre);
     this.mostrarVista('darTurno');
 
-    // Cargar contadores de Supabase para saber el próximo número de turno
-    if (Estado.online && sb) {
-      try {
-        const { data } = await sb.from('contadores').select('*');
-        if (data) data.forEach(c => { Estado.contadores[c.doctor_id] = c.ultimo_turno; });
-      } catch(e) { console.warn('Error cargando contadores', e.message); }
-    }
-    
+    // Ya no dependemos de la tabla contadores, calcularemos el turno en vivo.
     // Cargar historial de turnos generados por este turnero
     this.cargarHistorialTurnero();
     
@@ -267,7 +260,7 @@ const app = {
   // LÓGICA TURNERO
   // ============================================================
 
-  onDoctorSelectTurno() {
+  async onDoctorSelectTurno() {
     const docId = document.getElementById('doctorSelectTurno').value;
     const btn = document.getElementById('btnDarTurno');
     const preview = document.getElementById('turnPreview');
@@ -277,9 +270,33 @@ const app = {
       if (preview) preview.style.display = 'none';
       return;
     }
-    const ultimo = Estado.contadores[docId] || 0;
-    if (numEl) numEl.innerText = '#' + (ultimo + 1);
+    
     if (preview) preview.style.display = 'block';
+    if (numEl) numEl.innerText = 'Calculando...';
+    
+    let ultimo = Estado.contadores[docId] || 0;
+    
+    // Buscar el turno más alto directamente en la tabla turnos para este doctor
+    if (Estado.online && sb) {
+      try {
+        const { data } = await sb.from('turnos')
+          .select('numero_turno')
+          .eq('doctor_id', docId)
+          .order('numero_turno', { ascending: false })
+          .limit(1);
+          
+        if (data && data.length > 0) {
+          ultimo = data[0].numero_turno;
+        } else {
+          ultimo = 0; // No tiene turnos
+        }
+        Estado.contadores[docId] = ultimo; // Guardar en caché local
+      } catch(e) {
+        console.warn('Error calculando turno', e);
+      }
+    }
+
+    if (numEl) numEl.innerText = '#' + (ultimo + 1);
     if (btn) btn.disabled = false;
   },
 
@@ -347,20 +364,17 @@ const app = {
 
     try {
       if (Estado.online && sb) {
-        // Obtener y actualizar contador (upsert por si no existe el registro)
-        const { data: cRow } = await sb.from('contadores')
-          .select('ultimo_turno').eq('doctor_id', doctorId).single();
+        // Buscar el turno más alto en la tabla turnos para ESTE doctor
+        const { data: maxTurnoData } = await sb.from('turnos')
+          .select('numero_turno')
+          .eq('doctor_id', doctorId)
+          .order('numero_turno', { ascending: false })
+          .limit(1);
 
-        if (cRow) {
-          numeroTurno = cRow.ultimo_turno + 1;
-          await sb.from('contadores')
-            .update({ ultimo_turno: numeroTurno })
-            .eq('doctor_id', doctorId);
+        if (maxTurnoData && maxTurnoData.length > 0) {
+          numeroTurno = maxTurnoData[0].numero_turno + 1;
         } else {
-          // No existe fila de contador: insertar
-          await sb.from('contadores')
-            .insert({ doctor_id: doctorId, ultimo_turno: 1 });
-          numeroTurno = 1;
+          numeroTurno = 1; // Primer turno para este doctor
         }
 
         // Insertar turno con TODAS las columnas (requiere ejecutar el SQL en Supabase)
