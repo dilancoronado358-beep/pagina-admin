@@ -29,6 +29,7 @@
         <p style="color:#757575; margin-bottom:1.2rem;">Selecciona tu perfil para ingresar:</p>
         <div class="role-selection">
           <button id="btnRoleDoctor" class="role-btn">👨‍⚕️ Soy Profesional Médico</button>
+          <button id="btnRoleEnfermera" class="role-btn">🩺 Soy Enfermero/a (Signos Vitales)</button>
           <button id="btnRoleTurnero" class="role-btn">📝 Soy Recepción / Turnero</button>
         </div>
       </div>
@@ -43,15 +44,27 @@
         <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
       </div>
 
-      <!-- Paso 2B: Login Doctor -->
-      <div id="step-doctor" class="login-step">
+      <!-- Paso 2B: Login Enfermera -->
+      <div id="step-enfermera" class="login-step">
         <div class="form-group">
-          <label for="doctorLoginSelect">Selecciona tu nombre:</label>
-          <select id="doctorLoginSelect">
-            <option value="">-- Seleccionar Profesional --</option>
+          <label for="enfermeraLoginSelect">Selecciona tu nombre:</label>
+          <select id="enfermeraLoginSelect">
+            <option value="">-- Seleccionar Enfermero/a --</option>
           </select>
         </div>
-        <button id="btnIngresarDoctor" class="btn-large">Ingresar a mi Panel</button>
+        <button id="btnIngresarEnfermera" class="btn-large">Ingresar a Triaje</button>
+        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
+      </div>
+
+      <!-- Paso 2C: Login Doctor (Especialidad) -->
+      <div id="step-doctor" class="login-step">
+        <div class="form-group">
+          <label for="doctorLoginSelect">Selecciona tu Área/Especialidad:</label>
+          <select id="doctorLoginSelect">
+            <option value="">-- Seleccionar Área --</option>
+          </select>
+        </div>
+        <button id="btnIngresarDoctor" class="btn-large">Ingresar al Consultorio</button>
         <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
       </div>
 
@@ -68,10 +81,10 @@
         alt="Logo Renovación Montufareña">
       <h1>Sistema de Turnos</h1>
     </div>
-    <div class="user-info" id="userInfoDisplay" style="display:none;">
+    <div class="user-info" id="userInfoDisplay">
       <span id="roleBadge"></span>
       <strong id="displayUserName"></strong>
-      <button class="logout-btn" onclick="app.logout()">Salir</button>
+      <button class="logout-btn" onclick="app.cerrarSesion()">Salir</button>
     </div>
   </header>
 
@@ -83,21 +96,14 @@
     <!-- VISTA: Dar Turno (Turnero) -->
     <div id="view-darTurno" class="view">
       <div class="card">
-        <h2>Asignar Nuevo Turno</h2>
-
-        <div class="form-group full-width">
-          <label for="doctorSelectTurno">Asignar al Profesional:</label>
-          <select id="doctorSelectTurno" onchange="app.onDoctorSelectTurno()">
-            <option value="">-- Elige un profesional --</option>
-          </select>
-        </div>
+        <h2>Registrar Nuevo Paciente</h2>
 
         <div id="turnPreview" class="turn-display" style="display:none;">
-          Siguiente Turno a Asignar:
+          Siguiente Turno General:
           <span id="nextTurnNumber">#--</span>
         </div>
 
-        <h3>Datos del Paciente</h3>
+        <h3>Datos Básicos del Paciente</h3>
 
         <div class="form-grid">
           <div class="form-group full-width">
@@ -111,68 +117,115 @@
           </div>
 
           <div class="form-group">
-            <label for="pacienteEdad">Edad (años):</label>
-            <input type="number" id="pacienteEdad" placeholder="Ej: 35" min="0" max="120">
-          </div>
-
-          <div class="form-group">
-            <label for="pacientePeso">Peso:</label>
-            <input type="text" id="pacientePeso" placeholder="Ej: 70 kg">
-          </div>
-
-          <div class="form-group">
-            <label for="pacienteEstatura">Estatura:</label>
-            <input type="text" id="pacienteEstatura" placeholder="Ej: 1.70 m">
-          </div>
-
-          <div class="form-group">
-            <label for="pacientePresion">Presión Arterial:</label>
-            <input type="text" id="pacientePresion" placeholder="Ej: 120/80 mmHg">
-          </div>
-
-          <div class="form-group">
-            <label for="pacienteTemperatura">Temperatura:</label>
-            <input type="text" id="pacienteTemperatura" placeholder="Ej: 36.5 °C">
-          </div>
-
-          <div class="form-group">
-            <label for="pacienteFrecuencia">Frecuencia Cardíaca:</label>
-            <input type="text" id="pacienteFrecuencia" placeholder="Ej: 72 lpm">
-          </div>
-
-          <div class="form-group">
-            <label for="pacienteSaturacion">Saturación O₂:</label>
-            <input type="text" id="pacienteSaturacion" placeholder="Ej: 98%">
-          </div>
-
-          <div class="form-group">
             <label for="pacienteCelular">Número de Celular:</label>
             <input type="tel" id="pacienteCelular" placeholder="Ej: 099xxxxxxx">
           </div>
 
-          <div class="form-group">
-            <label for="pacienteCorreo">Correo Electrónico:</label>
-            <input type="email" id="pacienteCorreo" placeholder="Ej: correo@ejemplo.com">
+          <div class="form-group full-width">
+            <label for="pacienteDireccion">Dirección de Domicilio:</label>
+            <input type="text" id="pacienteDireccion" placeholder="Ej: Calle Principal 123">
           </div>
         </div>
 
-        <button id="btnDarTurno" class="btn-large" onclick="app.darTurno()" disabled>
-          Registrar Paciente y Dar Turno
+        <button id="btnDarTurno" class="btn-large" onclick="app.darTurno()">
+          Registrar Paciente y Generar Turno
         </button>
       </div>
 
       <div class="card" style="margin-top:1rem;">
-        <h2>Turnos Asignados en esta Sesión</h2>
+        <h2>Pacientes Registrados en esta Sesión</h2>
         <ul class="patient-list" id="turneroHistoryList">
-          <li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has asignado turnos aún.</li>
+          <li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has registrado pacientes aún.
+          </li>
         </ul>
       </div>
     </div>
 
-    <!-- VISTA: Panel del Doctor -->
+    <!-- VISTA: Enfermería (Lista de Triaje) -->
+    <div id="view-triaje" class="view">
+      <div class="next-patient" style="background: linear-gradient(135deg, #10b981, #047857);">
+        <h3>Próximo Paciente para Signos Vitales</h3>
+        <div class="big-number" id="currentTriajeNumber">--</div>
+        <div id="currentTriajeName" style="margin-top:.5rem; font-size:1.1rem; opacity:.9;">
+          Esperando pacientes...
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h2 style="margin-bottom:0;">Pacientes en Recepción (Por Atender)</h2>
+          <button onclick="app.cargarPacientesTriaje()" class="btn-action" style="background: var(--primary);">🔄
+            Actualizar</button>
+        </div>
+        <ul class="patient-list" id="triajeList">
+          <li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- VISTA: Formulario de Triaje (Enfermera) -->
+    <div id="view-formTriaje" class="view">
+      <div class="card">
+        <h2>Registro de Signos Vitales</h2>
+        <h3 id="triajePacienteName">Paciente: </h3>
+
+        <input type="hidden" id="triajeTurnoId">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="triajeEdad">Edad (años):</label>
+            <input type="number" id="triajeEdad" placeholder="Ej: 35">
+          </div>
+
+          <div class="form-group">
+            <label for="triajePeso">Peso:</label>
+            <input type="text" id="triajePeso" placeholder="Ej: 70 kg">
+          </div>
+
+          <div class="form-group">
+            <label for="triajeEstatura">Estatura:</label>
+            <input type="text" id="triajeEstatura" placeholder="Ej: 1.70 m">
+          </div>
+
+          <div class="form-group">
+            <label for="triajePresion">Presión Arterial:</label>
+            <input type="text" id="triajePresion" placeholder="Ej: 120/80">
+          </div>
+
+          <div class="form-group">
+            <label for="triajeTemperatura">Temperatura:</label>
+            <input type="text" id="triajeTemperatura" placeholder="Ej: 36.5 °C">
+          </div>
+
+          <div class="form-group">
+            <label for="triajeFrecuencia">Frecuencia Cardíaca:</label>
+            <input type="text" id="triajeFrecuencia" placeholder="Ej: 72 lpm">
+          </div>
+
+          <div class="form-group">
+            <label for="triajeSaturacion">Saturación O₂:</label>
+            <input type="text" id="triajeSaturacion" placeholder="Ej: 98%">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="triajeEspecialidad">Asignar a Especialidad / Área:</label>
+            <select id="triajeEspecialidad">
+              <option value="">-- Seleccionar Área --</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="btnGuardarTriaje" class="btn-large" onclick="app.guardarTriaje()">
+          Guardar Signos Vitales y Enviar a Consultorio
+        </button>
+        <button class="btn-volver" onclick="app.mostrarVista('triaje')">← Cancelar y Volver a Lista</button>
+      </div>
+    </div>
+
+    <!-- VISTA: Panel del Doctor (Área) -->
     <div id="view-misPacientes" class="view">
       <div class="next-patient">
-        <h3>Próximo Paciente a Atender</h3>
+        <h3 id="tituloConsultorio">Próximo Paciente en esta Área</h3>
         <div class="big-number" id="currentPatientNumber">--</div>
         <div id="currentPatientName" style="margin-top:.5rem; font-size:1.1rem; opacity:.9;">
           Esperando pacientes...
@@ -182,7 +235,8 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <h2 style="margin-bottom:0;">Lista de Espera</h2>
-          <button onclick="app.cargarPacientes()" class="btn-action" style="background: var(--primary);">🔄 Actualizar</button>
+          <button onclick="app.cargarPacientesArea()" class="btn-action" style="background: var(--primary);">🔄
+            Actualizar</button>
         </div>
         <ul class="patient-list" id="patientList">
           <li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>
