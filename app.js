@@ -151,7 +151,47 @@ const app = {
         if (data) data.forEach(c => { Estado.contadores[c.doctor_id] = c.ultimo_turno; });
       } catch(e) { console.warn('Error cargando contadores', e.message); }
     }
+    
+    // Cargar historial de turnos generados por este turnero
+    this.cargarHistorialTurnero();
+    
     this.onDoctorSelectTurno();
+  },
+
+  async cargarHistorialTurnero() {
+    const lista = document.getElementById('turneroHistoryList');
+    if (!lista) return;
+
+    if (Estado.online && sb && Estado.userName) {
+      try {
+        // Obtener los últimos 20 turnos creados por este turnero
+        const { data, error } = await sb.from('turnos')
+          .select('numero_turno, paciente, doctor_id, doctores(nombre)')
+          .eq('creado_por', Estado.userName)
+          .order('id', { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+
+        lista.innerHTML = '';
+        if (data && data.length > 0) {
+          data.forEach(t => {
+            // Intentar buscar el nombre del doctor (join o fallback a local)
+            let docName = 'Profesional';
+            if (t.doctores && t.doctores.nombre) docName = t.doctores.nombre;
+            else {
+              const docInfo = Estado.doctores.find(d => d.id === t.doctor_id);
+              if (docInfo) docName = docInfo.nombre;
+            }
+            this.agregarAlHistorial(t.numero_turno, t.paciente, docName, true);
+          });
+        } else {
+          lista.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay turnos registrados en la base de datos.</li>';
+        }
+      } catch (err) {
+        console.error('Error cargando historial del turnero:', err);
+      }
+    }
   },
 
   // ------ LOGIN DOCTOR ------------------------------------
@@ -252,12 +292,12 @@ const app = {
     });
   },
 
-  agregarAlHistorial(numero, nombrePaciente, doctorTexto) {
+  agregarAlHistorial(numero, nombrePaciente, doctorTexto, desdeDB = false) {
     const lista = document.getElementById('turneroHistoryList');
     if (!lista) return;
     
     // Si es el primero, quitar el mensaje de "vacío"
-    if (lista.innerHTML.includes('No has asignado turnos aún')) {
+    if (lista.innerHTML.includes('No has asignado turnos aún') || lista.innerHTML.includes('No hay turnos registrados')) {
       lista.innerHTML = '';
     }
 
@@ -269,11 +309,15 @@ const app = {
           <div class="patient-title">Turno #${numero} — ${nombrePaciente}</div>
           <div class="patient-subtitle" style="color: #666; font-size: 0.85rem;">Asignado a: ${doctorTexto}</div>
         </div>
-        <div style="font-size:1.5rem;">✅</div>
+        <div style="font-size:1.5rem;">${desdeDB ? '💾' : '✅'}</div>
       </div>
     `;
-    // Agregar arriba de la lista
-    lista.prepend(item);
+    // Agregar arriba de la lista si es nuevo, o al final si se está cargando de la DB en orden
+    if (desdeDB) {
+      lista.appendChild(item);
+    } else {
+      lista.prepend(item);
+    }
   },
 
   async darTurno() {
@@ -298,24 +342,7 @@ const app = {
     btn.disabled = true;
     btn.innerText = 'Guardando...';
 
-    // Empacar TODOS los datos extra en un JSON dentro de la columna "paciente"
-    // Esto garantiza que NO haya errores de columnas faltantes en Supabase
-    const extraData = {
-      cedula: d.cedula,
-      edad: d.edad,
-      peso: d.peso,
-      estatura: d.estatura,
-      presion: d.presion,
-      temperatura: d.temperatura,
-      frecuencia: d.frecuencia,
-      saturacion: d.saturacion,
-      celular: d.celular,
-      correo: d.correo,
-      creado_por: Estado.userName
-    };
-    
-    const pacienteEmpacado = d.nombre + "|||" + JSON.stringify(extraData);
-
+    // Deshacemos el hack del JSON y pasamos las columnas correctas a Supabase
     let numeroTurno = (Estado.contadores[doctorId] || 0) + 1;
 
     try {
@@ -336,11 +363,21 @@ const app = {
           numeroTurno = 1;
         }
 
-        // Insertar turno usando solo las columnas base de Supabase
+        // Insertar turno con TODAS las columnas (requiere ejecutar el SQL en Supabase)
         const { error: insErr } = await sb.from('turnos').insert({
           doctor_id:      doctorId,
           numero_turno:   numeroTurno,
-          paciente:       pacienteEmpacado,
+          paciente:       d.nombre,
+          cedula:         d.cedula,
+          edad:           d.edad ? parseInt(d.edad) : null,
+          peso:           d.peso,
+          estatura:       d.estatura,
+          presion:        d.presion,
+          temperatura:    d.temperatura,
+          frecuencia:     d.frecuencia,
+          saturacion:     d.saturacion,
+          celular:        d.celular,
+          correo:         d.correo,
           estado:         'pendiente',
           creado_por:     Estado.userName
         });
@@ -473,33 +510,24 @@ const app = {
       if (t.estado === 'pendiente')    btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
       if (t.estado === 'en_consulta')  btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
 
-      // Desempacar JSON si existe
-      let nombreReal = t.paciente || 'Sin nombre';
-      let extra = {};
-      if (nombreReal.includes('|||')) {
-        const parts = nombreReal.split('|||');
-        nombreReal = parts[0];
-        try { extra = JSON.parse(parts[1]); } catch(e) {}
-      }
-
-      // Mostrar campo individual si existe localmente, si no usar el JSON desempacado
-      const mostrarCedula      = t.cedula      || extra.cedula      || 'N/A';
-      const mostrarEdad        = t.edad        ? t.edad + ' años' : (extra.edad ? extra.edad + ' años' : 'N/A');
-      const mostrarPeso        = t.peso        || extra.peso        || 'N/A';
-      const mostrarEstatura    = t.estatura    || extra.estatura    || 'N/A';
-      const mostrarPresion     = t.presion     || extra.presion     || 'N/A';
-      const mostrarTemperatura = t.temperatura || extra.temperatura || 'N/A';
-      const mostrarFrecuencia  = t.frecuencia  || extra.frecuencia  || 'N/A';
-      const mostrarSaturacion  = t.saturacion  || extra.saturacion  || 'N/A';
-      const mostrarCelular     = t.celular     || extra.celular     || 'N/A';
-      const mostrarCorreo      = t.correo      || extra.correo      || 'N/A';
-      const mostrarCreadoPor   = t.creado_por  || extra.creado_por  || 'N/A';
+      // Mostrar campo individual directamente desde las columnas de Supabase
+      const mostrarCedula      = t.cedula      || 'N/A';
+      const mostrarEdad        = t.edad        ? t.edad + ' años' : 'N/A';
+      const mostrarPeso        = t.peso        || 'N/A';
+      const mostrarEstatura    = t.estatura    || 'N/A';
+      const mostrarPresion     = t.presion     || 'N/A';
+      const mostrarTemperatura = t.temperatura || 'N/A';
+      const mostrarFrecuencia  = t.frecuencia  || 'N/A';
+      const mostrarSaturacion  = t.saturacion  || 'N/A';
+      const mostrarCelular     = t.celular     || 'N/A';
+      const mostrarCorreo      = t.correo      || 'N/A';
+      const mostrarCreadoPor   = t.creado_por  || 'N/A';
 
       listEl.innerHTML += `
         <li class="patient-item ${ec ? 'en-consulta' : ''}">
           <div class="patient-header">
             <div>
-              <div class="patient-title">Turno #${t.numero_turno} — ${nombreReal}</div>
+              <div class="patient-title">Turno #${t.numero_turno} — ${t.paciente || 'Sin nombre'}</div>
               <div class="patient-subtitle">Ingresado por: ${mostrarCreadoPor}</div>
             </div>
             <div class="patient-actions">${btns}</div>
