@@ -3,22 +3,22 @@
 // ============================================================
 const SUPABASE_URL = 'https://tmucjycefiyhthgoladq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_GRERFbwae5xPLjMPG55zXA_Z2GWb3qB';
-let sb = null; // cliente Supabase
+let sb = null;
 
 // ============================================================
-// LISTAS ESTÁTICAS DE RESPALDO
+// LISTAS ESTÁTICAS
 // ============================================================
 const AREAS_ESTATICAS = [
-  'Odontología',
-  'Urología',
-  'Imagenología',
-  'Traumatología',
-  'Pediatría',
   'Medicina General',
-  'Fisioterapia',
+  'Odontología',
+  'Pediatría',
   'Obstetricia',
+  'Traumatología',
+  'Fisioterapia',
   'Psicología Clínica',
   'Nutrición',
+  'Urología',
+  'Imagenología',
   'Farmacia'
 ];
 
@@ -36,48 +36,41 @@ const ENFERMERAS_ESTATICAS = [
 // ESTADO GLOBAL
 // ============================================================
 const Estado = {
-  role: null,              // 'turnero' | 'enfermera' | 'doctor'
-  userName: '',            // Nombre del turnero o enfermera
-  areaId: null,            // Área/Especialidad seleccionada por el doctor
+  role: null,           // 'turnero' | 'enfermera' | 'doctor'
+  userName: '',
+  areaId: null,         // Área seleccionada por el doctor
   areas: [],
   enfermeras: [],
-  contadoresGenerales: 0,  // Contador local para turneros (si offline)
-  contadoresAreas: {},     // Contadores locales por área
   online: false,
-  autoRefreshInterval: null // ID del setInterval para auto-recarga
+  autoRefreshInterval: null
 };
 
 // ============================================================
-// OBJETO PRINCIPAL DE LA APP
+// APP
 // ============================================================
 const app = {
 
-  // ------ ARRANQUE ----------------------------------------
+  // ---- ARRANQUE ----
   async init() {
-    Estado.areas = AREAS_ESTATICAS;
+    Estado.areas     = AREAS_ESTATICAS;
     Estado.enfermeras = ENFERMERAS_ESTATICAS;
     this.llenarSelects();
 
     try {
       if (!window.supabase) throw new Error('SDK no disponible');
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-      // Verificar conexión
-      const { error: testErr } = await sb.from('turnos').select('id').limit(1);
-      if (testErr) throw new Error('Supabase no responde: ' + testErr.message);
-
+      const { error } = await sb.from('pacientes_espera').select('id').limit(1);
+      if (error) throw error;
       Estado.online = true;
       console.log('✅ Supabase en línea');
-
     } catch (e) {
       Estado.online = false;
-      console.warn('⚠️ Modo offline:', e.message);
+      console.warn('⚠️ Modo offline / tabla no lista:', e.message);
     }
   },
 
-  // ------ SELECTS -----------------------------------------
   llenarSelects() {
-    // Select de áreas para Doctores
+    // Áreas para login de doctores
     const selDoc = document.getElementById('doctorLoginSelect');
     if (selDoc) {
       selDoc.innerHTML = '<option value="">-- Seleccionar Área --</option>';
@@ -85,17 +78,15 @@ const app = {
         selDoc.innerHTML += `<option value="${a}">${a}</option>`;
       });
     }
-
-    // Select de áreas para Triaje (Enfermera)
-    const selTriajeArea = document.getElementById('triajeEspecialidad');
-    if (selTriajeArea) {
-      selTriajeArea.innerHTML = '<option value="">-- Seleccionar Área --</option>';
+    // Áreas para que la enfermera asigne al triaje
+    const selArea = document.getElementById('triajeEspecialidad');
+    if (selArea) {
+      selArea.innerHTML = '<option value="">-- Seleccionar Área --</option>';
       Estado.areas.forEach(a => {
-        selTriajeArea.innerHTML += `<option value="${a}">${a}</option>`;
+        selArea.innerHTML += `<option value="${a}">${a}</option>`;
       });
     }
-
-    // Select de enfermeras
+    // Enfermeras
     const selEnf = document.getElementById('enfermeraLoginSelect');
     if (selEnf) {
       selEnf.innerHTML = '<option value="">-- Seleccionar Enfermero/a --</option>';
@@ -105,12 +96,12 @@ const app = {
     }
   },
 
-  // ------ NAVEGACIÓN MODAL --------------------------------
+  // ---- NAVEGACIÓN ----
   selectRole(role) {
     document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
     if (role === 'turnero') {
       document.getElementById('step-turnero').classList.add('active');
-      setTimeout(() => { const i = document.getElementById('userNameInput'); if(i) i.focus(); }, 100);
+      setTimeout(() => { document.getElementById('userNameInput')?.focus(); }, 100);
     } else if (role === 'enfermera') {
       document.getElementById('step-enfermera').classList.add('active');
     } else {
@@ -123,68 +114,22 @@ const app = {
     document.getElementById('step-role').classList.add('active');
   },
 
-  // ------ LOGIN -------------------------------------------
-  async loginTurnero() {
-    const nombre = (document.getElementById('userNameInput').value || '').trim();
-    if (!nombre) { this.toast('Ingresa tu nombre', 'error'); return; }
-
-    Estado.role = 'turnero';
-    Estado.userName = nombre;
-    this.cerrarOverlay('📝 Recepción:', nombre);
-    this.mostrarVista('darTurno');
-
-    this.cargarHistorialTurnero();
-    this.calcularProximoTurnoGeneral();
-  },
-
-  async loginEnfermera() {
-    const sel = document.getElementById('enfermeraLoginSelect');
-    if (!sel.value) { this.toast('Selecciona tu nombre', 'error'); return; }
-
-    Estado.role = 'enfermera';
-    Estado.userName = sel.value;
-    this.cerrarOverlay('🩺 Triaje:', Estado.userName);
-    this.mostrarVista('triaje');
-
-    await this.cargarPacientesTriaje();
-    // Auto-recarga cada 30 segundos
-    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => { this.cargarPacientesTriaje(); }, 30000);
-  },
-
-  async loginDoctor() {
-    const sel = document.getElementById('doctorLoginSelect');
-    if (!sel.value) { this.toast('Selecciona el área', 'error'); return; }
-
-    Estado.role = 'doctor';
-    Estado.areaId = sel.value;
-    this.cerrarOverlay('👨‍⚕️ Área:', Estado.areaId);
-    
-    const titulo = document.getElementById('tituloConsultorio');
-    if (titulo) titulo.innerText = 'Próximo Paciente en ' + Estado.areaId;
-    
-    this.mostrarVista('misPacientes');
-    await this.cargarPacientesArea();
-    // Auto-recarga cada 30 segundos
-    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => { this.cargarPacientesArea(); }, 30000);
-  },
-
-  cerrarOverlay(badgeText, userText) {
-    document.getElementById('overlay').style.display = 'none';
-    const rb = document.getElementById('roleBadge');
-    if (rb) rb.innerText = badgeText;
-    const dun = document.getElementById('displayUserName');
-    if (dun) dun.innerText = userText;
-  },
-
   mostrarVista(vistaId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById('view-' + vistaId).classList.add('active');
+    const el = document.getElementById('view-' + vistaId);
+    if (el) el.classList.add('active');
   },
 
+  cerrarOverlay(badge, nombre) {
+    document.getElementById('overlay').style.display = 'none';
+    const rb = document.getElementById('roleBadge');
+    const dn = document.getElementById('displayUserName');
+    if (rb) rb.innerText = badge;
+    if (dn) dn.innerText = nombre;
+  },
+
+  // ---- CERRAR SESIÓN ----
   cerrarSesion() {
-    // Detener auto-recarga
     if (Estado.autoRefreshInterval) {
       clearInterval(Estado.autoRefreshInterval);
       Estado.autoRefreshInterval = null;
@@ -195,44 +140,22 @@ const app = {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('overlay').style.display = 'flex';
     this.backToRoles();
-    
-    // Limpiar campos de login
     document.getElementById('userNameInput').value = '';
     document.getElementById('enfermeraLoginSelect').value = '';
     document.getElementById('doctorLoginSelect').value = '';
   },
 
   // ============================================================
-  // LÓGICA TURNERO (Recepción)
+  // ROL: TURNERO (solo registra datos básicos, SIN número de turno)
   // ============================================================
-  async calcularProximoTurnoGeneral() {
-    const numEl = document.getElementById('nextTurnNumber');
-    const preview = document.getElementById('turnPreview');
-    if (preview) preview.style.display = 'block';
-    if (numEl) numEl.innerText = 'Calculando...';
-
-    let ultimo = Estado.contadoresGenerales;
-
-    if (Estado.online && sb) {
-      try {
-        // Obtenemos el turno más alto general (independiente de especialidad o doctor)
-        const { data } = await sb.from('turnos')
-          .select('numero_turno')
-          .order('id', { ascending: false }) // En turnos generales, nos basamos en el ID que es secuencial
-          .limit(1);
-          
-        if (data && data.length > 0) {
-          ultimo = data[0].numero_turno || 0;
-        } else {
-          ultimo = 0;
-        }
-        Estado.contadoresGenerales = ultimo;
-      } catch(e) {
-        console.warn('Error calculando turno general', e);
-      }
-    }
-
-    if (numEl) numEl.innerText = 'Turno #' + (ultimo + 1);
+  async loginTurnero() {
+    const nombre = (document.getElementById('userNameInput').value || '').trim();
+    if (!nombre) { this.toast('Ingresa tu nombre', 'error'); return; }
+    Estado.role     = 'turnero';
+    Estado.userName = nombre;
+    this.cerrarOverlay('📝', nombre);
+    this.mostrarVista('darTurno');
+    this.cargarHistorialTurnero();
   },
 
   async darTurno() {
@@ -240,217 +163,171 @@ const app = {
     btn.disabled = true;
     btn.innerText = 'Registrando...';
 
-    const nombre = document.getElementById('pacienteNameInput').value.trim();
-    const cedula = document.getElementById('pacienteCedula').value.trim();
-    const celular = document.getElementById('pacienteCelular').value.trim();
+    const nombre    = document.getElementById('pacienteNameInput').value.trim();
+    const cedula    = document.getElementById('pacienteCedula').value.trim();
+    const celular   = document.getElementById('pacienteCelular').value.trim();
     const direccion = document.getElementById('pacienteDireccion').value.trim();
 
     if (!nombre) {
       this.toast('Ingresa el nombre del paciente', 'error');
       btn.disabled = false;
-      btn.innerText = 'Registrar Paciente y Generar Turno';
+      btn.innerText = 'Registrar Paciente';
       return;
     }
 
-    // El turnero empaca solo los datos de contacto y recepción
-    const pacienteEmpacado = JSON.stringify({
-      nombre: nombre,
-      cedula: cedula,
-      celular: celular,
-      direccion: direccion
-    });
-
-    let numeroTurno = Estado.contadoresGenerales + 1;
-
     try {
       if (Estado.online && sb) {
-        // Recalcular en vivo antes de insertar
-        const { data: maxTurnoData } = await sb.from('turnos')
-          .select('numero_turno')
-          .order('id', { ascending: false })
-          .limit(1);
-
-        if (maxTurnoData && maxTurnoData.length > 0) {
-          numeroTurno = (maxTurnoData[0].numero_turno || 0) + 1;
-        } else {
-          numeroTurno = 1;
-        }
-
-        // Insertar turno (estado inicial: en_espera_triaje)
-        // UUID por defecto o se omite si se puede.
-        const UUID_TRIAJE = '00000000-0000-0000-0000-000000000000'; // Dejar vacío si doctor_id no es obligatorio en DB
-        const { error: insErr } = await sb.from('turnos').insert({
-          numero_turno: numeroTurno,
-          paciente: pacienteEmpacado,
-          estado: 'en_espera_triaje',
+        const { error } = await sb.from('pacientes_espera').insert({
+          nombre:     nombre,
+          cedula:     cedula,
+          celular:    celular,
+          direccion:  direccion,
           creado_por: Estado.userName,
-          doctor_id: null // Si la BD permite nulos. Si lanza error, es porque la BD tiene "not null"
+          estado:     'en_espera'   // Aún sin número de turno ni especialidad
         });
-
-        if (insErr) {
-          console.error("Supabase insert error (Turnero):", insErr);
-          throw insErr;
-        }
-
-        Estado.contadoresGenerales = numeroTurno;
+        if (error) throw error;
       }
-      this.toast('Paciente registrado (Turno #' + numeroTurno + ')', 'success');
 
-      // Limpiar
+      this.toast(`✅ Paciente "${nombre}" registrado`, 'success');
       document.getElementById('pacienteNameInput').value = '';
-      document.getElementById('pacienteCedula').value = '';
-      document.getElementById('pacienteCelular').value = '';
+      document.getElementById('pacienteCedula').value    = '';
+      document.getElementById('pacienteCelular').value   = '';
       document.getElementById('pacienteDireccion').value = '';
-
-      this.calcularProximoTurnoGeneral();
       this.cargarHistorialTurnero();
 
     } catch (err) {
-      console.error('Error al registrar paciente:', err);
-      if (err.message && err.message.includes('doctor_id')) {
-        this.toast('Error: BD exige doctor_id. Ajusta Supabase permitiendo nulos.', 'error');
-      } else {
-        this.toast('Error al registrar: ' + err.message, 'error');
-      }
+      console.error(err);
+      this.toast('Error al registrar: ' + err.message, 'error');
     }
 
     btn.disabled = false;
-    btn.innerText = 'Registrar Paciente y Generar Turno';
+    btn.innerText = 'Registrar Paciente';
   },
 
   async cargarHistorialTurnero() {
     const lista = document.getElementById('turneroHistoryList');
     if (!lista) return;
+    if (!Estado.online || !sb) return;
 
-    if (Estado.online && sb && Estado.userName) {
-      try {
-        const { data, error } = await sb.from('turnos')
-          .select('numero_turno, paciente, estado, creado_por')
-          .eq('creado_por', Estado.userName)
-          .order('id', { ascending: false })
-          .limit(10);
+    try {
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('nombre, cedula, estado, especialidad, numero_turno_area, creado_por')
+        .eq('creado_por', Estado.userName)
+        .order('id', { ascending: false })
+        .limit(15);
+      if (error) throw error;
 
-        if (error) throw error;
-
-        lista.innerHTML = '';
-        if (data && data.length > 0) {
-          data.forEach(t => {
-            let nombreReal = 'Sin nombre';
-            try {
-              const obj = JSON.parse(t.paciente);
-              nombreReal = obj.nombre || 'Desconocido';
-            } catch(e) { nombreReal = t.paciente; }
-
-            const li = document.createElement('li');
-            li.className = 'patient-item';
-            li.innerHTML = `
-              <div class="patient-header" style="margin-bottom:0;">
-                <div>
-                  <div class="patient-title">Turno General #${t.numero_turno} — ${nombreReal}</div>
-                  <div class="patient-subtitle">Estado: ${t.estado.replace(/_/g, ' ').toUpperCase()}</div>
-                </div>
-              </div>
-            `;
-            lista.appendChild(li);
-          });
-        } else {
-          lista.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes registrados en esta sesión.</li>';
-        }
-      } catch (err) {
-        console.error('Error cargando historial:', err);
+      lista.innerHTML = '';
+      if (!data || data.length === 0) {
+        lista.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has registrado pacientes aún.</li>';
+        return;
       }
+
+      data.forEach(t => {
+        const turnoLabel = t.numero_turno_area
+          ? `<span style="background:var(--primary);color:white;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:700;">Turno ${t.especialidad ? t.especialidad.substring(0,3).toUpperCase() : ''}-${t.numero_turno_area}</span>`
+          : `<span style="background:#e2e8f0;color:#64748b;padding:2px 10px;border-radius:20px;font-size:.8rem;">En Recepción</span>`;
+
+        lista.innerHTML += `
+          <li class="patient-item">
+            <div class="patient-header" style="margin-bottom:0;">
+              <div>
+                <div class="patient-title">${t.nombre}</div>
+                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} ${t.especialidad ? '→ ' + t.especialidad : ''}</div>
+              </div>
+              <div>${turnoLabel}</div>
+            </div>
+          </li>`;
+      });
+    } catch (err) {
+      console.error('Error historial turnero:', err);
     }
   },
 
   // ============================================================
-  // LÓGICA ENFERMERÍA (Triaje)
+  // ROL: ENFERMERA (ve TODOS los pacientes, asigna signos y turno)
   // ============================================================
+  async loginEnfermera() {
+    const sel = document.getElementById('enfermeraLoginSelect');
+    if (!sel.value) { this.toast('Selecciona tu nombre', 'error'); return; }
+    Estado.role     = 'enfermera';
+    Estado.userName = sel.value;
+    this.cerrarOverlay('🩺', Estado.userName);
+    this.mostrarVista('triaje');
+    await this.cargarPacientesTriaje();
+    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 30000);
+  },
+
   async cargarPacientesTriaje() {
     const listEl = document.getElementById('triajeList');
     if (!listEl) return;
     listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
-
-    if (!Estado.online || !sb) return;
+    if (!Estado.online || !sb) {
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:orange;">Sin conexión a Supabase.</li>';
+      return;
+    }
 
     try {
-      const { data, error } = await sb.from('turnos')
+      // La enfermera ve TODOS los que están "en_espera" (sin turno asignado aún)
+      const { data, error } = await sb.from('pacientes_espera')
         .select('*')
-        .eq('estado', 'en_espera_triaje')
-        .order('id', { ascending: true }); // Orden de llegada
-
+        .eq('estado', 'en_espera')
+        .order('id', { ascending: true });
       if (error) throw error;
 
       listEl.innerHTML = '';
+      const numEl  = document.getElementById('currentTriajeNumber');
+      const nameEl = document.getElementById('currentTriajeName');
 
       if (!data || data.length === 0) {
-        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">No hay pacientes esperando triaje.</li>';
-        document.getElementById('currentTriajeNumber').innerText = '--';
-        document.getElementById('currentTriajeName').innerText = 'Recepción vacía';
+        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en recepción.</li>';
+        if (numEl)  numEl.innerText = '--';
+        if (nameEl) nameEl.innerText = 'Sin pacientes en espera';
         return;
       }
 
-      const proximo = data[0];
-      let proxNombre = proximo.paciente;
-      try { proxNombre = JSON.parse(proximo.paciente).nombre; } catch(e){}
-
-      document.getElementById('currentTriajeNumber').innerText = 'Turno #' + proximo.numero_turno;
-      document.getElementById('currentTriajeName').innerText = proxNombre;
+      if (numEl)  numEl.innerText = data.length + ' en espera';
+      if (nameEl) nameEl.innerText = 'Próximo: ' + data[0].nombre;
 
       data.forEach(t => {
-        let pData = {};
-        try { pData = JSON.parse(t.paciente); } catch(e) { pData.nombre = t.paciente; }
-
         listEl.innerHTML += `
           <li class="patient-item">
             <div class="patient-header" style="margin-bottom:0;">
               <div>
-                <div class="patient-title">Turno #${t.numero_turno} — ${pData.nombre || 'Sin nombre'}</div>
-                <div class="patient-subtitle">Cédula: ${pData.cedula || 'N/A'} | Creado por: ${t.creado_por || 'N/A'}</div>
+                <div class="patient-title">${t.nombre}</div>
+                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
+                <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
               </div>
               <div class="patient-actions">
-                <button class="btn-action btn-call" onclick="app.abrirFormularioTriaje('${t.id}')">🩺 Tomar Signos</button>
+                <button class="btn-action btn-call" onclick="app.abrirFormularioTriaje('${t.id}', '${(t.nombre || '').replace(/'/g, "\\'")}')">
+                  🩺 Tomar Signos y Asignar Turno
+                </button>
               </div>
             </div>
           </li>`;
       });
-
-    } catch(e) {
-      console.error('Error cargando triaje:', e);
-      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error cargando pacientes</li>';
+    } catch (e) {
+      console.error(e);
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
     }
   },
 
-  async abrirFormularioTriaje(turnoId) {
-    try {
-      const { data, error } = await sb.from('turnos').select('*').eq('id', turnoId).single();
-      if (error) throw error;
-
-      let pData = {};
-      try { pData = JSON.parse(data.paciente); } catch(e) { pData.nombre = data.paciente; }
-
-      document.getElementById('triajeTurnoId').value = data.id;
-      document.getElementById('triajePacienteName').innerText = 'Paciente: ' + (pData.nombre || 'Desconocido');
-
-      // Limpiar campos
-      ['triajeEdad', 'triajePeso', 'triajeEstatura', 'triajePresion', 'triajeTemperatura', 'triajeFrecuencia', 'triajeSaturacion', 'triajeEspecialidad'].forEach(id => {
-        document.getElementById(id).value = '';
-      });
-
-      // Guardar datos base en un atributo oculto para no perderlos al sobreescribir el JSON
-      document.getElementById('triajeTurnoId').dataset.baseJson = JSON.stringify(pData);
-
-      this.mostrarVista('formTriaje');
-    } catch(e) {
-      this.toast('Error abriendo turno', 'error');
-    }
+  abrirFormularioTriaje(pacienteId, nombrePaciente) {
+    document.getElementById('triajeTurnoId').value             = pacienteId;
+    document.getElementById('triajePacienteName').innerText    = 'Paciente: ' + nombrePaciente;
+    ['triajeEdad','triajePeso','triajeEstatura','triajePresion',
+     'triajeTemperatura','triajeFrecuencia','triajeSaturacion','triajeEspecialidad'
+    ].forEach(id => { document.getElementById(id).value = ''; });
+    this.mostrarVista('formTriaje');
   },
 
   async guardarTriaje() {
-    const turnoId = document.getElementById('triajeTurnoId').value;
+    const pacienteId  = document.getElementById('triajeTurnoId').value;
     const especialidad = document.getElementById('triajeEspecialidad').value;
-    
+
     if (!especialidad) {
-      this.toast('Debes seleccionar el Área / Especialidad', 'error');
+      this.toast('Selecciona el Área/Especialidad', 'error');
       return;
     }
 
@@ -458,62 +335,49 @@ const app = {
     btn.disabled = true;
     btn.innerText = 'Guardando...';
 
-    // Recuperar datos base (nombre, cedula, etc)
-    let pData = {};
-    try {
-      pData = JSON.parse(document.getElementById('triajeTurnoId').dataset.baseJson);
-    } catch(e) {}
-
-    // Añadir signos vitales
-    pData.edad = document.getElementById('triajeEdad').value;
-    pData.peso = document.getElementById('triajePeso').value;
-    pData.estatura = document.getElementById('triajeEstatura').value;
-    pData.presion = document.getElementById('triajePresion').value;
-    pData.temperatura = document.getElementById('triajeTemperatura').value;
-    pData.frecuencia = document.getElementById('triajeFrecuencia').value;
-    pData.saturacion = document.getElementById('triajeSaturacion').value;
-
-    const pacienteEmpacado = JSON.stringify(pData);
+    const signosVitales = {
+      edad:        document.getElementById('triajeEdad').value,
+      peso:        document.getElementById('triajePeso').value,
+      estatura:    document.getElementById('triajeEstatura').value,
+      presion:     document.getElementById('triajePresion').value,
+      temperatura: document.getElementById('triajeTemperatura').value,
+      frecuencia:  document.getElementById('triajeFrecuencia').value,
+      saturacion:  document.getElementById('triajeSaturacion').value
+    };
 
     try {
-      // Calcular el Turno de Área
-      let numTurnoArea = 1;
-      const { data: maxArea } = await sb.from('turnos')
+      // Calcular el siguiente número de turno para esta especialidad
+      const { data: maxData } = await sb.from('pacientes_espera')
         .select('numero_turno_area')
         .eq('especialidad', especialidad)
-        .order('id', { ascending: false })
+        .order('numero_turno_area', { ascending: false })
         .limit(1);
 
-      if (maxArea && maxArea.length > 0 && maxArea[0].numero_turno_area) {
-        numTurnoArea = maxArea[0].numero_turno_area + 1;
+      let numTurno = 1;
+      if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+        numTurno = maxData[0].numero_turno_area + 1;
       }
 
-      // Actualizar turno
-      const { error } = await sb.from('turnos')
+      // Actualizar el registro del paciente con signos vitales y turno asignado
+      const { error } = await sb.from('pacientes_espera')
         .update({
-          paciente: pacienteEmpacado,
-          estado: 'pendiente',
-          especialidad: especialidad,
-          numero_turno_area: numTurnoArea
+          especialidad:       especialidad,
+          numero_turno_area:  numTurno,
+          estado:             'pendiente',     // Ahora sí tiene turno y va al doctor
+          atendido_por:       Estado.userName, // Nombre de la enfermera
+          signos_vitales:     JSON.stringify(signosVitales)
         })
-        .eq('id', turnoId);
+        .eq('id', pacienteId);
 
-      if (error) {
-        console.error("Error update triaje:", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      this.toast('Signos vitales guardados y derivado a ' + especialidad, 'success');
+      this.toast(`Turno asignado: ${especialidad.substring(0,3).toUpperCase()}-${numTurno}`, 'success');
       this.mostrarVista('triaje');
       this.cargarPacientesTriaje();
 
-    } catch(e) {
+    } catch (e) {
       console.error(e);
-      if (e.message && e.message.includes('column')) {
-         this.toast('Faltan columnas en BD (especialidad, numero_turno_area). Aplica el SQL.', 'error');
-      } else {
-         this.toast('Error al guardar signos', 'error');
-      }
+      this.toast('Error al guardar: ' + e.message, 'error');
     }
 
     btn.disabled = false;
@@ -521,113 +385,110 @@ const app = {
   },
 
   // ============================================================
-  // LÓGICA DOCTOR (Especialidad / Área)
+  // ROL: DOCTOR / ÁREA (ve solo su cola con turnos asignados)
   // ============================================================
+  async loginDoctor() {
+    const sel = document.getElementById('doctorLoginSelect');
+    if (!sel.value) { this.toast('Selecciona el área', 'error'); return; }
+    Estado.role   = 'doctor';
+    Estado.areaId = sel.value;
+    this.cerrarOverlay('👨‍⚕️', Estado.areaId);
+    const titulo = document.getElementById('tituloConsultorio');
+    if (titulo) titulo.innerText = 'Área: ' + Estado.areaId;
+    this.mostrarVista('misPacientes');
+    await this.cargarPacientesArea();
+    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 30000);
+  },
+
   async cargarPacientesArea() {
     const listEl = document.getElementById('patientList');
     if (!listEl) return;
     listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
-
-    if (!Estado.online || !sb || !Estado.areaId) return;
+    if (!Estado.online || !sb) return;
 
     try {
-      // Buscar pacientes derivados a esta área que estén pendientes o en consulta
-      const { data: turnos, error } = await sb.from('turnos')
+      const { data: turnos, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('especialidad', Estado.areaId)
         .in('estado', ['pendiente', 'en_consulta'])
-        .order('numero_turno_area', { ascending: true }); // Orden por el turno de área
+        .order('numero_turno_area', { ascending: true });
 
       if (error) throw error;
 
       listEl.innerHTML = '';
-
-      const numEl = document.getElementById('currentPatientNumber');
+      const numEl  = document.getElementById('currentPatientNumber');
       const nameEl = document.getElementById('currentPatientName');
 
       if (!turnos || turnos.length === 0) {
-        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">No hay pacientes en espera en esta área.</li>';
+        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en cola para esta área.</li>';
         if (numEl)  numEl.innerText = '--';
-        if (nameEl) nameEl.innerText = 'Sala de espera vacía';
+        if (nameEl) nameEl.innerText = 'Cola vacía';
         return;
       }
 
       const enConsulta = turnos.find(t => t.estado === 'en_consulta');
-      const proximo = enConsulta || turnos[0];
-      
-      let proxNombre = proximo.paciente;
-      try { proxNombre = JSON.parse(proximo.paciente).nombre; } catch(e){}
+      const proximo    = enConsulta || turnos[0];
 
-      if (numEl)  numEl.innerText = 'Turno #' + (proximo.numero_turno_area || proximo.numero_turno);
+      if (numEl)  numEl.innerText = Estado.areaId.substring(0,3).toUpperCase() + '-' + proximo.numero_turno_area;
       if (nameEl) {
-        nameEl.innerText = proxNombre || 'Sin nombre';
-        if (enConsulta) {
-          nameEl.innerHTML += '<br><span style="font-size:.8rem;background:white;color:var(--primary);padding:2px 10px;border-radius:12px;font-weight:bold;display:inline-block;margin-top:5px;">EN CONSULTA</span>';
-        }
+        nameEl.innerText = proximo.nombre;
+        if (enConsulta) nameEl.innerHTML += '<br><span style="font-size:.8rem;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;display:inline-block;margin-top:6px;">EN CONSULTA</span>';
       }
 
       turnos.forEach(t => {
-        const ec = t.estado === 'en_consulta';
-        let btns = '';
-        if (t.estado === 'pendiente')    btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
-        if (t.estado === 'en_consulta')  btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
+        const ec   = t.estado === 'en_consulta';
+        let btns   = '';
+        if (t.estado === 'pendiente')   btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
+        if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
 
-        let pData = {};
-        try { pData = JSON.parse(t.paciente); } catch(e) { pData.nombre = t.paciente; }
-
-        const numMostrar = t.numero_turno_area || t.numero_turno;
+        let sv = {};
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e) {}
 
         listEl.innerHTML += `
           <li class="patient-item ${ec ? 'en-consulta' : ''}">
             <div class="patient-header">
               <div>
-                <div class="patient-title">Turno Área #${numMostrar} — ${pData.nombre || 'Sin nombre'}</div>
-                <div class="patient-subtitle">Recepcionado por: ${t.creado_por || 'N/A'}</div>
+                <div class="patient-title">Turno ${Estado.areaId.substring(0,3).toUpperCase()}-${t.numero_turno_area} — ${t.nombre}</div>
+                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'} | Triaje: ${t.atendido_por || 'N/A'}</div>
               </div>
               <div class="patient-actions">${btns}</div>
             </div>
             <div class="patient-data-grid">
-              <div class="data-item"><span>Cédula</span><span>${pData.cedula || 'N/A'}</span></div>
-              <div class="data-item"><span>Edad</span><span>${pData.edad ? pData.edad + ' años' : 'N/A'}</span></div>
-              <div class="data-item"><span>Peso</span><span>${pData.peso || 'N/A'}</span></div>
-              <div class="data-item"><span>Estatura</span><span>${pData.estatura || 'N/A'}</span></div>
-              <div class="data-item"><span>Presión Arterial</span><span>${pData.presion || 'N/A'}</span></div>
-              <div class="data-item"><span>Temperatura</span><span>${pData.temperatura || 'N/A'}</span></div>
-              <div class="data-item"><span>Frec. Cardíaca</span><span>${pData.frecuencia || 'N/A'}</span></div>
-              <div class="data-item"><span>Saturación O₂</span><span>${pData.saturacion || 'N/A'}</span></div>
-              <div class="data-item"><span>Celular</span><span>${pData.celular || 'N/A'}</span></div>
-              <div class="data-item"><span>Dirección</span><span>${pData.direccion || 'N/A'}</span></div>
+              <div class="data-item"><span>Dirección</span><span>${t.direccion || 'N/A'}</span></div>
+              <div class="data-item"><span>Edad</span><span>${sv.edad ? sv.edad + ' años' : 'N/A'}</span></div>
+              <div class="data-item"><span>Peso</span><span>${sv.peso || 'N/A'}</span></div>
+              <div class="data-item"><span>Estatura</span><span>${sv.estatura || 'N/A'}</span></div>
+              <div class="data-item"><span>Presión</span><span>${sv.presion || 'N/A'}</span></div>
+              <div class="data-item"><span>Temperatura</span><span>${sv.temperatura || 'N/A'}</span></div>
+              <div class="data-item"><span>Frec. Cardíaca</span><span>${sv.frecuencia || 'N/A'}</span></div>
+              <div class="data-item"><span>Saturación O₂</span><span>${sv.saturacion || 'N/A'}</span></div>
             </div>
           </li>`;
       });
-    } catch(e) {
+    } catch (e) {
       console.error(e);
-      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error cargando pacientes del área.</li>';
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
     }
   },
 
-  async cambiarEstado(turnoId, nuevoEstado) {
-    if (Estado.online && sb) {
-      try {
-        const { error } = await sb.from('turnos')
-          .update({ estado: nuevoEstado }).eq('id', turnoId);
-        if (error) throw error;
-      } catch (e) {
-        console.error('Error actualizando estado:', e);
-        this.toast('Error al actualizar', 'error');
-        return;
-      }
+  async cambiarEstado(pacienteId, nuevoEstado) {
+    if (!Estado.online || !sb) return;
+    try {
+      const { error } = await sb.from('pacientes_espera')
+        .update({ estado: nuevoEstado })
+        .eq('id', pacienteId);
+      if (error) throw error;
+    } catch (e) {
+      this.toast('Error al actualizar estado', 'error');
+      return;
     }
-
     if (nuevoEstado === 'en_consulta') this.toast('Paciente llamado', 'success');
-    if (nuevoEstado === 'atendido')    this.toast('Consulta finalizada', 'success');
-
+    if (nuevoEstado === 'atendido')    this.toast('Consulta finalizada ✅', 'success');
     await this.cargarPacientesArea();
   },
 
-  // ============================================================
-  // TOAST
-  // ============================================================
+  // ---- TOAST ----
   toast(msg, tipo) {
     tipo = tipo || 'success';
     const c = document.getElementById('toastContainer');
@@ -641,33 +502,22 @@ const app = {
 };
 
 // ============================================================
-// ARRANQUE (sin DOMContentLoaded para evitar problemas de timing)
+// ARRANQUE
 // ============================================================
 function arrancarApp() {
   app.init();
 
-  // Botones del modal
-  const bDoc = document.getElementById('btnRoleDoctor');
-  if (bDoc) bDoc.onclick = function() { app.selectRole('doctor'); };
+  document.getElementById('btnRoleDoctor')?.addEventListener('click', () => app.selectRole('doctor'));
+  document.getElementById('btnRoleEnfermera')?.addEventListener('click', () => app.selectRole('enfermera'));
+  document.getElementById('btnRoleTurnero')?.addEventListener('click', () => app.selectRole('turnero'));
 
-  const bEnf = document.getElementById('btnRoleEnfermera');
-  if (bEnf) bEnf.onclick = function() { app.selectRole('enfermera'); };
+  document.getElementById('btnIngresarTurnero')?.addEventListener('click', () => app.loginTurnero());
+  document.getElementById('btnIngresarEnfermera')?.addEventListener('click', () => app.loginEnfermera());
+  document.getElementById('btnIngresarDoctor')?.addEventListener('click', () => app.loginDoctor());
 
-  const bTur = document.getElementById('btnRoleTurnero');
-  if (bTur) bTur.onclick = function() { app.selectRole('turnero'); };
-
-  const bIngTur = document.getElementById('btnIngresarTurnero');
-  if (bIngTur) bIngTur.onclick = function() { app.loginTurnero(); };
-
-  const bIngEnf = document.getElementById('btnIngresarEnfermera');
-  if (bIngEnf) bIngEnf.onclick = function() { app.loginEnfermera(); };
-
-  const bIngDoc = document.getElementById('btnIngresarDoctor');
-  if (bIngDoc) bIngDoc.onclick = function() { app.loginDoctor(); };
-
-  // Enter en el campo de nombre
-  const inp = document.getElementById('userNameInput');
-  if (inp) inp.onkeypress = function(e) { if (e.key === 'Enter') app.loginTurnero(); };
+  document.getElementById('userNameInput')?.addEventListener('keypress', e => {
+    if (e.key === 'Enter') app.loginTurnero();
+  });
 }
 
 if (document.readyState === 'loading') {

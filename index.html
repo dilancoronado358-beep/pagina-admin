@@ -93,17 +93,11 @@
        ===================================================== -->
   <main>
 
-    <!-- VISTA: Dar Turno (Turnero) -->
+    <!-- VISTA: Dar Turno (Turnero / Recepción) -->
     <div id="view-darTurno" class="view">
       <div class="card">
         <h2>Registrar Nuevo Paciente</h2>
-
-        <div id="turnPreview" class="turn-display" style="display:none;">
-          Siguiente Turno General:
-          <span id="nextTurnNumber">#--</span>
-        </div>
-
-        <h3>Datos Básicos del Paciente</h3>
+        <p style="color:var(--text-muted);margin-bottom:1.5rem;">Complete los datos del paciente. La enfermera asignará el turno a la especialidad correspondiente.</p>
 
         <div class="form-grid">
           <div class="form-group full-width">
@@ -128,7 +122,7 @@
         </div>
 
         <button id="btnDarTurno" class="btn-large" onclick="app.darTurno()">
-          Registrar Paciente y Generar Turno
+          Registrar Paciente
         </button>
       </div>
 
