@@ -97,7 +97,8 @@
     <div id="view-darTurno" class="view">
       <div class="card">
         <h2>Registrar Nuevo Paciente</h2>
-        <p style="color:var(--text-muted);margin-bottom:1.5rem;">Complete los datos del paciente. La enfermera asignará el turno a la especialidad correspondiente.</p>
+        <p style="color:var(--text-muted);margin-bottom:1.5rem;">Complete los datos del paciente. La enfermera asignará
+          el turno a la especialidad correspondiente.</p>
 
         <div class="form-grid">
           <div class="form-group full-width">
@@ -118,6 +119,13 @@
           <div class="form-group full-width">
             <label for="pacienteDireccion">Dirección de Domicilio:</label>
             <input type="text" id="pacienteDireccion" placeholder="Ej: Calle Principal 123">
+          </div>
+
+          <div class="form-group full-width">
+            <label for="pacienteEspecialidad">Especialidad / Área a Atender:</label>
+            <select id="pacienteEspecialidad">
+              <option value="">-- Seleccionar Área --</option>
+            </select>
           </div>
         </div>
 
@@ -200,17 +208,10 @@
             <label for="triajeSaturacion">Saturación O₂:</label>
             <input type="text" id="triajeSaturacion" placeholder="Ej: 98%">
           </div>
-
-          <div class="form-group full-width">
-            <label for="triajeEspecialidad">Asignar a Especialidad / Área:</label>
-            <select id="triajeEspecialidad">
-              <option value="">-- Seleccionar Área --</option>
-            </select>
-          </div>
         </div>
 
         <button id="btnGuardarTriaje" class="btn-large" onclick="app.guardarTriaje()">
-          Guardar Signos Vitales y Enviar a Consultorio
+          Guardar Signos Vitales y Asignar Turno
         </button>
         <button class="btn-volver" onclick="app.mostrarVista('triaje')">← Cancelar y Volver a Lista</button>
       </div>
