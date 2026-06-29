@@ -52,7 +52,7 @@ const app = {
 
   // ---- ARRANQUE ----
   async init() {
-    Estado.areas     = AREAS_ESTATICAS;
+    Estado.areas = AREAS_ESTATICAS;
     Estado.enfermeras = ENFERMERAS_ESTATICAS;
     this.llenarSelects();
 
@@ -145,7 +145,7 @@ const app = {
   async loginTurnero() {
     const nombre = (document.getElementById('userNameInput').value || '').trim();
     if (!nombre) { this.toast('Ingresa tu nombre', 'error'); return; }
-    Estado.role     = 'turnero';
+    Estado.role = 'turnero';
     Estado.userName = nombre;
     this.cerrarOverlay('📝', nombre);
     this.mostrarVista('darTurno');
@@ -158,10 +158,10 @@ const app = {
     btn.disabled = true;
     btn.innerText = 'Registrando...';
 
-    const nombre      = document.getElementById('pacienteNameInput').value.trim();
-    const cedula      = document.getElementById('pacienteCedula').value.trim();
-    const celular     = document.getElementById('pacienteCelular').value.trim();
-    const direccion   = document.getElementById('pacienteDireccion').value.trim();
+    const nombre = document.getElementById('pacienteNameInput').value.trim();
+    const cedula = document.getElementById('pacienteCedula').value.trim();
+    const celular = document.getElementById('pacienteCelular').value.trim();
+    const direccion = document.getElementById('pacienteDireccion').value.trim();
     const especialidad = document.getElementById('pacienteEspecialidad').value;
 
     if (!nombre) {
@@ -177,7 +177,7 @@ const app = {
       if (Estado.online && sb) {
         let estadoStr = directoEspecialidad ? 'pendiente' : 'en_espera';
         let atendidoPor = directoEspecialidad ? 'Directo desde Recepción' : null;
-        
+
         // Calcular el número de turno para esa especialidad SIEMPRE
         const { data: maxData } = await sb.from('pacientes_espera')
           .select('numero_turno_area')
@@ -192,25 +192,25 @@ const app = {
         }
 
         const { error } = await sb.from('pacientes_espera').insert({
-          nombre:       nombre,
-          cedula:       cedula,
-          celular:      celular,
-          direccion:    direccion,
+          nombre: nombre,
+          cedula: cedula,
+          celular: celular,
+          direccion: direccion,
           especialidad: especialidad,
           numero_turno_area: numTurno,
-          creado_por:   Estado.userName,
+          creado_por: Estado.userName,
           atendido_por: atendidoPor,
-          estado:       estadoStr
+          estado: estadoStr
         });
         if (error) throw error;
       }
 
       const destino = directoEspecialidad ? `Especialidad` : 'Signos Vitales';
       this.toast(`✅ Paciente "${nombre}" → ${destino}`, 'success');
-      document.getElementById('pacienteNameInput').value   = '';
-      document.getElementById('pacienteCedula').value      = '';
-      document.getElementById('pacienteCelular').value     = '';
-      document.getElementById('pacienteDireccion').value   = '';
+      document.getElementById('pacienteNameInput').value = '';
+      document.getElementById('pacienteCedula').value = '';
+      document.getElementById('pacienteCelular').value = '';
+      document.getElementById('pacienteDireccion').value = '';
       document.getElementById('pacienteEspecialidad').value = '';
       this.cargarHistorialTurnero();
 
@@ -244,7 +244,7 @@ const app = {
 
       data.forEach(t => {
         const turnoLabel = t.numero_turno_area
-          ? `<span style="background:var(--primary);color:white;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:700;">Turno ${t.especialidad ? t.especialidad.substring(0,3).toUpperCase() : ''}-${t.numero_turno_area}</span>`
+          ? `<span style="background:var(--primary);color:white;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:700;">Turno ${t.especialidad ? t.especialidad.substring(0, 3).toUpperCase() : ''}-${t.numero_turno_area}</span>`
           : `<span style="background:#e2e8f0;color:#64748b;padding:2px 10px;border-radius:20px;font-size:.8rem;">En Recepción</span>`;
 
         lista.innerHTML += `
@@ -269,7 +269,7 @@ const app = {
   async loginEnfermera() {
     const sel = document.getElementById('enfermeraLoginSelect');
     if (!sel.value) { this.toast('Selecciona tu nombre', 'error'); return; }
-    Estado.role     = 'enfermera';
+    Estado.role = 'enfermera';
     Estado.userName = sel.value;
     this.cerrarOverlay('🩺', Estado.userName);
     this.mostrarVista('triaje');
@@ -299,17 +299,17 @@ const app = {
       if (error) throw error;
 
       listEl.innerHTML = '';
-      const numEl  = document.getElementById('currentTriajeNumber');
+      const numEl = document.getElementById('currentTriajeNumber');
       const nameEl = document.getElementById('currentTriajeName');
 
       if (!data || data.length === 0) {
         listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en recepción.</li>';
-        if (numEl)  numEl.innerText = '--';
+        if (numEl) numEl.innerText = '--';
         if (nameEl) nameEl.innerText = 'Sin pacientes en espera';
         return;
       }
 
-      if (numEl)  numEl.innerText = data.length + ' en espera';
+      if (numEl) numEl.innerText = data.length + ' en espera';
       if (nameEl) nameEl.innerText = 'Próximo: ' + data[0].nombre;
 
       data.forEach(t => {
@@ -317,7 +317,7 @@ const app = {
           <li class="patient-item">
             <div class="patient-header" style="margin-bottom:0;">
               <div>
-                <div class="patient-title">${t.numero_turno_area ? `Turno ${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
+                <div class="patient-title">${t.numero_turno_area ? `Turno ${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
                 <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
                 <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
                 <div class="patient-subtitle" style="margin-top:.3rem;">
@@ -332,17 +332,36 @@ const app = {
             </div>
           </li>`;
       });
+
+      // Re-aplicar filtro por si la lista se actualizó mientras la enfermera escribía
+      this.filtrarTriaje();
+
     } catch (e) {
       console.error(e);
       listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
     }
   },
 
+  filtrarTriaje() {
+    const input = document.getElementById('inputFiltroTriaje');
+    if (!input) return;
+    const filter = input.value.toLowerCase();
+    const items = document.querySelectorAll('#triajeList .patient-item');
+
+    items.forEach(item => {
+      // Evitar esconder los mensajes del sistema si están solos
+      if (item.innerText.includes('Cargando...') || item.innerText.includes('No hay pacientes')) return;
+
+      const text = item.innerText.toLowerCase();
+      item.style.display = text.includes(filter) ? '' : 'none';
+    });
+  },
+
   abrirFormularioTriaje(pacienteId, nombrePaciente) {
-    document.getElementById('triajeTurnoId').value             = pacienteId;
-    document.getElementById('triajePacienteName').innerText    = 'Paciente: ' + nombrePaciente;
-    ['triajeEdad','triajePeso','triajeEstatura','triajePresion',
-     'triajeTemperatura','triajeFrecuencia','triajeSaturacion'
+    document.getElementById('triajeTurnoId').value = pacienteId;
+    document.getElementById('triajePacienteName').innerText = 'Paciente: ' + nombrePaciente;
+    ['triajeEdad', 'triajePeso', 'triajeEstatura', 'triajePresion',
+      'triajeTemperatura', 'triajeFrecuencia', 'triajeSaturacion'
     ].forEach(id => { document.getElementById(id).value = ''; });
     this.mostrarVista('formTriaje');
   },
@@ -354,13 +373,13 @@ const app = {
     btn.innerText = 'Guardando...';
 
     const signosVitales = {
-      edad:        document.getElementById('triajeEdad').value,
-      peso:        document.getElementById('triajePeso').value,
-      estatura:    document.getElementById('triajeEstatura').value,
-      presion:     document.getElementById('triajePresion').value,
+      edad: document.getElementById('triajeEdad').value,
+      peso: document.getElementById('triajePeso').value,
+      estatura: document.getElementById('triajeEstatura').value,
+      presion: document.getElementById('triajePresion').value,
       temperatura: document.getElementById('triajeTemperatura').value,
-      frecuencia:  document.getElementById('triajeFrecuencia').value,
-      saturacion:  document.getElementById('triajeSaturacion').value
+      frecuencia: document.getElementById('triajeFrecuencia').value,
+      saturacion: document.getElementById('triajeSaturacion').value
     };
 
     try {
@@ -398,9 +417,9 @@ const app = {
       const { error } = await sb.from('pacientes_espera')
         .update({
           numero_turno_area: numTurno,
-          estado:            'pendiente',
-          atendido_por:      Estado.userName,
-          signos_vitales:    JSON.stringify(signosVitales)
+          estado: 'pendiente',
+          atendido_por: Estado.userName,
+          signos_vitales: JSON.stringify(signosVitales)
         })
         .eq('id', pacienteId);
 
@@ -426,7 +445,7 @@ const app = {
   async loginDoctor() {
     const sel = document.getElementById('doctorLoginSelect');
     if (!sel.value) { this.toast('Selecciona el área', 'error'); return; }
-    Estado.role   = 'doctor';
+    Estado.role = 'doctor';
     Estado.areaId = sel.value;
     this.cerrarOverlay('👨‍⚕️', Estado.areaId);
     const titulo = document.getElementById('tituloConsultorio');
@@ -456,12 +475,12 @@ const app = {
       if (error) throw error;
 
       listEl.innerHTML = '';
-      const numEl  = document.getElementById('currentPatientNumber');
+      const numEl = document.getElementById('currentPatientNumber');
       const nameEl = document.getElementById('currentPatientName');
 
       if (!turnos || turnos.length === 0) {
         listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en cola para esta área.</li>';
-        if (numEl)  numEl.innerText = '--';
+        if (numEl) numEl.innerText = '--';
         if (nameEl) nameEl.innerText = 'Cola vacía';
         return;
       }
@@ -470,28 +489,28 @@ const app = {
       // El próximo a llamar debe ser el primero que esté 'pendiente', no el que está 'en_espera'
       const proximo = enConsulta || turnos.find(t => t.estado === 'pendiente') || turnos[0];
 
-      if (numEl)  numEl.innerText = Estado.areaId.substring(0,3).toUpperCase() + '-' + proximo.numero_turno_area;
+      if (numEl) numEl.innerText = Estado.areaId.substring(0, 3).toUpperCase() + '-' + proximo.numero_turno_area;
       if (nameEl) {
         nameEl.innerText = proximo.nombre;
         if (enConsulta) nameEl.innerHTML += '<br><span style="font-size:.8rem;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;display:inline-block;margin-top:6px;">EN CONSULTA</span>';
       }
 
       turnos.forEach(t => {
-        const ec   = t.estado === 'en_consulta';
+        const ec = t.estado === 'en_consulta';
         const enEspera = t.estado === 'en_espera';
-        let btns   = '';
-        if (t.estado === 'pendiente')   btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
+        let btns = '';
+        if (t.estado === 'pendiente') btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
         if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
-        if (t.estado === 'en_espera')   btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
+        if (t.estado === 'en_espera') btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
 
         let sv = {};
-        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e) {}
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
 
         listEl.innerHTML += `
           <li class="patient-item ${ec ? 'en-consulta' : ''}">
             <div class="patient-header">
               <div>
-                <div class="patient-title">Turno ${Estado.areaId.substring(0,3).toUpperCase()}-${t.numero_turno_area} — ${t.nombre}</div>
+                <div class="patient-title">Turno ${Estado.areaId.substring(0, 3).toUpperCase()}-${t.numero_turno_area} — ${t.nombre}</div>
                 <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'} | Triaje: ${t.atendido_por || 'N/A'}</div>
               </div>
               <div class="patient-actions">${btns}</div>
@@ -526,7 +545,7 @@ const app = {
       return;
     }
     if (nuevoEstado === 'en_consulta') this.toast('Paciente llamado', 'success');
-    if (nuevoEstado === 'atendido')    this.toast('Consulta finalizada ✅', 'success');
+    if (nuevoEstado === 'atendido') this.toast('Consulta finalizada ✅', 'success');
     await this.cargarPacientesArea();
   },
 
@@ -536,16 +555,16 @@ const app = {
       this.toast('Sin conexión a base de datos', 'error');
       return;
     }
-    
+
     this.toast('Generando archivo Excel (CSV)...', 'success');
 
     try {
       const { data, error } = await sb.from('pacientes_espera')
         .select('*')
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       if (!data || data.length === 0) {
         this.toast('No hay datos para exportar', 'error');
         return;
@@ -557,11 +576,11 @@ const app = {
 
       data.forEach(t => {
         let sv = {};
-        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e) {}
-        
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
+
         const fechaStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-        const turnoStr = t.numero_turno_area ? `${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area}` : 'N/A';
-        
+        const turnoStr = t.numero_turno_area ? `${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : 'N/A';
+
         const row = [
           `"${fechaStr}"`,
           `"${t.nombre || ''}"`,
@@ -581,14 +600,14 @@ const app = {
           `"${sv.frecuencia || ''}"`,
           `"${sv.saturacion || ''}"`
         ];
-        
+
         csvContent += row.join(",") + "\n";
       });
 
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Reporte_Pacientes_${new Date().toISOString().slice(0,10)}.csv`);
+      link.setAttribute("download", `Reporte_Pacientes_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
