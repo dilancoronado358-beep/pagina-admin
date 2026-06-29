@@ -317,7 +317,7 @@ const app = {
           <li class="patient-item">
             <div class="patient-header" style="margin-bottom:0;">
               <div>
-                <div class="patient-title">${t.nombre}</div>
+                <div class="patient-title">Turno ${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area || '?'} — ${t.nombre}</div>
                 <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
                 <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
                 <div class="patient-subtitle" style="margin-top:.3rem;">
