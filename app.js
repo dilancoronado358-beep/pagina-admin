@@ -152,8 +152,9 @@ const app = {
     this.cargarHistorialTurnero();
   },
 
-  async darTurno() {
-    const btn = document.getElementById('btnDarTurno');
+  async darTurno(directoEspecialidad = false) {
+    const btn = document.getElementById(directoEspecialidad ? 'btnDarTurnoDirecto' : 'btnDarTurno');
+    const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = 'Registrando...';
 
@@ -165,28 +166,53 @@ const app = {
 
     if (!nombre) {
       this.toast('Ingresa el nombre del paciente', 'error');
-      btn.disabled = false; btn.innerText = 'Registrar Paciente'; return;
+      btn.disabled = false; btn.innerText = originalText; return;
     }
     if (!especialidad) {
       this.toast('Selecciona la especialidad / área', 'error');
-      btn.disabled = false; btn.innerText = 'Registrar Paciente'; return;
+      btn.disabled = false; btn.innerText = originalText; return;
     }
 
     try {
       if (Estado.online && sb) {
+        let numTurno = null;
+        let estadoStr = 'en_espera';
+        let atendidoPor = null;
+
+        if (directoEspecialidad) {
+          estadoStr = 'pendiente';
+          atendidoPor = 'Directo desde Recepción';
+          
+          // Calcular el siguiente número de turno para esa especialidad
+          const { data: maxData } = await sb.from('pacientes_espera')
+            .select('numero_turno_area')
+            .eq('especialidad', especialidad)
+            .not('numero_turno_area', 'is', null)
+            .order('numero_turno_area', { ascending: false })
+            .limit(1);
+
+          numTurno = 1;
+          if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+            numTurno = maxData[0].numero_turno_area + 1;
+          }
+        }
+
         const { error } = await sb.from('pacientes_espera').insert({
           nombre:       nombre,
           cedula:       cedula,
           celular:      celular,
           direccion:    direccion,
-          especialidad: especialidad,   // Se guarda desde el inicio
+          especialidad: especialidad,
+          numero_turno_area: numTurno,
           creado_por:   Estado.userName,
-          estado:       'en_espera'
+          atendido_por: atendidoPor,
+          estado:       estadoStr
         });
         if (error) throw error;
       }
 
-      this.toast(`✅ Paciente "${nombre}" → ${especialidad}`, 'success');
+      const destino = directoEspecialidad ? `Especialidad` : 'Signos Vitales';
+      this.toast(`✅ Paciente "${nombre}" → ${destino}`, 'success');
       document.getElementById('pacienteNameInput').value   = '';
       document.getElementById('pacienteCedula').value      = '';
       document.getElementById('pacienteCelular').value     = '';
@@ -200,7 +226,7 @@ const app = {
     }
 
     btn.disabled = false;
-    btn.innerText = 'Registrar Paciente';
+    btn.innerText = originalText;
   },
 
   async cargarHistorialTurnero() {
@@ -261,7 +287,10 @@ const app = {
   async cargarPacientesTriaje() {
     const listEl = document.getElementById('triajeList');
     if (!listEl) return;
-    listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
+    // Solo mostramos "Cargando..." si la lista está vacía (evita el parpadeo cuando se actualiza sola)
+    if (listEl.innerHTML.trim() === '') {
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
+    }
     if (!Estado.online || !sb) {
       listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:orange;">Sin conexión a Supabase.</li>';
       return;
@@ -413,7 +442,10 @@ const app = {
   async cargarPacientesArea() {
     const listEl = document.getElementById('patientList');
     if (!listEl) return;
-    listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
+    // Solo mostramos "Cargando..." si la lista está vacía (evita el parpadeo)
+    if (listEl.innerHTML.trim() === '') {
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>';
+    }
     if (!Estado.online || !sb) return;
 
     try {

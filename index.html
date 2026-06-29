@@ -129,9 +129,14 @@
           </div>
         </div>
 
-        <button id="btnDarTurno" class="btn-large" onclick="app.darTurno()">
-          Registrar Paciente
-        </button>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+          <button id="btnDarTurno" class="btn-large" onclick="app.darTurno(false)" style="flex: 1; background-color: var(--primary);">
+            🩺 Enviar a Signos Vitales
+          </button>
+          <button id="btnDarTurnoDirecto" class="btn-large" onclick="app.darTurno(true)" style="flex: 1; background-color: var(--secondary, #64748b);">
+            👨‍⚕️ Directo a Especialidad
+          </button>
+        </div>
       </div>
 
       <div class="card" style="margin-top:1rem;">
