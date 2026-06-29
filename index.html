@@ -140,7 +140,10 @@
       </div>
 
       <div class="card" style="margin-top:1rem;">
-        <h2>Pacientes Registrados en esta Sesión</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h2 style="margin-bottom:0;">Pacientes Registrados en esta Sesión</h2>
+          <button onclick="app.descargarExcel()" class="btn-action" style="background: #10b981;">📥 Descargar Excel</button>
+        </div>
         <ul class="patient-list" id="turneroHistoryList">
           <li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has registrado pacientes aún.
           </li>

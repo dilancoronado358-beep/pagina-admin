@@ -175,26 +175,20 @@ const app = {
 
     try {
       if (Estado.online && sb) {
-        let numTurno = null;
-        let estadoStr = 'en_espera';
-        let atendidoPor = null;
+        let estadoStr = directoEspecialidad ? 'pendiente' : 'en_espera';
+        let atendidoPor = directoEspecialidad ? 'Directo desde Recepción' : null;
+        
+        // Calcular el número de turno para esa especialidad SIEMPRE
+        const { data: maxData } = await sb.from('pacientes_espera')
+          .select('numero_turno_area')
+          .eq('especialidad', especialidad)
+          .not('numero_turno_area', 'is', null)
+          .order('numero_turno_area', { ascending: false })
+          .limit(1);
 
-        if (directoEspecialidad) {
-          estadoStr = 'pendiente';
-          atendidoPor = 'Directo desde Recepción';
-          
-          // Calcular el siguiente número de turno para esa especialidad
-          const { data: maxData } = await sb.from('pacientes_espera')
-            .select('numero_turno_area')
-            .eq('especialidad', especialidad)
-            .not('numero_turno_area', 'is', null)
-            .order('numero_turno_area', { ascending: false })
-            .limit(1);
-
-          numTurno = 1;
-          if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
-            numTurno = maxData[0].numero_turno_area + 1;
-          }
+        let numTurno = 1;
+        if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+          numTurno = maxData[0].numero_turno_area + 1;
         }
 
         const { error } = await sb.from('pacientes_espera').insert({
@@ -281,7 +275,7 @@ const app = {
     this.mostrarVista('triaje');
     await this.cargarPacientesTriaje();
     if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 30000);
+    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 5000);
   },
 
   async cargarPacientesTriaje() {
@@ -372,7 +366,7 @@ const app = {
     try {
       // Leer la especialidad que ya trae el paciente (asignada por el Turnero)
       const { data: pacData } = await sb.from('pacientes_espera')
-        .select('especialidad')
+        .select('especialidad, numero_turno_area')
         .eq('id', pacienteId)
         .single();
 
@@ -383,23 +377,11 @@ const app = {
         return;
       }
 
-      // Calcular el siguiente número de turno para esa especialidad
-      const { data: maxData } = await sb.from('pacientes_espera')
-        .select('numero_turno_area')
-        .eq('especialidad', especialidad)
-        .not('numero_turno_area', 'is', null)
-        .order('numero_turno_area', { ascending: false })
-        .limit(1);
+      const numTurno = pacData?.numero_turno_area;
 
-      let numTurno = 1;
-      if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
-        numTurno = maxData[0].numero_turno_area + 1;
-      }
-
-      // Actualizar el registro con signos vitales y turno
+      // Actualizar el registro con signos vitales y estado
       const { error } = await sb.from('pacientes_espera')
         .update({
-          numero_turno_area: numTurno,
           estado:            'pendiente',
           atendido_por:      Estado.userName,
           signos_vitales:    JSON.stringify(signosVitales)
@@ -436,7 +418,7 @@ const app = {
     this.mostrarVista('misPacientes');
     await this.cargarPacientesArea();
     if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 30000);
+    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
   },
 
   async cargarPacientesArea() {
@@ -527,6 +509,75 @@ const app = {
     if (nuevoEstado === 'en_consulta') this.toast('Paciente llamado', 'success');
     if (nuevoEstado === 'atendido')    this.toast('Consulta finalizada ✅', 'success');
     await this.cargarPacientesArea();
+  },
+
+  // ---- EXPORTAR EXCEL ----
+  async descargarExcel() {
+    if (!Estado.online || !sb) {
+      this.toast('Sin conexión a base de datos', 'error');
+      return;
+    }
+    
+    this.toast('Generando archivo Excel (CSV)...', 'success');
+
+    try {
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        this.toast('No hay datos para exportar', 'error');
+        return;
+      }
+
+      // Crear encabezados CSV
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Fecha,Nombre,Cedula,Celular,Direccion,Especialidad,Turno,Estado,Creado Por,Atendido Por,Edad,Peso,Estatura,Presion,Temperatura,Frecuencia,Saturacion\n";
+
+      data.forEach(t => {
+        let sv = {};
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e) {}
+        
+        const fechaStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
+        const turnoStr = t.numero_turno_area ? `${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area}` : 'N/A';
+        
+        const row = [
+          `"${fechaStr}"`,
+          `"${t.nombre || ''}"`,
+          `"${t.cedula || ''}"`,
+          `"${t.celular || ''}"`,
+          `"${t.direccion || ''}"`,
+          `"${t.especialidad || ''}"`,
+          `"${turnoStr}"`,
+          `"${t.estado || ''}"`,
+          `"${t.creado_por || ''}"`,
+          `"${t.atendido_por || ''}"`,
+          `"${sv.edad || ''}"`,
+          `"${sv.peso || ''}"`,
+          `"${sv.estatura || ''}"`,
+          `"${sv.presion || ''}"`,
+          `"${sv.temperatura || ''}"`,
+          `"${sv.frecuencia || ''}"`,
+          `"${sv.saturacion || ''}"`
+        ];
+        
+        csvContent += row.join(",") + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Reporte_Pacientes_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    } catch (err) {
+      console.error(err);
+      this.toast('Error al exportar: ' + err.message, 'error');
+    }
   },
 
   // ---- TOAST ----
