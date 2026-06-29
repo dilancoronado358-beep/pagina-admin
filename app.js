@@ -317,7 +317,7 @@ const app = {
           <li class="patient-item">
             <div class="patient-header" style="margin-bottom:0;">
               <div>
-                <div class="patient-title">Turno ${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area || '?'} — ${t.nombre}</div>
+                <div class="patient-title">${t.numero_turno_area ? `Turno ${(t.especialidad||'').substring(0,3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
                 <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
                 <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
                 <div class="patient-subtitle" style="margin-top:.3rem;">
@@ -377,11 +377,27 @@ const app = {
         return;
       }
 
-      const numTurno = pacData?.numero_turno_area;
+      let numTurno = pacData?.numero_turno_area;
+
+      if (!numTurno) {
+        // Calcular el siguiente número de turno para esa especialidad si es un paciente antiguo
+        const { data: maxData } = await sb.from('pacientes_espera')
+          .select('numero_turno_area')
+          .eq('especialidad', especialidad)
+          .not('numero_turno_area', 'is', null)
+          .order('numero_turno_area', { ascending: false })
+          .limit(1);
+
+        numTurno = 1;
+        if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+          numTurno = maxData[0].numero_turno_area + 1;
+        }
+      }
 
       // Actualizar el registro con signos vitales y estado
       const { error } = await sb.from('pacientes_espera')
         .update({
+          numero_turno_area: numTurno,
           estado:            'pendiente',
           atendido_por:      Estado.userName,
           signos_vitales:    JSON.stringify(signosVitales)
