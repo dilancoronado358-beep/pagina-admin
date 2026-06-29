@@ -212,7 +212,7 @@ const app = {
       const { data, error } = await sb.from('pacientes_espera')
         .select('nombre, cedula, estado, especialidad, numero_turno_area, creado_por')
         .eq('creado_por', Estado.userName)
-        .order('id', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(15);
       if (error) throw error;
 
@@ -272,7 +272,7 @@ const app = {
       const { data, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('estado', 'en_espera')
-        .order('id', { ascending: true });
+        .order('created_at', { ascending: true });
       if (error) throw error;
 
       listEl.innerHTML = '';
