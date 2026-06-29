@@ -434,7 +434,7 @@ const app = {
       const { data: turnos, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('especialidad', Estado.areaId)
-        .in('estado', ['pendiente', 'en_consulta'])
+        .in('estado', ['en_espera', 'pendiente', 'en_consulta'])
         .order('numero_turno_area', { ascending: true });
 
       if (error) throw error;
@@ -451,7 +451,8 @@ const app = {
       }
 
       const enConsulta = turnos.find(t => t.estado === 'en_consulta');
-      const proximo    = enConsulta || turnos[0];
+      // El próximo a llamar debe ser el primero que esté 'pendiente', no el que está 'en_espera'
+      const proximo = enConsulta || turnos.find(t => t.estado === 'pendiente') || turnos[0];
 
       if (numEl)  numEl.innerText = Estado.areaId.substring(0,3).toUpperCase() + '-' + proximo.numero_turno_area;
       if (nameEl) {
@@ -461,9 +462,11 @@ const app = {
 
       turnos.forEach(t => {
         const ec   = t.estado === 'en_consulta';
+        const enEspera = t.estado === 'en_espera';
         let btns   = '';
         if (t.estado === 'pendiente')   btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
         if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
+        if (t.estado === 'en_espera')   btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
 
         let sv = {};
         try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e) {}

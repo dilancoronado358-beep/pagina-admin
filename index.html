@@ -164,8 +164,10 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <h2 style="margin-bottom:0;">Pacientes en Recepción (Por Atender)</h2>
-          <button onclick="app.cargarPacientesTriaje()" class="btn-action" style="background: var(--primary);">🔄
-            Actualizar</button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: #10b981;">📥 Excel</button>
+            <button onclick="app.cargarPacientesTriaje()" class="btn-action" style="background: var(--primary);">🔄 Actualizar</button>
+          </div>
         </div>
         <ul class="patient-list" id="triajeList">
           <li class="patient-item" style="text-align:center;color:#666;">Cargando...</li>
