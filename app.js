@@ -470,7 +470,7 @@ const app = {
         .select('*')
         .eq('especialidad', Estado.areaId)
         .in('estado', ['en_espera', 'pendiente', 'en_consulta'])
-        .order('numero_turno_area', { ascending: true });
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
 
@@ -489,7 +489,7 @@ const app = {
       // El próximo a llamar debe ser el primero que esté 'pendiente', no el que está 'en_espera'
       const proximo = enConsulta || turnos.find(t => t.estado === 'pendiente') || turnos[0];
 
-      if (numEl) numEl.innerText = Estado.areaId.substring(0, 3).toUpperCase() + '-' + proximo.numero_turno_area;
+      if (numEl) numEl.innerText = proximo.numero_turno_area ? Estado.areaId.substring(0, 3).toUpperCase() + '-' + proximo.numero_turno_area : 'Por asignar';
       if (nameEl) {
         nameEl.innerText = proximo.nombre;
         if (enConsulta) nameEl.innerHTML += '<br><span style="font-size:.8rem;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;display:inline-block;margin-top:6px;">EN CONSULTA</span>';
@@ -510,7 +510,7 @@ const app = {
           <li class="patient-item ${ec ? 'en-consulta' : ''}">
             <div class="patient-header">
               <div>
-                <div class="patient-title">Turno ${Estado.areaId.substring(0, 3).toUpperCase()}-${t.numero_turno_area} — ${t.nombre}</div>
+                <div class="patient-title">${t.numero_turno_area ? `Turno ${Estado.areaId.substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
                 <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'} | Triaje: ${t.atendido_por || 'N/A'}</div>
               </div>
               <div class="patient-actions">${btns}</div>
