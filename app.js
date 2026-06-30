@@ -68,6 +68,12 @@ const app = {
       selPac.innerHTML = '<option value="">-- Seleccionar Área --</option>';
       Estado.areas.forEach(a => { selPac.innerHTML += `<option value="${a}">${a}</option>`; });
     }
+    // Áreas para el admin al crear usuarios
+    const selAdmin = document.getElementById('adminNewArea');
+    if (selAdmin) {
+      selAdmin.innerHTML = '<option value="">-- Sin Área --</option>';
+      Estado.areas.forEach(a => { selAdmin.innerHTML += `<option value="${a}">${a}</option>`; });
+    }
   },
 
   // ---- NAVEGACIÓN ----

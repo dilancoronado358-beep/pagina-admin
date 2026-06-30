@@ -239,15 +239,17 @@
             </div>
             <div class="form-group">
               <label>Rol:</label>
-              <select id="adminNewRole" onchange="document.getElementById('adminAreaContainer').style.display = this.value === 'doctor' ? 'block' : 'none'">
+              <select id="adminNewRole">
                 <option value="turnero">Turnero / Recepción</option>
                 <option value="enfermera">Enfermera / Triaje</option>
                 <option value="doctor">Doctor</option>
               </select>
             </div>
-            <div class="form-group" id="adminAreaContainer" style="display: none;">
-              <label>Área (Solo Doctores):</label>
-              <input type="text" id="adminNewArea" placeholder="Ej: Cardiología">
+            <div class="form-group" id="adminAreaContainer">
+              <label>Área (Opcional):</label>
+              <select id="adminNewArea">
+                <option value="">-- Sin Área --</option>
+              </select>
             </div>
           </div>
           <button class="btn-action" style="background: var(--primary); margin-top: 1rem;" onclick="app.adminCrearUsuario()">💾 Guardar Usuario</button>
