@@ -55,6 +55,7 @@ const app = {
       if (error) throw error;
       Estado.online = true;
       console.log('✅ Supabase en línea');
+      this.verificarSesionGuardada();
     } catch (e) {
       Estado.online = false;
       console.warn('⚠️ Modo offline / tabla no lista:', e.message);
@@ -73,6 +74,49 @@ const app = {
     if (selAdmin) {
       selAdmin.innerHTML = '<option value="">-- Sin Área --</option>';
       Estado.areas.forEach(a => { selAdmin.innerHTML += `<option value="${a}">${a}</option>`; });
+    }
+  },
+
+  verificarSesionGuardada() {
+    const sesionInfo = localStorage.getItem('turnero_session');
+    if (sesionInfo) {
+      try {
+        const parsed = JSON.parse(sesionInfo);
+        Estado.role = parsed.role;
+        Estado.userName = parsed.userName;
+        Estado.areaId = parsed.areaId;
+        Estado.adminPass = parsed.adminPass || '';
+        this.restaurarVistaSegunRol();
+      } catch (e) {
+        console.error('Error parseando sesión', e);
+      }
+    }
+  },
+
+  async restaurarVistaSegunRol() {
+    if (Estado.role === 'admin') {
+      this.cerrarOverlay('👑', 'Administrador');
+      this.mostrarVista('admin');
+      this.adminCargarUsuarios();
+    } else if (Estado.role === 'turnero') {
+      this.cerrarOverlay('📝', Estado.userName);
+      this.mostrarVista('darTurno');
+      this.cargarHistorialTurnero();
+    } else if (Estado.role === 'enfermera') {
+      this.cerrarOverlay('🩺', Estado.userName);
+      this.mostrarVista('triaje');
+      this.cargarPacientesTriaje();
+      if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+      Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 5000);
+    } else if (Estado.role === 'doctor') {
+      if (!Estado.areaId) return; // Error preventivo
+      this.cerrarOverlay('👨‍⚕️', Estado.areaId);
+      const titulo = document.getElementById('tituloConsultorio');
+      if (titulo) titulo.innerText = 'Área: ' + Estado.areaId;
+      this.mostrarVista('misPacientes');
+      await this.cargarPacientesArea();
+      if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+      Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
     }
   },
 
@@ -101,6 +145,8 @@ const app = {
     Estado.role = null;
     Estado.userName = '';
     Estado.areaId = null;
+    Estado.adminPass = '';
+    localStorage.removeItem('turnero_session');
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('overlay').style.display = 'flex';
     document.getElementById('loginUsername').value = '';
@@ -143,33 +189,14 @@ const app = {
       Estado.areaId = data.area || null;
       if (Estado.role === 'admin') Estado.adminPass = pass;
 
-      // Redirigir según el rol
-      if (Estado.role === 'admin') {
-        this.cerrarOverlay('👑', 'Administrador');
-        this.mostrarVista('admin');
-        this.adminCargarUsuarios();
-      } else if (Estado.role === 'turnero') {
-        this.cerrarOverlay('📝', Estado.userName);
-        this.mostrarVista('darTurno');
-        this.cargarHistorialTurnero();
-      } else if (Estado.role === 'enfermera') {
-        this.cerrarOverlay('🩺', Estado.userName);
-        this.mostrarVista('triaje');
-        this.cargarPacientesTriaje();
-        if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-        Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 5000);
-      } else if (Estado.role === 'doctor') {
-        if (!Estado.areaId) throw new Error('El doctor no tiene un área asignada en la BD');
-        this.cerrarOverlay('👨‍⚕️', Estado.areaId);
-        const titulo = document.getElementById('tituloConsultorio');
-        if (titulo) titulo.innerText = 'Área: ' + Estado.areaId;
-        this.mostrarVista('misPacientes');
-        await this.cargarPacientesArea();
-        if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-        Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
-      } else {
-        throw new Error('Rol desconocido: ' + Estado.role);
-      }
+      localStorage.setItem('turnero_session', JSON.stringify({
+        role: Estado.role,
+        userName: Estado.userName,
+        areaId: Estado.areaId,
+        adminPass: Estado.adminPass
+      }));
+
+      this.restaurarVistaSegunRol();
 
     } catch (e) {
       console.error(e);
