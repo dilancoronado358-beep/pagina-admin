@@ -544,6 +544,7 @@ const app = {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
+      Estado.turnosArea = turnos; // Guardar localmente para abrir la consulta
 
       const numEl = document.getElementById('currentPatientNumber');
       const nameEl = document.getElementById('currentPatientName');
@@ -570,7 +571,7 @@ const app = {
           const enEspera = t.estado === 'en_espera';
           let btns = '';
           if (t.estado === 'pendiente') btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
-          if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
+          if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.abrirConsulta('${t.id}')" style="background:var(--success);">👨‍⚕️ Abrir Consulta</button>`;
           if (t.estado === 'en_espera') btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
 
           let sv = {};
@@ -601,6 +602,7 @@ const app = {
 
       if (listEl.innerHTML !== newHTML) {
         listEl.innerHTML = newHTML;
+        this.filtrarDoctor();
       }
     } catch (e) {
       console.error(e);
@@ -620,8 +622,135 @@ const app = {
       return;
     }
     if (nuevoEstado === 'en_consulta') this.toast('Paciente llamado', 'success');
-    if (nuevoEstado === 'atendido') this.toast('Consulta finalizada ✅', 'success');
     await this.cargarPacientesArea();
+  },
+
+  filtrarDoctor() {
+    const input = document.getElementById('inputFiltroDoctor');
+    if (!input) return;
+    const filter = input.value.toLowerCase();
+    const items = document.querySelectorAll('#patientList .patient-item');
+
+    items.forEach(item => {
+      if (item.innerText.includes('Cargando...') || item.innerText.includes('No hay pacientes')) return;
+      const text = item.innerText.toLowerCase();
+      item.style.display = text.includes(filter) ? '' : 'none';
+    });
+  },
+
+  abrirConsulta(pacienteId) {
+    if (!Estado.turnosArea) return;
+    const paciente = Estado.turnosArea.find(p => p.id === pacienteId);
+    if (!paciente) return;
+
+    document.getElementById('consultaTurnoId').value = paciente.id;
+    document.getElementById('consultaPacienteName').innerText = 'Paciente: ' + paciente.nombre;
+
+    let sv = {};
+    try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch (e) { }
+
+    document.getElementById('consEdad').value = sv.edad || '';
+    document.getElementById('consPeso').value = sv.peso || '';
+    document.getElementById('consEstatura').value = sv.estatura || '';
+    document.getElementById('consPresion').value = sv.presion || '';
+    document.getElementById('consTemperatura').value = sv.temperatura || '';
+    document.getElementById('consFrecuencia').value = sv.frecuencia || '';
+    document.getElementById('consSaturacion').value = sv.saturacion || '';
+
+    document.getElementById('consDiagnostico').value = sv.diagnostico || '';
+    document.getElementById('consReceta').value = sv.receta || '';
+
+    this.mostrarVista('formConsulta');
+  },
+
+  async guardarConsulta() {
+    const pacienteId = document.getElementById('consultaTurnoId').value;
+    const btn = document.getElementById('btnGuardarConsulta');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const paciente = Estado.turnosArea.find(p => p.id === pacienteId);
+    if (!paciente) {
+      this.toast('Error: Paciente no encontrado', 'error');
+      btn.disabled = false; btn.innerText = '✅ Finalizar Consulta';
+      return;
+    }
+
+    let sv = {};
+    try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch (e) { }
+
+    sv.edad = document.getElementById('consEdad').value;
+    sv.peso = document.getElementById('consPeso').value;
+    sv.estatura = document.getElementById('consEstatura').value;
+    sv.presion = document.getElementById('consPresion').value;
+    sv.temperatura = document.getElementById('consTemperatura').value;
+    sv.frecuencia = document.getElementById('consFrecuencia').value;
+    sv.saturacion = document.getElementById('consSaturacion').value;
+
+    sv.diagnostico = document.getElementById('consDiagnostico').value.trim();
+    const recetaTexto = document.getElementById('consReceta').value.trim();
+
+    let codigoReceta = null;
+    if (recetaTexto) {
+      // Generar código único de receta (Ej: REC-492X)
+      codigoReceta = 'REC-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      sv.receta = recetaTexto;
+      sv.codigo_receta = codigoReceta;
+    }
+
+    try {
+      // 1. Actualizar paciente actual y marcarlo como atendido
+      const { error: err1 } = await sb.from('pacientes_espera')
+        .update({
+          estado: 'atendido',
+          signos_vitales: JSON.stringify(sv)
+        })
+        .eq('id', pacienteId);
+      if (err1) throw err1;
+
+      // 2. Si hay receta, enviar a Farmacia creando un nuevo turno
+      if (recetaTexto) {
+
+        // Calcular turno de farmacia
+        const { data: maxData } = await sb.from('pacientes_espera')
+          .select('numero_turno_area')
+          .eq('especialidad', 'Farmacia')
+          .not('numero_turno_area', 'is', null)
+          .order('numero_turno_area', { ascending: false })
+          .limit(1);
+
+        let numTurnoFarmacia = 1;
+        if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+          numTurnoFarmacia = maxData[0].numero_turno_area + 1;
+        }
+
+        const { error: err2 } = await sb.from('pacientes_espera').insert({
+          nombre: `[Receta: ${codigoReceta}] ${paciente.nombre}`,
+          cedula: paciente.cedula,
+          celular: paciente.celular,
+          direccion: paciente.direccion,
+          especialidad: 'Farmacia',
+          numero_turno_area: numTurnoFarmacia,
+          creado_por: Estado.userName,
+          atendido_por: 'Enviado desde ' + Estado.areaId,
+          estado: 'pendiente', // Aparece directo en la lista de Farmacia
+          signos_vitales: JSON.stringify(sv)
+        });
+        if (err2) throw err2;
+        this.toast(`✅ Consulta finalizada. Receta ${codigoReceta} enviada a Farmacia.`, 'success');
+      } else {
+        this.toast('✅ Consulta finalizada exitosamente.', 'success');
+      }
+
+      this.mostrarVista('misPacientes');
+      await this.cargarPacientesArea();
+    } catch (e) {
+      console.error(e);
+      this.toast('Error: ' + e.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerText = '✅ Finalizar Consulta';
   },
 
   // ---- EXPORTAR EXCEL ----

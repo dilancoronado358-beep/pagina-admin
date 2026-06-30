@@ -228,6 +228,10 @@
             <button onclick="app.cargarPacientesArea()" class="btn-action">🔄 Actualizar</button>
           </div>
         </div>
+        
+        <input type="text" class="search-input" id="inputFiltroDoctor"
+          onkeyup="app.filtrarDoctor()" placeholder="Buscar por nombre o cédula...">
+
         <ul class="patient-list" id="patientList">
           <li>
             <div class="state-empty animate-pulse">
@@ -236,6 +240,70 @@
             </div>
           </li>
         </ul>
+      </div>
+    </div>
+
+    <!-- VISTA: Formulario de Consulta (Doctor) -->
+    <div id="view-formConsulta" class="view">
+      <div class="card">
+        <h2>👨‍⚕️ Consulta Médica</h2>
+        <h3 id="consultaPacienteName" style="font-size:1.1rem; color:var(--text-muted); font-weight:600; margin-bottom:1.75rem;">
+          Paciente:
+        </h3>
+
+        <input type="hidden" id="consultaTurnoId">
+
+        <div class="card-section" style="background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.2);">
+          <h3>🩺 Signos Vitales (Triaje)</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes modificar estos valores si es necesario.</p>
+          <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));">
+            <div class="form-group">
+              <label>Edad</label>
+              <input type="number" id="consEdad">
+            </div>
+            <div class="form-group">
+              <label>Peso</label>
+              <input type="text" id="consPeso">
+            </div>
+            <div class="form-group">
+              <label>Estatura</label>
+              <input type="text" id="consEstatura">
+            </div>
+            <div class="form-group">
+              <label>Presión Art.</label>
+              <input type="text" id="consPresion">
+            </div>
+            <div class="form-group">
+              <label>Temp.</label>
+              <input type="text" id="consTemperatura">
+            </div>
+            <div class="form-group">
+              <label>Frec. Card.</label>
+              <input type="text" id="consFrecuencia">
+            </div>
+            <div class="form-group">
+              <label>Sat. O₂</label>
+              <input type="text" id="consSaturacion">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="consDiagnostico">Estado o Problemas del Paciente (Diagnóstico)</label>
+            <textarea id="consDiagnostico" rows="4" placeholder="Describe los síntomas, diagnóstico y observaciones..."></textarea>
+          </div>
+          
+          <div class="form-group full-width">
+            <label for="consReceta">Receta Médica (Opcional)</label>
+            <textarea id="consReceta" rows="4" placeholder="Escribe los medicamentos e indicaciones... (Si llenas esto, el paciente será enviado a Farmacia)"></textarea>
+          </div>
+        </div>
+
+        <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()">
+          ✅ Finalizar Consulta
+        </button>
+        <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin Guardar)</button>
       </div>
     </div>
 
