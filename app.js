@@ -342,43 +342,45 @@ const app = {
         .order('created_at', { ascending: true });
       if (error) throw error;
 
-      listEl.innerHTML = '';
       const numEl = document.getElementById('currentTriajeNumber');
       const nameEl = document.getElementById('currentTriajeName');
 
+      let newHTML = '';
+
       if (!data || data.length === 0) {
-        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en recepción.</li>';
+        newHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en recepción.</li>';
         if (numEl) numEl.innerText = '--';
         if (nameEl) nameEl.innerText = 'Sin pacientes en espera';
-        return;
-      }
+      } else {
+        if (numEl) numEl.innerText = data.length + ' en espera';
+        if (nameEl) nameEl.innerText = 'Próximo: ' + data[0].nombre;
 
-      if (numEl) numEl.innerText = data.length + ' en espera';
-      if (nameEl) nameEl.innerText = 'Próximo: ' + data[0].nombre;
-
-      data.forEach(t => {
-        listEl.innerHTML += `
-          <li class="patient-item">
-            <div class="patient-header" style="margin-bottom:0;">
-              <div>
-                <div class="patient-title">${t.numero_turno_area ? `Turno ${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
-                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
-                <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
-                <div class="patient-subtitle" style="margin-top:.3rem;">
-                  🏥 Área: <strong style="color:var(--primary);">${t.especialidad || 'Sin asignar'}</strong>
+        data.forEach(t => {
+          newHTML += `
+            <li class="patient-item">
+              <div class="patient-header" style="margin-bottom:0;">
+                <div>
+                  <div class="patient-title">${t.numero_turno_area ? `Turno ${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
+                  <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'}</div>
+                  <div class="patient-subtitle">Dirección: ${t.direccion || 'N/A'}</div>
+                  <div class="patient-subtitle" style="margin-top:.3rem;">
+                    🏥 Área: <strong style="color:var(--primary);">${t.especialidad || 'Sin asignar'}</strong>
+                  </div>
+                </div>
+                <div class="patient-actions">
+                  <button class="btn-action btn-call" onclick="app.abrirFormularioTriaje('${t.id}', '${(t.nombre || '').replace(/'/g, "\\'")}')">
+                    🩺 Tomar Signos
+                  </button>
                 </div>
               </div>
-              <div class="patient-actions">
-                <button class="btn-action btn-call" onclick="app.abrirFormularioTriaje('${t.id}', '${(t.nombre || '').replace(/'/g, "\\'")}')">
-                  🩺 Tomar Signos
-                </button>
-              </div>
-            </div>
-          </li>`;
-      });
+            </li>`;
+        });
+      }
 
-      // Re-aplicar filtro por si la lista se actualizó mientras la enfermera escribía
-      this.filtrarTriaje();
+      if (listEl.innerHTML !== newHTML) {
+        listEl.innerHTML = newHTML;
+        this.filtrarTriaje();
+      }
 
     } catch (e) {
       console.error(e);
@@ -505,59 +507,63 @@ const app = {
 
       if (error) throw error;
 
-      listEl.innerHTML = '';
       const numEl = document.getElementById('currentPatientNumber');
       const nameEl = document.getElementById('currentPatientName');
 
+      let newHTML = '';
+
       if (!turnos || turnos.length === 0) {
-        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en cola para esta área.</li>';
+        newHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No hay pacientes en cola para esta área.</li>';
         if (numEl) numEl.innerText = '--';
         if (nameEl) nameEl.innerText = 'Cola vacía';
-        return;
-      }
+      } else {
+        const enConsulta = turnos.find(t => t.estado === 'en_consulta');
+        // El próximo a llamar debe ser el primero que esté 'pendiente', no el que está 'en_espera'
+        const proximo = enConsulta || turnos.find(t => t.estado === 'pendiente') || turnos[0];
 
-      const enConsulta = turnos.find(t => t.estado === 'en_consulta');
-      // El próximo a llamar debe ser el primero que esté 'pendiente', no el que está 'en_espera'
-      const proximo = enConsulta || turnos.find(t => t.estado === 'pendiente') || turnos[0];
+        if (numEl) numEl.innerText = proximo.numero_turno_area ? Estado.areaId.substring(0, 3).toUpperCase() + '-' + proximo.numero_turno_area : 'Por asignar';
+        if (nameEl) {
+          nameEl.innerText = proximo.nombre;
+          if (enConsulta) nameEl.innerHTML += '<br><span style="font-size:.8rem;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;display:inline-block;margin-top:6px;">EN CONSULTA</span>';
+        }
 
-      if (numEl) numEl.innerText = proximo.numero_turno_area ? Estado.areaId.substring(0, 3).toUpperCase() + '-' + proximo.numero_turno_area : 'Por asignar';
-      if (nameEl) {
-        nameEl.innerText = proximo.nombre;
-        if (enConsulta) nameEl.innerHTML += '<br><span style="font-size:.8rem;background:rgba(255,255,255,.25);padding:2px 10px;border-radius:12px;display:inline-block;margin-top:6px;">EN CONSULTA</span>';
-      }
+        turnos.forEach(t => {
+          const ec = t.estado === 'en_consulta';
+          const enEspera = t.estado === 'en_espera';
+          let btns = '';
+          if (t.estado === 'pendiente') btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
+          if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
+          if (t.estado === 'en_espera') btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
 
-      turnos.forEach(t => {
-        const ec = t.estado === 'en_consulta';
-        const enEspera = t.estado === 'en_espera';
-        let btns = '';
-        if (t.estado === 'pendiente') btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
-        if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.cambiarEstado('${t.id}','atendido')">✅ Finalizar</button>`;
-        if (t.estado === 'en_espera') btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
+          let sv = {};
+          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
 
-        let sv = {};
-        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
-
-        listEl.innerHTML += `
-          <li class="patient-item ${ec ? 'en-consulta' : ''}">
-            <div class="patient-header">
-              <div>
-                <div class="patient-title">${t.numero_turno_area ? `Turno ${Estado.areaId.substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
-                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'} | Triaje: ${t.atendido_por || 'N/A'}</div>
+          newHTML += `
+            <li class="patient-item ${ec ? 'en-consulta' : ''}">
+              <div class="patient-header">
+                <div>
+                  <div class="patient-title">${t.numero_turno_area ? `Turno ${Estado.areaId.substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : `<span style="color:#f59e0b; font-size: 0.9rem;">Turno por asignar</span>`} — ${t.nombre}</div>
+                  <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} | Tel: ${t.celular || 'N/A'} | Triaje: ${t.atendido_por || 'N/A'}</div>
+                </div>
+                <div class="patient-actions">${btns}</div>
               </div>
-              <div class="patient-actions">${btns}</div>
-            </div>
-            <div class="patient-data-grid">
-              <div class="data-item"><span>Dirección</span><span>${t.direccion || 'N/A'}</span></div>
-              <div class="data-item"><span>Edad</span><span>${sv.edad ? sv.edad + ' años' : 'N/A'}</span></div>
-              <div class="data-item"><span>Peso</span><span>${sv.peso || 'N/A'}</span></div>
-              <div class="data-item"><span>Estatura</span><span>${sv.estatura || 'N/A'}</span></div>
-              <div class="data-item"><span>Presión</span><span>${sv.presion || 'N/A'}</span></div>
-              <div class="data-item"><span>Temperatura</span><span>${sv.temperatura || 'N/A'}</span></div>
-              <div class="data-item"><span>Frec. Cardíaca</span><span>${sv.frecuencia || 'N/A'}</span></div>
-              <div class="data-item"><span>Saturación O₂</span><span>${sv.saturacion || 'N/A'}</span></div>
-            </div>
-          </li>`;
-      });
+              <div class="patient-data-grid">
+                <div class="data-item"><span>Dirección</span><span>${t.direccion || 'N/A'}</span></div>
+                <div class="data-item"><span>Edad</span><span>${sv.edad ? sv.edad + ' años' : 'N/A'}</span></div>
+                <div class="data-item"><span>Peso</span><span>${sv.peso || 'N/A'}</span></div>
+                <div class="data-item"><span>Estatura</span><span>${sv.estatura || 'N/A'}</span></div>
+                <div class="data-item"><span>Presión</span><span>${sv.presion || 'N/A'}</span></div>
+                <div class="data-item"><span>Temperatura</span><span>${sv.temperatura || 'N/A'}</span></div>
+                <div class="data-item"><span>Frec. Cardíaca</span><span>${sv.frecuencia || 'N/A'}</span></div>
+                <div class="data-item"><span>Saturación O₂</span><span>${sv.saturacion || 'N/A'}</span></div>
+              </div>
+            </li>`;
+        });
+      }
+
+      if (listEl.innerHTML !== newHTML) {
+        listEl.innerHTML = newHTML;
+      }
     } catch (e) {
       console.error(e);
       listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
@@ -677,7 +683,7 @@ const app = {
       usuarios.forEach(u => {
         let badgeColor = u.role === 'admin' ? '#000' : (u.role === 'doctor' ? '#2563eb' : (u.role === 'enfermera' ? '#0d9488' : '#f59e0b'));
         listEl.innerHTML += `
-          <li class="patient-item" style="display:flex; justify-content:space-between; align-items:center;">
+          <li class="patient-item" style="display:flex; flex-direction:row; justify-content:space-between; align-items:center; text-align:left;">
             <div>
               <div style="font-weight:bold; font-size:1.1rem; margin-bottom:.3rem;">@${u.username}</div>
               <div style="font-size:0.9rem; color:#64748b;">
