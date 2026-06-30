@@ -652,6 +652,33 @@ const app = {
     document.getElementById('consultaTurnoId').value = paciente.id;
     document.getElementById('consultaPacienteName').innerText = 'Paciente: ' + paciente.nombre;
 
+    const isFarmacia = Estado.areaId === 'Farmacia';
+
+    // Bloquear edición si es Farmacia
+    const camposFormulario = [
+      'consNombre', 'consCedula', 'consCelular', 'consDireccion',
+      'consEdad', 'consPeso', 'consEstatura', 'consPresion',
+      'consTemperatura', 'consFrecuencia', 'consSaturacion',
+      'consDiagnostico', 'consReceta'
+    ];
+    camposFormulario.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.readOnly = isFarmacia;
+        if (isFarmacia) el.style.backgroundColor = 'rgba(0,0,0,0.02)';
+        else el.style.backgroundColor = '';
+      }
+    });
+
+    const btnGuardar = document.getElementById('btnGuardarConsulta');
+    if (btnGuardar) {
+      if (isFarmacia) {
+        btnGuardar.innerText = '✅ Marcar Medicinas Entregadas';
+      } else {
+        btnGuardar.innerText = '✅ Finalizar Consulta';
+      }
+    }
+
     document.getElementById('consNombre').value = paciente.nombre || '';
     document.getElementById('consCedula').value = paciente.cedula || '';
     document.getElementById('consCelular').value = paciente.celular || '';
@@ -702,7 +729,10 @@ const app = {
     const recetaTexto = document.getElementById('consReceta').value.trim();
 
     let codigoReceta = null;
-    if (recetaTexto) {
+    const isFarmacia = Estado.areaId === 'Farmacia';
+
+    // Solo los doctores (no Farmacia) pueden generar nuevas recetas y enviar a Farmacia
+    if (recetaTexto && !isFarmacia) {
       // Generar código único de receta de SOLO 4 NÚMEROS (Ej: 4921)
       codigoReceta = Math.floor(1000 + Math.random() * 9000).toString();
       sv.receta = recetaTexto;
@@ -728,8 +758,8 @@ const app = {
         .eq('id', pacienteId);
       if (err1) throw err1;
 
-      // 2. Si hay receta, enviar a Farmacia creando un nuevo turno
-      if (recetaTexto) {
+      // 2. Si hay receta y NO somos Farmacia, enviar a Farmacia creando un nuevo turno
+      if (recetaTexto && !isFarmacia) {
 
         // Calcular turno de farmacia
         const { data: maxData } = await sb.from('pacientes_espera')
@@ -772,7 +802,11 @@ const app = {
           this.mostrarVista('misPacientes');
         }
       } else {
-        this.toast('✅ Consulta finalizada exitosamente.', 'success');
+        if (isFarmacia) {
+          this.toast('✅ Medicamentos entregados. Turno finalizado.', 'success');
+        } else {
+          this.toast('✅ Consulta finalizada exitosamente.', 'success');
+        }
         this.mostrarVista('misPacientes');
       }
 
