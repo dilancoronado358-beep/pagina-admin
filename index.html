@@ -22,53 +22,22 @@
        ===================================================== -->
   <div id="overlay">
     <div class="modal">
-      <h2>Bienvenido</h2>
-
-      <!-- Paso 1: Elegir rol -->
-      <div id="step-role" class="login-step active">
-        <p style="color:#757575; margin-bottom:1.2rem;">Selecciona tu perfil para ingresar:</p>
-        <div class="role-selection">
-          <button id="btnRoleDoctor" class="role-btn">👨‍⚕️ Soy Profesional Médico</button>
-          <button id="btnRoleEnfermera" class="role-btn">🩺 Soy Enfermero/a (Signos Vitales)</button>
-          <button id="btnRoleTurnero" class="role-btn">📝 Soy Recepción / Turnero</button>
+      <h2 style="margin-bottom: 1.5rem;">Iniciar Sesión</h2>
+      
+      <div id="step-login" class="login-step active">
+        <div class="form-group" style="text-align: left;">
+          <label for="loginUsername">Usuario:</label>
+          <input type="text" id="loginUsername" placeholder="Ingresa tu usuario" autocomplete="off" onkeypress="if(event.key === 'Enter') document.getElementById('loginPassword').focus()">
         </div>
-      </div>
-
-      <!-- Paso 2A: Login Turnero -->
-      <div id="step-turnero" class="login-step">
-        <div class="form-group">
-          <label for="userNameInput">Tu nombre (Recepción / Turnero):</label>
-          <input type="text" id="userNameInput" placeholder="Ej: María, Recepción 1..." autocomplete="off">
+        <div class="form-group" style="text-align: left; margin-top: 1rem;">
+          <label for="loginPassword">Contraseña:</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" onkeypress="if(event.key === 'Enter') app.iniciarSesion()">
         </div>
-        <button id="btnIngresarTurnero" class="btn-large">Ingresar</button>
-        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
+        
+        <button id="btnIngresar" class="btn-large" style="width: 100%; margin-top: 2rem;" onclick="app.iniciarSesion()">Ingresar al Sistema</button>
       </div>
-
-      <!-- Paso 2B: Login Enfermera -->
-      <div id="step-enfermera" class="login-step">
-        <div class="form-group">
-          <label for="enfermeraLoginSelect">Selecciona tu nombre:</label>
-          <select id="enfermeraLoginSelect">
-            <option value="">-- Seleccionar Enfermero/a --</option>
-          </select>
-        </div>
-        <button id="btnIngresarEnfermera" class="btn-large">Ingresar a Triaje</button>
-        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
-      </div>
-
-      <!-- Paso 2C: Login Doctor (Especialidad) -->
-      <div id="step-doctor" class="login-step">
-        <div class="form-group">
-          <label for="doctorLoginSelect">Selecciona tu Área/Especialidad:</label>
-          <select id="doctorLoginSelect">
-            <option value="">-- Seleccionar Área --</option>
-          </select>
-        </div>
-        <button id="btnIngresarDoctor" class="btn-large">Ingresar al Consultorio</button>
-        <button class="btn-volver" onclick="app.backToRoles()">← Volver</button>
-      </div>
-
     </div>
+  </div>
   </div>
 
   <!-- =====================================================

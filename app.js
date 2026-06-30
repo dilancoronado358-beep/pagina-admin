@@ -22,15 +22,7 @@ const AREAS_ESTATICAS = [
   'Farmacia'
 ];
 
-const ENFERMERAS_ESTATICAS = [
-  'Lic. Dayana Obando',
-  'Lic. Sonia Cangas',
-  'Lic. Jessica Muñoz',
-  'Lic. Erika Criollo',
-  'Lic. Byron Colimba',
-  'Tngla. Nicol Landázuri',
-  'Lic. Viviana Sánchez'
-];
+
 
 // ============================================================
 // ESTADO GLOBAL
@@ -53,7 +45,6 @@ const app = {
   // ---- ARRANQUE ----
   async init() {
     Estado.areas = AREAS_ESTATICAS;
-    Estado.enfermeras = ENFERMERAS_ESTATICAS;
     this.llenarSelects();
 
     try {
@@ -70,43 +61,15 @@ const app = {
   },
 
   llenarSelects() {
-    // Áreas para login de doctores
-    const selDoc = document.getElementById('doctorLoginSelect');
-    if (selDoc) {
-      selDoc.innerHTML = '<option value="">-- Seleccionar Área --</option>';
-      Estado.areas.forEach(a => { selDoc.innerHTML += `<option value="${a}">${a}</option>`; });
-    }
     // Áreas para el Turnero al registrar al paciente
     const selPac = document.getElementById('pacienteEspecialidad');
     if (selPac) {
       selPac.innerHTML = '<option value="">-- Seleccionar Área --</option>';
       Estado.areas.forEach(a => { selPac.innerHTML += `<option value="${a}">${a}</option>`; });
     }
-    // Enfermeras
-    const selEnf = document.getElementById('enfermeraLoginSelect');
-    if (selEnf) {
-      selEnf.innerHTML = '<option value="">-- Seleccionar Enfermero/a --</option>';
-      Estado.enfermeras.forEach(e => { selEnf.innerHTML += `<option value="${e}">${e}</option>`; });
-    }
   },
 
   // ---- NAVEGACIÓN ----
-  selectRole(role) {
-    document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
-    if (role === 'turnero') {
-      document.getElementById('step-turnero').classList.add('active');
-      setTimeout(() => { document.getElementById('userNameInput')?.focus(); }, 100);
-    } else if (role === 'enfermera') {
-      document.getElementById('step-enfermera').classList.add('active');
-    } else {
-      document.getElementById('step-doctor').classList.add('active');
-    }
-  },
-
-  backToRoles() {
-    document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
-    document.getElementById('step-role').classList.add('active');
-  },
 
   mostrarVista(vistaId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -133,23 +96,76 @@ const app = {
     Estado.areaId = null;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('overlay').style.display = 'flex';
-    this.backToRoles();
-    document.getElementById('userNameInput').value = '';
-    document.getElementById('enfermeraLoginSelect').value = '';
-    document.getElementById('doctorLoginSelect').value = '';
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
   },
 
   // ============================================================
   // ROL: TURNERO (solo registra datos básicos, SIN número de turno)
   // ============================================================
-  async loginTurnero() {
-    const nombre = (document.getElementById('userNameInput').value || '').trim();
-    if (!nombre) { this.toast('Ingresa tu nombre', 'error'); return; }
-    Estado.role = 'turnero';
-    Estado.userName = nombre;
-    this.cerrarOverlay('📝', nombre);
-    this.mostrarVista('darTurno');
-    this.cargarHistorialTurnero();
+  async iniciarSesion() {
+    const user = (document.getElementById('loginUsername').value || '').trim();
+    const pass = (document.getElementById('loginPassword').value || '').trim();
+
+    if (!user || !pass) {
+      this.toast('Ingresa usuario y contraseña', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnIngresar');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'Verificando...';
+
+    try {
+      if (!Estado.online || !sb) throw new Error('Sin conexión a Base de Datos');
+
+      const { data, error } = await sb.rpc('verificar_login', {
+        p_username: user,
+        p_password: pass
+      });
+
+      if (error) throw error;
+
+      if (!data || !data.success) {
+        throw new Error(data?.message || 'Credenciales incorrectas');
+      }
+
+      Estado.role = data.role;
+      Estado.userName = data.username;
+      Estado.areaId = data.area || null;
+
+      // Redirigir según el rol
+      if (Estado.role === 'turnero') {
+        this.cerrarOverlay('📝', Estado.userName);
+        this.mostrarVista('darTurno');
+        this.cargarHistorialTurnero();
+      } else if (Estado.role === 'enfermera') {
+        this.cerrarOverlay('🩺', Estado.userName);
+        this.mostrarVista('triaje');
+        this.cargarPacientesTriaje();
+        if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+        Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 5000);
+      } else if (Estado.role === 'doctor') {
+        if (!Estado.areaId) throw new Error('El doctor no tiene un área asignada en la BD');
+        this.cerrarOverlay('👨‍⚕️', Estado.areaId);
+        const titulo = document.getElementById('tituloConsultorio');
+        if (titulo) titulo.innerText = 'Área: ' + Estado.areaId;
+        this.mostrarVista('misPacientes');
+        await this.cargarPacientesArea();
+        if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
+        Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
+      } else {
+        throw new Error('Rol desconocido: ' + Estado.role);
+      }
+
+    } catch (e) {
+      console.error(e);
+      this.toast(e.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerText = originalText;
   },
 
   async darTurno(directoEspecialidad = false) {
@@ -264,19 +280,8 @@ const app = {
   },
 
   // ============================================================
-  // ROL: ENFERMERA (ve TODOS los pacientes, asigna signos y turno)
+  // ROL: ENFERMERA (Triaje y Signos Vitales)
   // ============================================================
-  async loginEnfermera() {
-    const sel = document.getElementById('enfermeraLoginSelect');
-    if (!sel.value) { this.toast('Selecciona tu nombre', 'error'); return; }
-    Estado.role = 'enfermera';
-    Estado.userName = sel.value;
-    this.cerrarOverlay('🩺', Estado.userName);
-    this.mostrarVista('triaje');
-    await this.cargarPacientesTriaje();
-    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesTriaje(), 5000);
-  },
 
   async cargarPacientesTriaje() {
     const listEl = document.getElementById('triajeList');
@@ -442,19 +447,6 @@ const app = {
   // ============================================================
   // ROL: DOCTOR / ÁREA (ve solo su cola con turnos asignados)
   // ============================================================
-  async loginDoctor() {
-    const sel = document.getElementById('doctorLoginSelect');
-    if (!sel.value) { this.toast('Selecciona el área', 'error'); return; }
-    Estado.role = 'doctor';
-    Estado.areaId = sel.value;
-    this.cerrarOverlay('👨‍⚕️', Estado.areaId);
-    const titulo = document.getElementById('tituloConsultorio');
-    if (titulo) titulo.innerText = 'Área: ' + Estado.areaId;
-    this.mostrarVista('misPacientes');
-    await this.cargarPacientesArea();
-    if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
-    Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
-  },
 
   async cargarPacientesArea() {
     const listEl = document.getElementById('patientList');
