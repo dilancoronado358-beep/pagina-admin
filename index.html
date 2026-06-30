@@ -220,6 +220,45 @@
         </ul>
       </div>
     </div>
+    <!-- VISTA: ADMIN (Panel de Administración) -->
+    <div id="view-admin" class="view">
+      <div class="card">
+        <h2 style="margin-bottom: 1rem;">Panel de Control de Usuarios (Admin)</h2>
+        <p style="color:var(--text-muted);margin-bottom:1.5rem;">Crea o elimina personal médico, de recepción o enfermería.</p>
+
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #e2e8f0;">
+          <h3>➕ Crear Nuevo Usuario</h3>
+          <div class="form-grid" style="margin-top: 1rem;">
+            <div class="form-group">
+              <label>Usuario (Sin espacios):</label>
+              <input type="text" id="adminNewUser" placeholder="Ej: maria_recepcion">
+            </div>
+            <div class="form-group">
+              <label>Contraseña:</label>
+              <input type="text" id="adminNewPass" placeholder="Ej: secreto123">
+            </div>
+            <div class="form-group">
+              <label>Rol:</label>
+              <select id="adminNewRole" onchange="document.getElementById('adminAreaContainer').style.display = this.value === 'doctor' ? 'block' : 'none'">
+                <option value="turnero">Turnero / Recepción</option>
+                <option value="enfermera">Enfermera / Triaje</option>
+                <option value="doctor">Doctor</option>
+              </select>
+            </div>
+            <div class="form-group" id="adminAreaContainer" style="display: none;">
+              <label>Área (Solo Doctores):</label>
+              <input type="text" id="adminNewArea" placeholder="Ej: Cardiología">
+            </div>
+          </div>
+          <button class="btn-action" style="background: var(--primary); margin-top: 1rem;" onclick="app.adminCrearUsuario()">💾 Guardar Usuario</button>
+        </div>
+
+        <h3>👥 Usuarios Activos</h3>
+        <ul class="patient-list" id="adminUserList">
+          <li class="patient-item" style="text-align:center;color:#666;">Cargando usuarios...</li>
+        </ul>
+      </div>
+    </div>
 
   </main>
 

@@ -28,8 +28,9 @@ const AREAS_ESTATICAS = [
 // ESTADO GLOBAL
 // ============================================================
 const Estado = {
-  role: null,           // 'turnero' | 'enfermera' | 'doctor'
+  role: null,           // 'turnero' | 'enfermera' | 'doctor' | 'admin'
   userName: '',
+  adminPass: '',        // Se guarda temporalmente para las llamadas a RPC de admin
   areaId: null,         // Área seleccionada por el doctor
   areas: [],
   enfermeras: [],
@@ -134,9 +135,14 @@ const app = {
       Estado.role = data.role;
       Estado.userName = data.username;
       Estado.areaId = data.area || null;
+      if (Estado.role === 'admin') Estado.adminPass = pass;
 
       // Redirigir según el rol
-      if (Estado.role === 'turnero') {
+      if (Estado.role === 'admin') {
+        this.cerrarOverlay('👑', 'Administrador');
+        this.mostrarVista('admin');
+        this.adminCargarUsuarios();
+      } else if (Estado.role === 'turnero') {
         this.cerrarOverlay('📝', Estado.userName);
         this.mostrarVista('darTurno');
         this.cargarHistorialTurnero();
@@ -603,10 +609,117 @@ const app = {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      this.toast('Excel descargado correctamente', 'success');
 
-    } catch (err) {
-      console.error(err);
-      this.toast('Error al exportar: ' + err.message, 'error');
+    } catch (error) {
+      console.error(error);
+      this.toast('Error al exportar: ' + error.message, 'error');
+    }
+  },
+
+  // ============================================================
+  // ROL: ADMIN (Panel de Control de Usuarios)
+  // ============================================================
+
+  async adminCargarUsuarios() {
+    const listEl = document.getElementById('adminUserList');
+    if (!listEl) return;
+    listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando usuarios...</li>';
+
+    try {
+      const { data, error } = await sb.rpc('admin_obtener_usuarios', {
+        p_admin_user: Estado.userName,
+        p_admin_pass: Estado.adminPass
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      listEl.innerHTML = '';
+      const usuarios = data.data || [];
+      if (usuarios.length === 0) {
+        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">No hay usuarios.</li>';
+        return;
+      }
+
+      usuarios.forEach(u => {
+        let badgeColor = u.role === 'admin' ? '#000' : (u.role === 'doctor' ? '#2563eb' : (u.role === 'enfermera' ? '#0d9488' : '#f59e0b'));
+        listEl.innerHTML += `
+          <li class="patient-item" style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:bold; font-size:1.1rem; margin-bottom:.3rem;">@${u.username}</div>
+              <div style="font-size:0.9rem; color:#64748b;">
+                <span style="background:${badgeColor};color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">${u.role.toUpperCase()}</span>
+                ${u.area ? ` — 🏥 ${u.area}` : ''}
+              </div>
+            </div>
+            ${u.username !== Estado.userName ? `<button class="btn-action" style="background:#ef4444; padding:0.4rem 0.8rem; font-size:0.9rem;" onclick="app.adminEliminarUsuario('${u.id}', '${u.username}')">🗑️ Borrar</button>` : '<span style="color:#aaa;font-size:0.8rem;">(Tú)</span>'}
+          </li>
+        `;
+      });
+    } catch (e) {
+      console.error(e);
+      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
+    }
+  },
+
+  async adminCrearUsuario() {
+    const username = (document.getElementById('adminNewUser').value || '').trim();
+    const pass = (document.getElementById('adminNewPass').value || '').trim();
+    const role = document.getElementById('adminNewRole').value;
+    const area = (document.getElementById('adminNewArea').value || '').trim();
+
+    if (!username || !pass) {
+      this.toast('Por favor completa usuario y contraseña', 'error');
+      return;
+    }
+    if (role === 'doctor' && !area) {
+      this.toast('El doctor debe tener un área especificada', 'error');
+      return;
+    }
+
+    try {
+      const { data, error } = await sb.rpc('admin_crear_usuario', {
+        p_admin_user: Estado.userName,
+        p_admin_pass: Estado.adminPass,
+        p_new_username: username,
+        p_new_password: pass,
+        p_new_role: role,
+        p_new_area: role === 'doctor' ? area : null
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      this.toast(`Usuario @${username} creado exitosamente`, 'success');
+      document.getElementById('adminNewUser').value = '';
+      document.getElementById('adminNewPass').value = '';
+      if (role === 'doctor') document.getElementById('adminNewArea').value = '';
+
+      this.adminCargarUsuarios();
+    } catch (e) {
+      console.error(e);
+      this.toast('Error: ' + e.message, 'error');
+    }
+  },
+
+  async adminEliminarUsuario(id, username) {
+    if (!confirm(`¿Estás seguro de que deseas ELIMINAR el usuario @${username}?`)) return;
+
+    try {
+      const { data, error } = await sb.rpc('admin_eliminar_usuario', {
+        p_admin_user: Estado.userName,
+        p_admin_pass: Estado.adminPass,
+        p_target_id: id
+      });
+
+      if (error) throw error;
+      if (!data.success) throw new Error(data.message);
+
+      this.toast(`Usuario @${username} eliminado`, 'success');
+      this.adminCargarUsuarios();
+    } catch (e) {
+      console.error(e);
+      this.toast('Error al eliminar: ' + e.message, 'error');
     }
   },
 
