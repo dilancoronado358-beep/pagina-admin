@@ -646,6 +646,11 @@ const app = {
     document.getElementById('consultaTurnoId').value = paciente.id;
     document.getElementById('consultaPacienteName').innerText = 'Paciente: ' + paciente.nombre;
 
+    document.getElementById('consNombre').value = paciente.nombre || '';
+    document.getElementById('consCedula').value = paciente.cedula || '';
+    document.getElementById('consCelular').value = paciente.celular || '';
+    document.getElementById('consDireccion').value = paciente.direccion || '';
+
     let sv = {};
     try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch (e) { }
 
@@ -700,9 +705,18 @@ const app = {
 
     try {
       // 1. Actualizar paciente actual y marcarlo como atendido
+      const nombreFinal = document.getElementById('consNombre').value.trim();
+      const cedulaFinal = document.getElementById('consCedula').value.trim();
+      const celularFinal = document.getElementById('consCelular').value.trim();
+      const direccionFinal = document.getElementById('consDireccion').value.trim();
+
       const { error: err1 } = await sb.from('pacientes_espera')
         .update({
           estado: 'atendido',
+          nombre: nombreFinal,
+          cedula: cedulaFinal,
+          celular: celularFinal,
+          direccion: direccionFinal,
           signos_vitales: JSON.stringify(sv)
         })
         .eq('id', pacienteId);
@@ -725,10 +739,10 @@ const app = {
         }
 
         const { error: err2 } = await sb.from('pacientes_espera').insert({
-          nombre: `[Receta: ${codigoReceta}] ${paciente.nombre}`,
-          cedula: paciente.cedula,
-          celular: paciente.celular,
-          direccion: paciente.direccion,
+          nombre: `[Receta: ${codigoReceta}] ${nombreFinal}`,
+          cedula: cedulaFinal,
+          celular: celularFinal,
+          direccion: direccionFinal,
           especialidad: 'Farmacia',
           numero_turno_area: numTurnoFarmacia,
           creado_por: Estado.userName,
