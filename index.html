@@ -253,7 +253,8 @@
 
         <input type="hidden" id="consultaTurnoId">
 
-        <div class="card-section">
+        <div id="formConsultaContent">
+          <div class="card-section">
           <h3>👤 Datos del Paciente</h3>
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes modificar los datos registrados en recepción si hay algún error.</p>
           <div class="form-grid">
@@ -323,10 +324,27 @@
           </div>
         </div>
 
-        <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()">
-          ✅ Finalizar Consulta
-        </button>
-        <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin Guardar)</button>
+          <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()">
+            ✅ Finalizar Consulta
+          </button>
+          <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin Guardar)</button>
+        </div>
+
+        <div id="formConsultaSuccess" style="display: none; text-align: center; padding: 2rem 0;">
+          <div style="font-size: 4rem; margin-bottom: 1rem;">💊</div>
+          <h2 style="color: var(--success); margin-bottom: 0.5rem;">¡Receta Enviada a Farmacia!</h2>
+          <p style="color: var(--text-muted); margin-bottom: 2rem;">Por favor, entrega este código al paciente:</p>
+          
+          <div style="background: var(--bg); border: 2px dashed var(--primary); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2.5rem; display: inline-block; min-width: 250px;">
+            <div style="font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.5rem;">CÓDIGO DE RECETA</div>
+            <div id="consultaCodigoGenerado" style="font-size: 4.5rem; font-weight: 800; color: var(--primary); letter-spacing: 4px; line-height: 1;">----</div>
+          </div>
+          
+          <button class="btn-large" onclick="app.cerrarPantallaExitoConsulta()">
+            Cerrar y Volver a la Lista
+          </button>
+        </div>
+
       </div>
     </div>
 

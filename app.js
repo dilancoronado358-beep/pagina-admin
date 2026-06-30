@@ -643,6 +643,12 @@ const app = {
     const paciente = Estado.turnosArea.find(p => p.id === pacienteId);
     if (!paciente) return;
 
+    // Reset visual state
+    const formContent = document.getElementById('formConsultaContent');
+    const successScreen = document.getElementById('formConsultaSuccess');
+    if (formContent) formContent.style.display = 'block';
+    if (successScreen) successScreen.style.display = 'none';
+
     document.getElementById('consultaTurnoId').value = paciente.id;
     document.getElementById('consultaPacienteName').innerText = 'Paciente: ' + paciente.nombre;
 
@@ -697,8 +703,8 @@ const app = {
 
     let codigoReceta = null;
     if (recetaTexto) {
-      // Generar código único de receta (Ej: REC-492X)
-      codigoReceta = 'REC-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      // Generar código único de receta de SOLO 4 NÚMEROS (Ej: 4921)
+      codigoReceta = Math.floor(1000 + Math.random() * 9000).toString();
       sv.receta = recetaTexto;
       sv.codigo_receta = codigoReceta;
     }
@@ -751,12 +757,25 @@ const app = {
           signos_vitales: JSON.stringify(sv)
         });
         if (err2) throw err2;
-        this.toast(`✅ Consulta finalizada. Receta ${codigoReceta} enviada a Farmacia.`, 'success');
+
+        // Mostrar pantalla de éxito con el código (no cerramos la vista aún)
+        const formContent = document.getElementById('formConsultaContent');
+        const successScreen = document.getElementById('formConsultaSuccess');
+        const codeDisplay = document.getElementById('consultaCodigoGenerado');
+
+        if (formContent && successScreen && codeDisplay) {
+          formContent.style.display = 'none';
+          codeDisplay.innerText = codigoReceta;
+          successScreen.style.display = 'block';
+        } else {
+          this.toast(`✅ Consulta finalizada. Receta ${codigoReceta} enviada a Farmacia.`, 'success');
+          this.mostrarVista('misPacientes');
+        }
       } else {
         this.toast('✅ Consulta finalizada exitosamente.', 'success');
+        this.mostrarVista('misPacientes');
       }
 
-      this.mostrarVista('misPacientes');
       await this.cargarPacientesArea();
     } catch (e) {
       console.error(e);
@@ -765,6 +784,10 @@ const app = {
 
     btn.disabled = false;
     btn.innerText = '✅ Finalizar Consulta';
+  },
+
+  cerrarPantallaExitoConsulta() {
+    this.mostrarVista('misPacientes');
   },
 
   // ---- EXPORTAR EXCEL ----
