@@ -8,6 +8,7 @@ let sb = null;
 // ============================================================
 // LISTAS ESTÁTICAS
 // ============================================================
+// Áreas reales del sistema (usadas para asignar doctores y filtrar colas)
 const AREAS_ESTATICAS = [
   'Medicina General',
   'Odontología',
@@ -19,7 +20,26 @@ const AREAS_ESTATICAS = [
   'Nutrición',
   'Urología',
   'Imagenología',
-  'Farmacia'
+  'Farmacia',
+  'Corte de Cabello'
+];
+
+// Opciones que ve el Turnero al registrar al paciente.
+// Algunas son alias que se redirigen a un área real con una nota de motivo.
+const OPCIONES_ESPECIALIDAD = [
+  { label: 'Medicina General', area: 'Medicina General', motivo: null },
+  { label: 'Odontología', area: 'Odontología', motivo: null },
+  { label: 'Pediatría', area: 'Pediatría', motivo: null },
+  { label: 'Obstetricia', area: 'Obstetricia', motivo: null },
+  { label: 'Solo Papanicolau', area: 'Obstetricia', motivo: 'Solo Papanicolau — Sin revisión general' },
+  { label: 'Traumatología', area: 'Traumatología', motivo: null },
+  { label: 'Fisioterapia', area: 'Fisioterapia', motivo: null },
+  { label: 'Psicología Clínica', area: 'Psicología Clínica', motivo: null },
+  { label: 'Nutrición', area: 'Nutrición', motivo: null },
+  { label: 'Urología', area: 'Urología', motivo: null },
+  { label: 'Imagenología', area: 'Imagenología', motivo: null },
+  { label: 'Farmacia', area: 'Farmacia', motivo: null },
+  { label: 'Corte de Cabello', area: 'Corte de Cabello', motivo: null }
 ];
 
 
@@ -63,13 +83,15 @@ const app = {
   },
 
   llenarSelects() {
-    // Áreas para el Turnero al registrar al paciente
+    // Opciones para el Turnero (incluye alias como Solo Papanicolau)
     const selPac = document.getElementById('pacienteEspecialidad');
     if (selPac) {
-      selPac.innerHTML = '<option value="">-- Seleccionar Área --</option>';
-      Estado.areas.forEach(a => { selPac.innerHTML += `<option value="${a}">${a}</option>`; });
+      selPac.innerHTML = '<option value="">-- Seleccionar Área / Servicio --</option>';
+      OPCIONES_ESPECIALIDAD.forEach(op => {
+        selPac.innerHTML += `<option value="${op.label}">${op.label}${op.motivo ? ' 📋' : ''}</option>`;
+      });
     }
-    // Áreas para el admin al crear usuarios
+    // Áreas reales para el admin (doctores se asignan a áreas reales)
     const selAdmin = document.getElementById('adminNewArea');
     if (selAdmin) {
       selAdmin.innerHTML = '<option value="">-- Sin Área --</option>';
@@ -217,16 +239,21 @@ const app = {
     const cedula = document.getElementById('pacienteCedula').value.trim();
     const celular = document.getElementById('pacienteCelular').value.trim();
     const direccion = document.getElementById('pacienteDireccion').value.trim();
-    const especialidad = document.getElementById('pacienteEspecialidad').value;
+    const seleccion = document.getElementById('pacienteEspecialidad').value;
 
     if (!nombre) {
       this.toast('Ingresa el nombre del paciente', 'error');
       btn.disabled = false; btn.innerText = originalText; return;
     }
-    if (!especialidad) {
+    if (!seleccion) {
       this.toast('Selecciona la especialidad / área', 'error');
       btn.disabled = false; btn.innerText = originalText; return;
     }
+
+    // Resolver la opción seleccionada → área real + motivo
+    const opcion = OPCIONES_ESPECIALIDAD.find(op => op.label === seleccion);
+    const especialidad = opcion ? opcion.area : seleccion;
+    const motivoExtra = opcion ? opcion.motivo : null;
 
     try {
       if (Estado.online && sb) {
@@ -246,8 +273,12 @@ const app = {
           numTurno = maxData[0].numero_turno_area + 1;
         }
 
+        // Si hay motivo especial (ej: Solo Papanicolau), se incluye como prefijo
+        // en el nombre del servicio almacenado para que el doctor lo vea en su cola
+        const nombreConMotivo = motivoExtra ? `[${motivoExtra}] ${nombre}` : nombre;
+
         const { error } = await sb.from('pacientes_espera').insert({
-          nombre: nombre,
+          nombre: nombreConMotivo,
           cedula: cedula,
           celular: celular,
           direccion: direccion,
@@ -260,8 +291,9 @@ const app = {
         if (error) throw error;
       }
 
-      const destino = directoEspecialidad ? `Especialidad` : 'Signos Vitales';
-      this.toast(`✅ Paciente "${nombre}" → ${destino}`, 'success');
+      const destino = directoEspecialidad ? `${especialidad}` : 'Signos Vitales';
+      const etiqueta = motivoExtra ? `${seleccion} → ${especialidad}` : especialidad;
+      this.toast(`✅ "${nombre}" → ${etiqueta}`, 'success');
       document.getElementById('pacienteNameInput').value = '';
       document.getElementById('pacienteCedula').value = '';
       document.getElementById('pacienteCelular').value = '';
