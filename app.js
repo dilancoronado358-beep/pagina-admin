@@ -293,21 +293,27 @@ const app = {
 
       lista.innerHTML = '';
       if (!data || data.length === 0) {
-        lista.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;padding:1rem;">No has registrado pacientes aún.</li>';
+        lista.innerHTML = `
+          <li>
+            <div class="state-empty">
+              <span class="state-empty-icon">💭</span>
+              <span class="state-empty-text">No has registrado pacientes aún</span>
+            </div>
+          </li>`;
         return;
       }
 
       data.forEach(t => {
         const turnoLabel = t.numero_turno_area
-          ? `<span style="background:var(--primary);color:white;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:700;">Turno ${t.especialidad ? t.especialidad.substring(0, 3).toUpperCase() : ''}-${t.numero_turno_area}</span>`
-          : `<span style="background:#e2e8f0;color:#64748b;padding:2px 10px;border-radius:20px;font-size:.8rem;">En Recepción</span>`;
+          ? `<span class="badge-turno">🎫 ${t.especialidad ? t.especialidad.substring(0, 3).toUpperCase() : ''}-${t.numero_turno_area}</span>`
+          : `<span class="badge-status espera">⏳ En Recepción</span>`;
 
         lista.innerHTML += `
           <li class="patient-item">
-            <div class="patient-header" style="margin-bottom:0;">
+            <div class="patient-header">
               <div>
                 <div class="patient-title">${t.nombre}</div>
-                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'} ${t.especialidad ? '→ ' + t.especialidad : ''}</div>
+                <div class="patient-subtitle">Cédula: ${t.cedula || 'N/A'}${t.especialidad ? ' &rarr; ' + t.especialidad : ''}</div>
               </div>
               <div>${turnoLabel}</div>
             </div>
@@ -663,7 +669,13 @@ const app = {
   async adminCargarUsuarios() {
     const listEl = document.getElementById('adminUserList');
     if (!listEl) return;
-    listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">Cargando usuarios...</li>';
+    listEl.innerHTML = `
+      <li>
+        <div class="state-empty animate-pulse">
+          <span class="state-empty-icon">👤</span>
+          <span class="state-empty-text">Cargando usuarios...</span>
+        </div>
+      </li>`;
 
     try {
       const { data, error } = await sb.rpc('admin_obtener_usuarios', {
@@ -676,28 +688,35 @@ const app = {
       listEl.innerHTML = '';
       const usuarios = data.data || [];
       if (usuarios.length === 0) {
-        listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:#666;">No hay usuarios.</li>';
+        listEl.innerHTML = `
+          <li>
+            <div class="state-empty">
+              <span class="state-empty-icon">👥</span>
+              <span class="state-empty-text">No hay usuarios registrados</span>
+            </div>
+          </li>`;
         return;
       }
 
       usuarios.forEach(u => {
-        let badgeColor = u.role === 'admin' ? '#000' : (u.role === 'doctor' ? '#2563eb' : (u.role === 'enfermera' ? '#0d9488' : '#f59e0b'));
+        const roleClass = u.role === 'admin' ? 'admin' : (u.role === 'doctor' ? 'doctor' : (u.role === 'enfermera' ? 'enfermera' : 'turnero'));
         listEl.innerHTML += `
-          <li class="patient-item" style="display:flex; flex-direction:row; justify-content:space-between; align-items:center; text-align:left;">
-            <div>
-              <div style="font-weight:bold; font-size:1.1rem; margin-bottom:.3rem;">@${u.username}</div>
-              <div style="font-size:0.9rem; color:#64748b;">
-                <span style="background:${badgeColor};color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">${u.role.toUpperCase()}</span>
-                ${u.area ? ` — 🏥 ${u.area}` : ''}
+          <li class="admin-user-item">
+            <div class="admin-user-info">
+              <div class="admin-username">@${u.username}${u.username === Estado.userName ? ' <span style="color:#a0aec0;font-size:0.78rem;font-weight:500;">(tú)</span>' : ''}</div>
+              <div class="admin-user-meta">
+                <span class="role-badge ${roleClass}">${u.role.toUpperCase()}</span>
+                ${u.area ? `<span class="area-tag">🏥 ${u.area}</span>` : ''}
               </div>
             </div>
-            ${u.username !== Estado.userName ? `<button class="btn-action" style="background:#ef4444; padding:0.4rem 0.8rem; font-size:0.9rem;" onclick="app.adminEliminarUsuario('${u.id}', '${u.username}')">🗑️ Borrar</button>` : '<span style="color:#aaa;font-size:0.8rem;">(Tú)</span>'}
-          </li>
-        `;
+            ${u.username !== Estado.userName
+            ? `<button class="btn-action" style="background:var(--danger);" onclick="app.adminEliminarUsuario('${u.id}', '${u.username}')">🗑️ Eliminar</button>`
+            : ''}
+          </li>`;
       });
     } catch (e) {
       console.error(e);
-      listEl.innerHTML = '<li class="patient-item" style="text-align:center;color:red;">Error: ' + e.message + '</li>';
+      listEl.innerHTML = `<li><div class="state-empty"><span class="state-empty-icon">❌</span><span class="state-empty-text">Error: ${e.message}</span></div></li>`;
     }
   },
 
