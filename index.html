@@ -225,6 +225,7 @@
         <div class="card-header">
           <h2>Lista de Espera</h2>
           <div class="card-header-actions">
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel</button>
             <button onclick="app.cargarPacientesArea()" class="btn-action">🔄 Actualizar</button>
           </div>
         </div>
@@ -351,7 +352,12 @@
     <!-- VISTA: ADMIN -->
     <div id="view-admin" class="view">
       <div class="card">
-        <h2>⚙️ Panel de Administración</h2>
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2>⚙️ Panel de Administración</h2>
+          <div class="card-header-actions">
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel Pacientes</button>
+          </div>
+        </div>
         <p>Gestiona el personal médico, de recepción y enfermería del sistema.</p>
 
         <div class="card-section">

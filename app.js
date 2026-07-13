@@ -825,72 +825,222 @@ const app = {
   },
 
   // ---- EXPORTAR EXCEL ----
-  async descargarExcel() {
+  descargarExcel() {
+    // Mostrar modal de selección de especialidad
+    this._mostrarModalExcel();
+  },
+
+  _mostrarModalExcel() {
+    // Eliminar modal previo si existe
+    const prev = document.getElementById('modalExcelExport');
+    if (prev) prev.remove();
+
+    const especialidades = ['TODAS LAS ESPECIALIDADES', ...AREAS_ESTATICAS];
+
+    const opcionesHTML = especialidades.map((esp, i) => `
+      <label class="excel-esp-option" for="espOpt${i}">
+        <input type="radio" name="excelEsp" id="espOpt${i}" value="${esp}" ${i === 0 ? 'checked' : ''}>
+        <span>${esp}</span>
+      </label>
+    `).join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'modalExcelExport';
+    modal.innerHTML = `
+      <div class="modal-excel-backdrop" onclick="app._cerrarModalExcel()"></div>
+      <div class="modal-excel-box">
+        <h2>📥 Exportar a Excel</h2>
+        <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.92rem;">Selecciona la especialidad y el tipo de pacientes a incluir en el reporte.</p>
+
+        <label style="font-weight:600;display:block;margin-bottom:.5rem;">Especialidad</label>
+        <div class="excel-esp-list">${opcionesHTML}</div>
+
+        <label style="font-weight:600;display:block;margin:.75rem 0 .5rem;">Pacientes a incluir</label>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <label class="excel-esp-option" for="excelFiltroTodos">
+            <input type="radio" name="excelFiltro" id="excelFiltroTodos" value="todos" checked>
+            <span>✅ Todos (en lista + atendidos)</span>
+          </label>
+          <label class="excel-esp-option" for="excelFiltroLista">
+            <input type="radio" name="excelFiltro" id="excelFiltroLista" value="lista">
+            <span>⏳ Solo en lista (espera / pendiente / en consulta)</span>
+          </label>
+          <label class="excel-esp-option" for="excelFiltroAtendidos">
+            <input type="radio" name="excelFiltro" id="excelFiltroAtendidos" value="atendidos">
+            <span>🏁 Solo atendidos</span>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
+          <button class="btn-large" style="flex:1;background:var(--success);" onclick="app._ejecutarDescargaExcel()">📥 Descargar Excel</button>
+          <button class="btn-large btn-secondary" style="flex:0 0 auto;" onclick="app._cerrarModalExcel()">Cancelar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Estilos dinámicos del modal
+    if (!document.getElementById('modalExcelStyles')) {
+      const style = document.createElement('style');
+      style.id = 'modalExcelStyles';
+      style.textContent = `
+        #modalExcelExport {
+          position: fixed; inset: 0; z-index: 9999;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .modal-excel-backdrop {
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+        }
+        .modal-excel-box {
+          position: relative; z-index: 1;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          padding: 2rem;
+          width: min(520px, 94vw);
+          max-height: 85vh;
+          overflow-y: auto;
+          box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+          animation: slideUp .25s ease;
+        }
+        .modal-excel-box h2 { margin-bottom: .5rem; }
+        .excel-esp-list {
+          display: flex; flex-direction: column; gap: .35rem;
+          max-height: 220px; overflow-y: auto;
+          padding: .5rem; background: var(--bg);
+          border: 1px solid var(--border); border-radius: var(--radius);
+          margin-bottom: .25rem;
+        }
+        .excel-esp-option {
+          display: flex; align-items: center; gap: .6rem;
+          padding: .45rem .6rem; border-radius: 6px;
+          cursor: pointer; transition: background .15s;
+          font-size: .9rem;
+        }
+        .excel-esp-option:hover { background: rgba(139,92,246,.1); }
+        .excel-esp-option input[type=radio] { accent-color: var(--primary); }
+      `;
+      document.head.appendChild(style);
+    }
+  },
+
+  _cerrarModalExcel() {
+    const modal = document.getElementById('modalExcelExport');
+    if (modal) modal.remove();
+  },
+
+  async _ejecutarDescargaExcel() {
     if (!Estado.online || !sb) {
       this.toast('Sin conexión a base de datos', 'error');
+      this._cerrarModalExcel();
       return;
     }
 
-    this.toast('Generando archivo Excel (CSV)...', 'success');
+    const especialidadSel = document.querySelector('input[name="excelEsp"]:checked')?.value || 'TODAS LAS ESPECIALIDADES';
+    const filtroSel = document.querySelector('input[name="excelFiltro"]:checked')?.value || 'todos';
+
+    this._cerrarModalExcel();
+    this.toast('⏳ Generando reporte Excel...', 'success');
 
     try {
-      const { data, error } = await sb.from('pacientes_espera')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query = sb.from('pacientes_espera').select('*');
 
+      // Filtrar por especialidad
+      if (especialidadSel !== 'TODAS LAS ESPECIALIDADES') {
+        query = query.eq('especialidad', especialidadSel);
+      }
+
+      // Filtrar por estado
+      if (filtroSel === 'lista') {
+        query = query.in('estado', ['en_espera', 'pendiente', 'en_consulta']);
+      } else if (filtroSel === 'atendidos') {
+        query = query.eq('estado', 'atendido');
+      }
+      // 'todos' → sin filtro adicional de estado
+
+      query = query.order('especialidad', { ascending: true }).order('created_at', { ascending: true });
+
+      const { data, error } = await query;
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        this.toast('No hay datos para exportar', 'error');
+        this.toast('No hay datos para exportar con ese filtro', 'error');
         return;
       }
 
-      // Crear encabezados CSV
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "Fecha,Nombre,Cedula,Celular,Direccion,Especialidad,Turno,Estado,Creado Por,Atendido Por,Edad,Peso,Estatura,Presion,Temperatura,Frecuencia,Saturacion\n";
+      // Mapeo de estado legible
+      const estadoLabel = (e) => {
+        const map = { 'en_espera': 'En Espera', 'pendiente': 'Pendiente', 'en_consulta': 'En Consulta', 'atendido': 'Atendido' };
+        return map[e] || e || '';
+      };
+
+      // Encabezados
+      const headers = [
+        'Fecha y Hora', 'Nombre Completo', 'Cédula', 'Celular', 'Dirección',
+        'Especialidad', 'Turno', 'Estado', 'Registrado Por', 'Atendido Por (Triaje)',
+        'Edad', 'Peso', 'Estatura', 'Presión Arterial', 'Temperatura',
+        'Frecuencia Cardíaca', 'Saturación O2', 'Diagnóstico'
+      ];
+
+      const escapeCsv = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
+
+      let csvRows = [headers.map(escapeCsv).join(',')];
 
       data.forEach(t => {
         let sv = {};
         try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
 
-        const fechaStr = t.created_at ? new Date(t.created_at).toLocaleString() : '';
-        const turnoStr = t.numero_turno_area ? `${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}` : 'N/A';
+        const fechaStr = t.created_at ? new Date(t.created_at).toLocaleString('es-EC') : '';
+        const turnoStr = t.numero_turno_area
+          ? `${(t.especialidad || '').substring(0, 3).toUpperCase()}-${t.numero_turno_area}`
+          : 'N/A';
 
         const row = [
-          `"${fechaStr}"`,
-          `"${t.nombre || ''}"`,
-          `"${t.cedula || ''}"`,
-          `"${t.celular || ''}"`,
-          `"${t.direccion || ''}"`,
-          `"${t.especialidad || ''}"`,
-          `"${turnoStr}"`,
-          `"${t.estado || ''}"`,
-          `"${t.creado_por || ''}"`,
-          `"${t.atendido_por || ''}"`,
-          `"${sv.edad || ''}"`,
-          `"${sv.peso || ''}"`,
-          `"${sv.estatura || ''}"`,
-          `"${sv.presion || ''}"`,
-          `"${sv.temperatura || ''}"`,
-          `"${sv.frecuencia || ''}"`,
-          `"${sv.saturacion || ''}"`
+          fechaStr,
+          t.nombre || '',
+          t.cedula || '',
+          t.celular || '',
+          t.direccion || '',
+          t.especialidad || '',
+          turnoStr,
+          estadoLabel(t.estado),
+          t.creado_por || '',
+          t.atendido_por || '',
+          sv.edad || '',
+          sv.peso || '',
+          sv.estatura || '',
+          sv.presion || '',
+          sv.temperatura || '',
+          sv.frecuencia || '',
+          sv.saturacion || '',
+          sv.diagnostico || ''
         ];
 
-        csvContent += row.join(",") + "\n";
+        csvRows.push(row.map(escapeCsv).join(','));
       });
 
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Reporte_Pacientes_${new Date().toISOString().slice(0, 10)}.csv`);
+      // BOM para compatibilidad UTF-8 con Excel
+      const BOM = '\uFEFF';
+      const csvContent = BOM + csvRows.join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const espNombre = especialidadSel === 'TODAS LAS ESPECIALIDADES' ? 'Todas' : especialidadSel.replace(/ /g, '_');
+      const filtroNombre = filtroSel === 'todos' ? 'Todos' : filtroSel === 'lista' ? 'EnLista' : 'Atendidos';
+      link.href = url;
+      link.download = `Reporte_${espNombre}_${filtroNombre}_${new Date().toISOString().slice(0, 10)}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      this.toast('Excel descargado correctamente', 'success');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    } catch (error) {
-      console.error(error);
-      this.toast('Error al exportar: ' + error.message, 'error');
+      this.toast(`✅ Excel descargado: ${data.length} pacientes`, 'success');
+
+    } catch (err) {
+      console.error(err);
+      this.toast('Error al exportar: ' + err.message, 'error');
     }
   },
 
