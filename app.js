@@ -837,92 +837,63 @@ const app = {
 
     const especialidades = ['TODAS LAS ESPECIALIDADES', ...AREAS_ESTATICAS];
 
-    const opcionesHTML = especialidades.map((esp, i) => `
-      <label class="excel-esp-option" for="espOpt${i}">
-        <input type="radio" name="excelEsp" id="espOpt${i}" value="${esp}" ${i === 0 ? 'checked' : ''}>
-        <span>${esp}</span>
-      </label>
-    `).join('');
-
     const modal = document.createElement('div');
     modal.id = 'modalExcelExport';
     modal.innerHTML = `
       <div class="modal-excel-backdrop" onclick="app._cerrarModalExcel()"></div>
       <div class="modal-excel-box">
-        <h2>📥 Exportar a Excel</h2>
-        <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.92rem;">Selecciona la especialidad y el tipo de pacientes a incluir en el reporte.</p>
+        <div class="modal-excel-inner">
+          <div class="modal-excel-header">
+            <div class="modal-excel-icon">📥</div>
+            <div class="modal-excel-titles">
+              <h2>Exportar a Excel</h2>
+              <p>Selecciona la especialidad y el tipo de pacientes para el reporte.</p>
+            </div>
+            <button class="modal-excel-close" onclick="app._cerrarModalExcel()">✕</button>
+          </div>
 
-        <label style="font-weight:600;display:block;margin-bottom:.5rem;">Especialidad</label>
-        <div class="excel-esp-list">${opcionesHTML}</div>
+          <div class="modal-excel-section">
+            <div class="modal-excel-section-label">🏥 Especialidad</div>
+            <div class="excel-esp-list">
+              ${especialidades.map((esp, i) => `
+                <label class="excel-radio-opt" for="espOpt${i}">
+                  <input type="radio" name="excelEsp" id="espOpt${i}" value="${esp}" ${i === 0 ? 'checked' : ''}>
+                  <div class="excel-radio-dot"></div>
+                  <span class="excel-radio-label">${i === 0 ? '⭐ ' + esp : esp}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
 
-        <label style="font-weight:600;display:block;margin:.75rem 0 .5rem;">Pacientes a incluir</label>
-        <div style="display:flex;flex-direction:column;gap:.4rem;">
-          <label class="excel-esp-option" for="excelFiltroTodos">
-            <input type="radio" name="excelFiltro" id="excelFiltroTodos" value="todos" checked>
-            <span>✅ Todos (en lista + atendidos)</span>
-          </label>
-          <label class="excel-esp-option" for="excelFiltroLista">
-            <input type="radio" name="excelFiltro" id="excelFiltroLista" value="lista">
-            <span>⏳ Solo en lista (espera / pendiente / en consulta)</span>
-          </label>
-          <label class="excel-esp-option" for="excelFiltroAtendidos">
-            <input type="radio" name="excelFiltro" id="excelFiltroAtendidos" value="atendidos">
-            <span>🏁 Solo atendidos</span>
-          </label>
-        </div>
+          <div class="modal-excel-section">
+            <div class="modal-excel-section-label">👥 Pacientes a incluir</div>
+            <div class="excel-filtro-grid">
+              <label class="excel-chip-opt" for="excelFiltroTodos">
+                <input type="radio" name="excelFiltro" id="excelFiltroTodos" value="todos" checked>
+                <span class="excel-chip-icon">📋</span>
+                <span class="excel-chip-label">Todos<br>(lista + atendidos)</span>
+              </label>
+              <label class="excel-chip-opt" for="excelFiltroLista">
+                <input type="radio" name="excelFiltro" id="excelFiltroLista" value="lista">
+                <span class="excel-chip-icon">⏳</span>
+                <span class="excel-chip-label">Solo en lista<br>(pendientes)</span>
+              </label>
+              <label class="excel-chip-opt" for="excelFiltroAtendidos">
+                <input type="radio" name="excelFiltro" id="excelFiltroAtendidos" value="atendidos">
+                <span class="excel-chip-icon">🏁</span>
+                <span class="excel-chip-label">Solo<br>atendidos</span>
+              </label>
+            </div>
+          </div>
 
-        <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
-          <button class="btn-large" style="flex:1;background:var(--success);" onclick="app._ejecutarDescargaExcel()">📥 Descargar Excel</button>
-          <button class="btn-large btn-secondary" style="flex:0 0 auto;" onclick="app._cerrarModalExcel()">Cancelar</button>
+          <div class="modal-excel-footer">
+            <button class="btn-large btn-excel-download" onclick="app._ejecutarDescargaExcel()">📥 Descargar Excel</button>
+            <button class="btn-large btn-excel-cancel" onclick="app._cerrarModalExcel()">Cancelar</button>
+          </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
-
-    // Estilos dinámicos del modal
-    if (!document.getElementById('modalExcelStyles')) {
-      const style = document.createElement('style');
-      style.id = 'modalExcelStyles';
-      style.textContent = `
-        #modalExcelExport {
-          position: fixed; inset: 0; z-index: 9999;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .modal-excel-backdrop {
-          position: absolute; inset: 0;
-          background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
-        }
-        .modal-excel-box {
-          position: relative; z-index: 1;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-lg);
-          padding: 2rem;
-          width: min(520px, 94vw);
-          max-height: 85vh;
-          overflow-y: auto;
-          box-shadow: 0 25px 60px rgba(0,0,0,0.4);
-          animation: slideUp .25s ease;
-        }
-        .modal-excel-box h2 { margin-bottom: .5rem; }
-        .excel-esp-list {
-          display: flex; flex-direction: column; gap: .35rem;
-          max-height: 220px; overflow-y: auto;
-          padding: .5rem; background: var(--bg);
-          border: 1px solid var(--border); border-radius: var(--radius);
-          margin-bottom: .25rem;
-        }
-        .excel-esp-option {
-          display: flex; align-items: center; gap: .6rem;
-          padding: .45rem .6rem; border-radius: 6px;
-          cursor: pointer; transition: background .15s;
-          font-size: .9rem;
-        }
-        .excel-esp-option:hover { background: rgba(139,92,246,.1); }
-        .excel-esp-option input[type=radio] { accent-color: var(--primary); }
-      `;
-      document.head.appendChild(style);
-    }
   },
 
   _cerrarModalExcel() {
