@@ -831,69 +831,177 @@ const app = {
   },
 
   _mostrarModalExcel() {
-    // Eliminar modal previo si existe
     const prev = document.getElementById('modalExcelExport');
     if (prev) prev.remove();
 
     const especialidades = ['TODAS LAS ESPECIALIDADES', ...AREAS_ESTATICAS];
 
+    // Construir opciones de especialidad como <option> de un <select>
+    const opcionesEsp = especialidades.map((esp, i) =>
+      `<option value="${esp}">${i === 0 ? '\u2605 ' + esp : esp}</option>`
+    ).join('');
+
     const modal = document.createElement('div');
     modal.id = 'modalExcelExport';
+    modal.style.cssText = `
+      position:fixed;inset:0;z-index:9999;
+      display:flex;align-items:center;justify-content:center;
+      padding:1rem;
+      background:rgba(10,15,30,0.65);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+      animation:fadeIn .2s ease;
+    `;
+
     modal.innerHTML = `
-      <div class="modal-excel-backdrop" onclick="app._cerrarModalExcel()"></div>
-      <div class="modal-excel-box">
-        <div class="modal-excel-inner">
-          <div class="modal-excel-header">
-            <div class="modal-excel-icon">📥</div>
-            <div class="modal-excel-titles">
-              <h2>Exportar a Excel</h2>
-              <p>Selecciona la especialidad y el tipo de pacientes para el reporte.</p>
-            </div>
-            <button class="modal-excel-close" onclick="app._cerrarModalExcel()">✕</button>
+      <div style="
+        background:#fff;
+        border-radius:20px;
+        width:100%;max-width:480px;
+        box-shadow:0 24px 64px rgba(0,0,0,0.25);
+        overflow:hidden;
+        animation:slideUp .3s cubic-bezier(.16,1,.3,1);
+        font-family:'Outfit',sans-serif;
+      ">
+
+        <!-- Cabecera verde -->
+        <div style="
+          background:linear-gradient(135deg,#10b981,#059669);
+          padding:1.5rem 1.75rem;
+          display:flex;align-items:center;gap:1rem;
+        ">
+          <div style="
+            width:48px;height:48px;
+            background:rgba(255,255,255,0.2);
+            border-radius:12px;
+            display:flex;align-items:center;justify-content:center;
+            font-size:1.5rem;flex-shrink:0;
+          ">📊</div>
+          <div style="flex:1;">
+            <div style="color:#fff;font-size:1.25rem;font-weight:800;letter-spacing:-.02em;">Exportar a Excel</div>
+            <div style="color:rgba(255,255,255,.75);font-size:.85rem;margin-top:2px;">Elige la especialidad y tipo de pacientes</div>
+          </div>
+          <button onclick="app._cerrarModalExcel()" style="
+            background:rgba(255,255,255,.2);border:none;
+            width:32px;height:32px;border-radius:50%;
+            color:#fff;font-size:1rem;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;
+            transition:background .2s;font-family:inherit;
+          " onmouseover="this.style.background='rgba(255,255,255,.35)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">✕</button>
+        </div>
+
+        <!-- Cuerpo -->
+        <div style="padding:1.5rem 1.75rem;display:flex;flex-direction:column;gap:1.25rem;">
+
+          <!-- Especialidad -->
+          <div>
+            <label style="
+              display:block;font-size:.78rem;font-weight:700;
+              text-transform:uppercase;letter-spacing:.08em;
+              color:#64748b;margin-bottom:.5rem;
+            ">🏥 Especialidad</label>
+            <select id="excelSelectEsp" style="
+              width:100%;padding:.75rem 1rem;
+              border:1.5px solid #e2e8f0;border-radius:12px;
+              font-size:.95rem;font-family:'Outfit',sans-serif;
+              color:#0f172a;background:#f8fafc;
+              outline:none;cursor:pointer;
+              transition:border-color .2s;
+            " onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='#e2e8f0'">
+              ${opcionesEsp}
+            </select>
           </div>
 
-          <div class="modal-excel-section">
-            <div class="modal-excel-section-label">🏥 Especialidad</div>
-            <div class="excel-esp-list">
-              ${especialidades.map((esp, i) => `
-                <label class="excel-radio-opt" for="espOpt${i}">
-                  <input type="radio" name="excelEsp" id="espOpt${i}" value="${esp}" ${i === 0 ? 'checked' : ''}>
-                  <div class="excel-radio-dot"></div>
-                  <span class="excel-radio-label">${i === 0 ? '⭐ ' + esp : esp}</span>
-                </label>
-              `).join('')}
+          <!-- Filtro de pacientes -->
+          <div>
+            <label style="
+              display:block;font-size:.78rem;font-weight:700;
+              text-transform:uppercase;letter-spacing:.08em;
+              color:#64748b;margin-bottom:.6rem;
+            ">👥 Pacientes a incluir</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;">
+
+              <label id="chip-todos" onclick="app._selChip(this)" style="
+                display:flex;flex-direction:column;align-items:center;gap:.35rem;
+                padding:.85rem .5rem;border-radius:12px;cursor:pointer;
+                border:2px solid #4f46e5;background:#ede9fe;
+                transition:all .2s;text-align:center;
+              ">
+                <input type="radio" name="excelFiltro" value="todos" checked style="display:none">
+                <span style="font-size:1.4rem;">📋</span>
+                <span style="font-size:.75rem;font-weight:700;color:#4338ca;line-height:1.3;">Todos<br><span style="font-weight:500;color:#6d28d9;">(lista + atendidos)</span></span>
+              </label>
+
+              <label id="chip-lista" onclick="app._selChip(this)" style="
+                display:flex;flex-direction:column;align-items:center;gap:.35rem;
+                padding:.85rem .5rem;border-radius:12px;cursor:pointer;
+                border:2px solid #e2e8f0;background:#fff;
+                transition:all .2s;text-align:center;
+              ">
+                <input type="radio" name="excelFiltro" value="lista" style="display:none">
+                <span style="font-size:1.4rem;">⏳</span>
+                <span style="font-size:.75rem;font-weight:700;color:#64748b;line-height:1.3;">Solo lista<br><span style="font-weight:500;">(pendientes)</span></span>
+              </label>
+
+              <label id="chip-atendidos" onclick="app._selChip(this)" style="
+                display:flex;flex-direction:column;align-items:center;gap:.35rem;
+                padding:.85rem .5rem;border-radius:12px;cursor:pointer;
+                border:2px solid #e2e8f0;background:#fff;
+                transition:all .2s;text-align:center;
+              ">
+                <input type="radio" name="excelFiltro" value="atendidos" style="display:none">
+                <span style="font-size:1.4rem;">✅</span>
+                <span style="font-size:.75rem;font-weight:700;color:#64748b;line-height:1.3;">Solo<br><span style="font-weight:500;">atendidos</span></span>
+              </label>
+
             </div>
           </div>
 
-          <div class="modal-excel-section">
-            <div class="modal-excel-section-label">👥 Pacientes a incluir</div>
-            <div class="excel-filtro-grid">
-              <label class="excel-chip-opt" for="excelFiltroTodos">
-                <input type="radio" name="excelFiltro" id="excelFiltroTodos" value="todos" checked>
-                <span class="excel-chip-icon">📋</span>
-                <span class="excel-chip-label">Todos<br>(lista + atendidos)</span>
-              </label>
-              <label class="excel-chip-opt" for="excelFiltroLista">
-                <input type="radio" name="excelFiltro" id="excelFiltroLista" value="lista">
-                <span class="excel-chip-icon">⏳</span>
-                <span class="excel-chip-label">Solo en lista<br>(pendientes)</span>
-              </label>
-              <label class="excel-chip-opt" for="excelFiltroAtendidos">
-                <input type="radio" name="excelFiltro" id="excelFiltroAtendidos" value="atendidos">
-                <span class="excel-chip-icon">🏁</span>
-                <span class="excel-chip-label">Solo<br>atendidos</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="modal-excel-footer">
-            <button class="btn-large btn-excel-download" onclick="app._ejecutarDescargaExcel()">📥 Descargar Excel</button>
-            <button class="btn-large btn-excel-cancel" onclick="app._cerrarModalExcel()">Cancelar</button>
+          <!-- Botones -->
+          <div style="display:flex;gap:.75rem;padding-top:.5rem;border-top:1px solid #f1f5f9;">
+            <button onclick="app._ejecutarDescargaExcel()" style="
+              flex:1;padding:.85rem 1rem;
+              background:linear-gradient(135deg,#10b981,#059669);
+              color:#fff;border:none;border-radius:12px;
+              font-size:1rem;font-weight:700;font-family:'Outfit',sans-serif;
+              cursor:pointer;transition:all .2s;
+              box-shadow:0 6px 20px rgba(16,185,129,0.35);
+              display:flex;align-items:center;justify-content:center;gap:.5rem;
+            " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 28px rgba(16,185,129,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 6px 20px rgba(16,185,129,.35)'">
+              <span style="font-size:1.1rem;">📥</span> Descargar Excel
+            </button>
+            <button onclick="app._cerrarModalExcel()" style="
+              padding:.85rem 1.25rem;
+              background:#f1f5f9;color:#64748b;
+              border:1.5px solid #e2e8f0;border-radius:12px;
+              font-size:.95rem;font-weight:600;font-family:'Outfit',sans-serif;
+              cursor:pointer;transition:all .2s;
+            " onmouseover="this.style.background='#e2e8f0';this.style.color='#334155'" onmouseout="this.style.background='#f1f5f9';this.style.color='#64748b'">Cancelar</button>
           </div>
         </div>
       </div>
     `;
     document.body.appendChild(modal);
+  },
+
+  _selChip(labelEl) {
+    // Deseleccionar todos los chips
+    ['chip-todos', 'chip-lista', 'chip-atendidos'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.border = '2px solid #e2e8f0';
+      el.style.background = '#fff';
+      const span = el.querySelector('span:last-child');
+      if (span) span.style.color = '#64748b';
+    });
+    // Marcar el seleccionado
+    labelEl.style.border = '2px solid #4f46e5';
+    labelEl.style.background = '#ede9fe';
+    const span = labelEl.querySelector('span:last-child');
+    if (span) span.style.color = '#4338ca';
+    // Marcar el radio
+    const radio = labelEl.querySelector('input[type=radio]');
+    if (radio) radio.checked = true;
   },
 
   _cerrarModalExcel() {
@@ -908,7 +1016,7 @@ const app = {
       return;
     }
 
-    const especialidadSel = document.querySelector('input[name="excelEsp"]:checked')?.value || 'TODAS LAS ESPECIALIDADES';
+    const especialidadSel = document.getElementById('excelSelectEsp')?.value || 'TODAS LAS ESPECIALIDADES';
     const filtroSel = document.querySelector('input[name="excelFiltro"]:checked')?.value || 'todos';
 
     this._cerrarModalExcel();
