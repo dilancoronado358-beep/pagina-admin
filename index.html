@@ -10,6 +10,10 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Librerías Externas Premium -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <!-- Estilos -->
   <link rel="stylesheet" href="style.css">
 </head>
@@ -39,6 +43,9 @@
         <button id="btnIngresar" class="btn-large" style="margin-top: 1.75rem;" onclick="app.iniciarSesion()">
           Ingresar al Sistema
         </button>
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+          <button class="btn-action" style="background: transparent; border: 1.5px solid var(--primary); color: var(--primary); width: 100%; padding: 0.75rem;" onclick="app.abrirModoTV()">📺 Abrir Pantalla Pública (TV)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -56,15 +63,44 @@
     <div class="user-info" id="userInfoDisplay">
       <span id="roleBadge"></span>
       <strong id="displayUserName"></strong>
-      <button class="btn-action" style="margin-right: 0.5rem; background: var(--primary);" onclick="app.abrirHistoriaClinica()" id="btnNavHistoriaClinica">📖 Historia Clínica</button>
       <button class="logout-btn" onclick="app.cerrarSesion()">Salir</button>
     </div>
   </header>
 
   <!-- =====================================================
+       NAVEGACIÓN PRINCIPAL (MENU)
+       ===================================================== -->
+  <nav class="main-nav" id="mainNav" style="display: none;">
+    <div class="nav-container">
+      <button class="nav-item active" id="navBtnPrincipal" onclick="app.restaurarVistaSegunRol()">🏠 Panel Principal</button>
+      <button class="nav-item" id="navBtnHistoria" onclick="app.abrirHistoriaClinica()">📖 Historia Clínica</button>
+      <button class="nav-item" id="navBtnDashboard" onclick="app.abrirDashboard()" style="display: none;">📊 Dashboard</button>
+    </div>
+  </nav>
+
+  <!-- =====================================================
        CONTENIDO PRINCIPAL
        ===================================================== -->
   <main>
+
+    <!-- VISTA: Pantalla Pública (TV) -->
+    <div id="view-tv" class="view" style="padding: 0; max-width: 100%; margin: -2rem;">
+      <div style="height: calc(100vh - 80px); background: #0f172a; display: flex; align-items: center; justify-content: center; flex-direction: column; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; background: linear-gradient(135deg, var(--primary), #0369a1); color: white; padding: 1.5rem; text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+          SISTEMA DE TURNOS - RENOVACIÓN MONTUFAREÑA
+          <button onclick="app.cerrarModoTV()" style="position:absolute; right: 1.5rem; top: 1.5rem; background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.9rem;">✕ Cerrar TV</button>
+        </div>
+        <div id="tvContent" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; padding: 2rem;">
+          <div style="font-size: 2.5rem; color: #64748b; font-weight: 600;">Esperando llamados...</div>
+        </div>
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.95); padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+          <h3 style="color: #94a3b8; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Últimos Llamados</h3>
+          <div id="tvUltimosLlamados" style="display: flex; gap: 1.5rem; overflow-x: hidden;">
+             <!-- items -->
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- VISTA: Dar Turno (Turnero / Recepción) -->
     <div id="view-darTurno" class="view">
@@ -80,7 +116,8 @@
 
           <div class="form-group">
             <label for="pacienteCedula">Número de Cédula</label>
-            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx">
+            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx" onblur="app.buscarPacienteExistente()">
+            <div id="cedulaFeedback" style="font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
           </div>
 
           <div class="form-group">
@@ -98,6 +135,27 @@
             <select id="pacienteEspecialidad">
               <option value="">-- Seleccionar Área --</option>
             </select>
+          </div>
+
+          <div class="form-group full-width" style="background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <label style="margin-bottom: 0.8rem; font-weight: 700; color: var(--text-dark);">¿Cuándo es la consulta?</label>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+              <label class="excel-radio-opt" style="flex:1;">
+                <input type="radio" name="tipo_turno" value="hoy" checked onchange="document.getElementById('fechaCitaContainer').style.display='none'">
+                <div class="excel-radio-dot"></div>
+                <span class="excel-radio-label">Para Hoy (Sala de Espera)</span>
+              </label>
+              <label class="excel-radio-opt" style="flex:1;">
+                <input type="radio" name="tipo_turno" value="programado" onchange="document.getElementById('fechaCitaContainer').style.display='block'">
+                <div class="excel-radio-dot"></div>
+                <span class="excel-radio-label">Cita Futura (Agendar)</span>
+              </label>
+            </div>
+            
+            <div id="fechaCitaContainer" style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
+              <label for="pacienteFechaCita">Fecha y Hora Programada</label>
+              <input type="datetime-local" id="pacienteFechaCita">
+            </div>
           </div>
         </div>
 
@@ -123,6 +181,25 @@
             <div class="state-empty">
               <span class="state-empty-icon">📭</span>
               <span class="state-empty-text">No has registrado pacientes aún</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- SECCIÓN AGENDA DE CITAS FUTURAS -->
+      <div class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+          <h2>📅 Agenda de Citas</h2>
+          <div class="card-header-actions">
+            <button onclick="app.cargarAgenda()" class="btn-action">🔄 Actualizar</button>
+          </div>
+        </div>
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">Pacientes programados para atención futura. Puedes enviarlos a la sala de espera cuando lleguen.</p>
+        <ul class="patient-list" id="agendaList">
+          <li>
+            <div class="state-empty">
+              <span class="state-empty-icon">📅</span>
+              <span class="state-empty-text">No hay citas programadas</span>
             </div>
           </li>
         </ul>
@@ -326,7 +403,32 @@
           </div>
         </div>
 
-          <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()">
+        <div id="farmaciaControls" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); width: 100%;">
+          <h3 style="margin-bottom: 1rem; color: var(--text-dark); font-size: 1.1rem;">Control de Entrega (Farmacia)</h3>
+          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <label class="excel-radio-opt" style="flex:1;">
+              <input type="radio" name="estado_entrega" value="Completo" checked>
+              <div class="excel-radio-dot"></div>
+              <span class="excel-radio-label">Entregado Completo</span>
+            </label>
+            <label class="excel-radio-opt" style="flex:1;">
+              <input type="radio" name="estado_entrega" value="Parcial">
+              <div class="excel-radio-dot"></div>
+              <span class="excel-radio-label">Entregado Parcial</span>
+            </label>
+            <label class="excel-radio-opt" style="flex:1;">
+              <input type="radio" name="estado_entrega" value="Sin Stock">
+              <div class="excel-radio-dot"></div>
+              <span class="excel-radio-label">Sin Stock</span>
+            </label>
+          </div>
+          <div class="form-group full-width">
+            <label for="farmaciaNotas">Notas / Observaciones de Farmacia</label>
+            <textarea id="farmaciaNotas" rows="2" placeholder="Ej: No hubo paracetamol de 500mg..."></textarea>
+          </div>
+        </div>
+
+          <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()" style="margin-top: 1.5rem;">
             ✅ Finalizar Consulta
           </button>
           <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin Guardar)</button>
@@ -341,11 +443,14 @@
             <div style="font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.5rem;">CÓDIGO DE RECETA</div>
             <div id="consultaCodigoGenerado" style="font-size: 4.5rem; font-weight: 800; color: var(--primary); letter-spacing: 4px; line-height: 1;">----</div>
           </div>
-          
-          <button class="btn-large" onclick="app.cerrarPantallaExitoConsulta()">
-            Cerrar y Volver a la Lista
-          </button>
-        </div>
+          <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button class="btn-large" style="background: var(--primary);" onclick="app.descargarRecetaPDF()">
+              🖨️ Descargar Receta (PDF)
+            </button>
+            <button class="btn-large btn-secondary" onclick="app.cerrarPantallaExitoConsulta()">
+              Cerrar y Volver
+            </button>
+          </div>
 
       </div>
     </div>
@@ -444,6 +549,45 @@
             </div>
           </li>
         </ul>
+      </div>
+    </div>
+
+    <!-- VISTA: Dashboard (Analytics) -->
+    <div id="view-dashboard" class="view">
+      <div class="card">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2>📊 Panel de Estadísticas (Analytics)</h2>
+          <div class="card-header-actions">
+            <button class="btn-action" style="background: var(--primary);" onclick="app.generarDashboard()">🔄 Refrescar</button>
+            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al Panel</button>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Total Hoy</h3>
+            <div id="dashTotalPacientes" style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">0</div>
+          </div>
+          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Atendidos</h3>
+            <div id="dashTotalAtendidos" style="font-size: 2.5rem; font-weight: 800; color: var(--success);">0</div>
+          </div>
+          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">En Espera</h3>
+            <div id="dashTotalEspera" style="font-size: 2.5rem; font-weight: 800; color: #f59e0b;">0</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
+            <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Pacientes por Área</h3>
+            <canvas id="chartAreas"></canvas>
+          </div>
+          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
+            <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Estado General</h3>
+            <canvas id="chartEstados"></canvas>
+          </div>
+        </div>
       </div>
     </div>
 

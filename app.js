@@ -141,9 +141,16 @@ const app = {
       if (Estado.autoRefreshInterval) clearInterval(Estado.autoRefreshInterval);
       Estado.autoRefreshInterval = setInterval(() => this.cargarPacientesArea(), 5000);
     }
+    this.activarTab('Principal');
   },
 
   // ---- NAVEGACIÓN ----
+
+  activarTab(tabId) {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('navBtn' + tabId);
+    if (btn) btn.classList.add('active');
+  },
 
   mostrarVista(vistaId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -158,7 +165,10 @@ const app = {
     if (rb) rb.innerText = badge;
     if (dn) dn.innerText = nombre;
 
-    const btnDash = document.getElementById('btnNavDashboard');
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.style.display = 'block';
+
+    const btnDash = document.getElementById('navBtnDashboard');
     if (btnDash) {
       btnDash.style.display = Estado.role === 'admin' ? 'inline-block' : 'none';
     }
@@ -177,6 +187,8 @@ const app = {
     localStorage.removeItem('turnero_session');
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('overlay').style.display = 'flex';
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.style.display = 'none';
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
   },
@@ -1858,6 +1870,7 @@ const app = {
 
   // ---- DASHBOARD (ANALYTICS) ----
   abrirDashboard() {
+    this.activarTab('Dashboard');
     this.mostrarVista('dashboard');
     this.generarDashboard();
   },
@@ -1941,6 +1954,7 @@ const app = {
   // HISTORIA CLÍNICA
   // ============================================================
   abrirHistoriaClinica() {
+    this.activarTab('Historia');
     this.mostrarVista('historiaClinica');
     document.getElementById('historiaClinicaResults').style.display = 'none';
     document.getElementById('historiaClinicaEmpty').style.display = 'block';

@@ -207,6 +207,49 @@ header {
 }
 
 /* ============================================================
+   NAVEGACIÓN PRINCIPAL
+   ============================================================ */
+.main-nav {
+  background: var(--surface-solid);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 80px; /* height of header */
+  z-index: 90;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -2px rgba(0,0,0,0.02);
+}
+
+.nav-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  padding: 1.25rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  color: var(--primary);
+  border-bottom-color: var(--border-strong);
+}
+
+.nav-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* ============================================================
    MAIN
    ============================================================ */
 main {
@@ -803,6 +846,11 @@ main {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(48px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -1185,3 +1233,49 @@ main {
   .btn-excel-cancel { width: 100%; }
 }
 
+/* ============================================================
+   IMPRESIÓN (TICKET TÉRMICO)
+   ============================================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printArea, #printArea * {
+    visibility: visible;
+  }
+  #printArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Formato ticketera térmica */
+    padding: 0;
+    margin: 0;
+    color: #000 !important;
+  }
+  
+  /* Ticket Styles */
+  .ticket-print {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
+    color: #000;
+  }
+  .ticket-print h1 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 5px 0;
+  }
+  .ticket-print h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+  .ticket-print .line {
+    border-top: 1px dashed #000;
+    margin: 10px 0;
+  }
+  .ticket-print p {
+    margin: 4px 0;
+  }
+}
