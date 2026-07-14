@@ -124,6 +124,7 @@ const app = {
       this.cerrarOverlay('📝', Estado.userName);
       this.mostrarVista('darTurno');
       this.cargarHistorialTurnero();
+      this.cargarAgenda();
     } else if (Estado.role === 'enfermera') {
       this.cerrarOverlay('🩺', Estado.userName);
       this.mostrarVista('triaje');
@@ -156,6 +157,11 @@ const app = {
     const dn = document.getElementById('displayUserName');
     if (rb) rb.innerText = badge;
     if (dn) dn.innerText = nombre;
+
+    const btnDash = document.getElementById('btnNavDashboard');
+    if (btnDash) {
+      btnDash.style.display = Estado.role === 'admin' ? 'inline-block' : 'none';
+    }
   },
 
   // ---- CERRAR SESIÓN ----
@@ -173,6 +179,124 @@ const app = {
     document.getElementById('overlay').style.display = 'flex';
     document.getElementById('loginUsername').value = '';
     document.getElementById('loginPassword').value = '';
+  },
+
+  // ============================================================
+  // MODO PANTALLA PÚBLICA (TV)
+  // ============================================================
+  tvInterval: null,
+  tvUltimos: [],
+  tvPrimeraCargaHecha: false,
+
+  abrirModoTV() {
+    document.getElementById('overlay').style.display = 'none';
+    const header = document.querySelector('header');
+    if (header) header.style.display = 'none';
+    this.mostrarVista('tv');
+
+    // Activar sonido inicial para permisos de navegador (autoplay policy)
+    try {
+      const u = new SpeechSynthesisUtterance('');
+      u.volume = 0;
+      speechSynthesis.speak(u);
+    } catch (e) { }
+
+    this.tvUltimos = [];
+    this.tvPrimeraCargaHecha = false;
+    this.tvInterval = setInterval(() => this.actualizarTV(), 3000);
+    this.actualizarTV();
+  },
+
+  cerrarModoTV() {
+    if (this.tvInterval) clearInterval(this.tvInterval);
+    document.getElementById('overlay').style.display = 'flex';
+    const header = document.querySelector('header');
+    if (header) header.style.display = 'flex';
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  },
+
+  async actualizarTV() {
+    if (!Estado.online || !sb) return;
+    try {
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('*')
+        .eq('estado', 'en_consulta')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+
+      if (!data) return;
+
+      const llamadosActuales = data.map(t => t.id);
+
+      if (!this.tvPrimeraCargaHecha) {
+        this.tvUltimos = llamadosActuales;
+        this.tvPrimeraCargaHecha = true;
+        return;
+      }
+
+      const nuevos = data.filter(t => !this.tvUltimos.includes(t.id));
+
+      if (nuevos.length > 0) {
+        const paciente = nuevos[0]; // Tomar el primero nuevo
+        this.anunciarTurnoTV(paciente);
+
+        // Actualizar lista
+        this.tvUltimos = llamadosActuales;
+      }
+
+    } catch (e) {
+      console.error('Error TV:', e);
+    }
+  },
+
+  anunciarTurnoTV(paciente) {
+    const turnoTxt = paciente.numero_turno_area
+      ? paciente.especialidad.substring(0, 3).toUpperCase() + '-' + paciente.numero_turno_area
+      : 'Nuevo Paciente';
+
+    const mainContent = document.getElementById('tvContent');
+    if (mainContent) {
+      mainContent.innerHTML = `
+        <div style="font-size: 6rem; color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 1rem; text-shadow: 0 0 40px rgba(56, 189, 248, 0.4); animation: pulse 2s infinite;">${turnoTxt}</div>
+        <div style="font-size: 4rem; color: white; font-weight: 700; margin-bottom: 2rem;">${paciente.nombre}</div>
+        <div style="font-size: 2.5rem; color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 1.5rem 4rem; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
+      `;
+    }
+
+    const historyContainer = document.getElementById('tvUltimosLlamados');
+    if (historyContainer) {
+      const historyItem = document.createElement('div');
+      historyItem.style.cssText = "background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; min-width: 200px; border-left: 4px solid #38bdf8;";
+      historyItem.innerHTML = `<div style="font-size: 1.5rem; font-weight: bold; color: white;">${turnoTxt}</div><div style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">${paciente.especialidad}</div>`;
+
+      historyContainer.prepend(historyItem);
+      if (historyContainer.children.length > 5) {
+        historyContainer.lastChild.remove();
+      }
+    }
+
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+      osc.start();
+      osc.stop(ctx.currentTime + 1);
+
+      setTimeout(() => {
+        const u = new SpeechSynthesisUtterance(`Turno ${turnoTxt}, paciente ${paciente.nombre}. Por favor acercarse a ${paciente.especialidad}`);
+        u.lang = 'es-ES';
+        u.rate = 0.9;
+        speechSynthesis.speak(u);
+      }, 800);
+    } catch (e) { console.error('Audio error', e); }
   },
 
   // ============================================================
@@ -229,6 +353,61 @@ const app = {
     btn.innerText = originalText;
   },
 
+  async buscarPacienteExistente() {
+    const cedulaInput = document.getElementById('pacienteCedula');
+    if (!cedulaInput) return;
+    const cedula = cedulaInput.value.trim();
+    const feedback = document.getElementById('cedulaFeedback');
+
+    if (!cedula || cedula.length < 5) {
+      if (feedback) feedback.style.display = 'none';
+      return;
+    }
+
+    if (!Estado.online || !sb) return;
+
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.color = 'var(--text-muted)';
+      feedback.innerText = 'Buscando paciente...';
+    }
+
+    try {
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('nombre, celular, direccion')
+        .eq('cedula', cedula)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const p = data[0];
+        // Remover tags como [Receta: 1234] o [Solo Papanicolau] si existen en el nombre del historial
+        let nombreLimpio = p.nombre || '';
+        if (nombreLimpio.startsWith('[')) {
+          nombreLimpio = nombreLimpio.replace(/^\[.*?\]\s*/, '');
+        }
+
+        document.getElementById('pacienteNameInput').value = nombreLimpio;
+        if (p.celular) document.getElementById('pacienteCelular').value = p.celular;
+        if (p.direccion) document.getElementById('pacienteDireccion').value = p.direccion;
+
+        if (feedback) {
+          feedback.style.color = 'var(--success)';
+          feedback.innerHTML = '✅ Paciente existente. Datos autocompletados.';
+        }
+      } else {
+        if (feedback) {
+          feedback.style.display = 'none';
+        }
+      }
+    } catch (e) {
+      console.error('Error buscando paciente', e);
+      if (feedback) feedback.style.display = 'none';
+    }
+  },
+
   async darTurno(directoEspecialidad = false) {
     const btn = document.getElementById(directoEspecialidad ? 'btnDarTurnoDirecto' : 'btnDarTurno');
     const originalText = btn.innerText;
@@ -256,28 +435,41 @@ const app = {
     const motivoExtra = opcion ? opcion.motivo : null;
 
     try {
+      // Leer si es cita programada
+      const tipoTurnoOpt = document.querySelector('input[name="tipo_turno"]:checked');
+      const esCitaProgramada = tipoTurnoOpt && tipoTurnoOpt.value === 'programado';
+      const fechaCita = esCitaProgramada ? document.getElementById('pacienteFechaCita').value : null;
+
+      if (esCitaProgramada && !fechaCita) {
+        this.toast('Selecciona la fecha y hora para la cita', 'error');
+        btn.disabled = false; btn.innerText = originalText; return;
+      }
+
       if (Estado.online && sb) {
-        let estadoStr = directoEspecialidad ? 'pendiente' : 'en_espera';
+        let estadoStr = esCitaProgramada ? 'programado' : (directoEspecialidad ? 'pendiente' : 'en_espera');
         let atendidoPor = directoEspecialidad ? 'Directo desde Recepción' : null;
 
-        // Calcular el número de turno para esa especialidad SIEMPRE
-        const { data: maxData } = await sb.from('pacientes_espera')
-          .select('numero_turno_area')
-          .eq('especialidad', especialidad)
-          .not('numero_turno_area', 'is', null)
-          .order('numero_turno_area', { ascending: false })
-          .limit(1);
+        // Solo calcular número de turno si no es cita programada
+        let numTurno = null;
+        if (!esCitaProgramada) {
+          const { data: maxData } = await sb.from('pacientes_espera')
+            .select('numero_turno_area')
+            .eq('especialidad', especialidad)
+            .not('numero_turno_area', 'is', null)
+            .order('numero_turno_area', { ascending: false })
+            .limit(1);
 
-        let numTurno = 1;
-        if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
-          numTurno = maxData[0].numero_turno_area + 1;
+          numTurno = 1;
+          if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+            numTurno = maxData[0].numero_turno_area + 1;
+          }
         }
 
         // Si hay motivo especial (ej: Solo Papanicolau), se incluye como prefijo
         // en el nombre del servicio almacenado para que el doctor lo vea en su cola
         const nombreConMotivo = motivoExtra ? `[${motivoExtra}] ${nombre}` : nombre;
 
-        const { error } = await sb.from('pacientes_espera').insert({
+        const insertObj = {
           nombre: nombreConMotivo,
           cedula: cedula,
           celular: celular,
@@ -287,19 +479,42 @@ const app = {
           creado_por: Estado.userName,
           atendido_por: atendidoPor,
           estado: estadoStr
-        });
+        };
+
+        if (esCitaProgramada && fechaCita) {
+          insertObj.fecha_cita = new Date(fechaCita).toISOString();
+        }
+
+        const { error } = await sb.from('pacientes_espera').insert(insertObj);
         if (error) throw error;
       }
 
-      const destino = directoEspecialidad ? `${especialidad}` : 'Signos Vitales';
       const etiqueta = motivoExtra ? `${seleccion} → ${especialidad}` : especialidad;
-      this.toast(`✅ "${nombre}" → ${etiqueta}`, 'success');
+      const tipoMsg = esCitaProgramada ? `📅 Cita agendada para ${new Date(fechaCita).toLocaleString('es-EC')}` : `✅ "${nombre}" → ${etiqueta}`;
+      this.toast(tipoMsg, 'success');
       document.getElementById('pacienteNameInput').value = '';
       document.getElementById('pacienteCedula').value = '';
       document.getElementById('pacienteCelular').value = '';
       document.getElementById('pacienteDireccion').value = '';
       document.getElementById('pacienteEspecialidad').value = '';
+      // Reset tipo turno
+      const hoyOpt = document.querySelector('input[name="tipo_turno"][value="hoy"]');
+      if (hoyOpt) hoyOpt.checked = true;
+      const fechaContaner = document.getElementById('fechaCitaContainer');
+      if (fechaContaner) fechaContaner.style.display = 'none';
+
+      if (document.getElementById('cedulaFeedback')) document.getElementById('cedulaFeedback').style.display = 'none';
       this.cargarHistorialTurnero();
+      this.cargarAgenda();
+
+      // Solo imprimir ticket si es turno de hoy
+      if (!esCitaProgramada) {
+        this.imprimirTicket({
+          nombre: nombre,
+          especialidad: especialidad,
+          numero_turno_area: numTurno
+        });
+      }
 
     } catch (err) {
       console.error(err);
@@ -308,6 +523,40 @@ const app = {
 
     btn.disabled = false;
     btn.innerText = originalText;
+  },
+
+  imprimirTicket(paciente) {
+    let printArea = document.getElementById('printArea');
+    if (!printArea) {
+      printArea = document.createElement('div');
+      printArea.id = 'printArea';
+      document.body.appendChild(printArea);
+    }
+
+    const turnoText = paciente.numero_turno_area
+      ? `${paciente.especialidad.substring(0, 3).toUpperCase()}-${paciente.numero_turno_area}`
+      : 'EN ESPERA';
+
+    printArea.innerHTML = `
+      <div class="ticket-print">
+        <p>RENOVACIÓN MONTUFAREÑA</p>
+        <p>SISTEMA DE TURNOS</p>
+        <div class="line"></div>
+        <p style="font-size: 14px;"><strong>${paciente.especialidad}</strong></p>
+        <h2>${turnoText}</h2>
+        <div class="line"></div>
+        <p>Paciente:</p>
+        <h1>${paciente.nombre}</h1>
+        <p>Fecha: ${new Date().toLocaleDateString('es-EC')} ${new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit' })}</p>
+        <div class="line"></div>
+        <p>Por favor, espere su llamado</p>
+        <p>en la pantalla pública.</p>
+      </div>
+    `;
+
+    setTimeout(() => {
+      window.print();
+    }, 100);
   },
 
   async cargarHistorialTurnero() {
@@ -353,6 +602,120 @@ const app = {
       });
     } catch (err) {
       console.error('Error historial turnero:', err);
+    }
+  },
+
+  async cargarAgenda() {
+    const lista = document.getElementById('agendaList');
+    if (!lista) return;
+    if (!Estado.online || !sb) return;
+
+    try {
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('*')
+        .eq('estado', 'programado')
+        .order('fecha_cita', { ascending: true });
+      if (error) throw error;
+
+      lista.innerHTML = '';
+      if (!data || data.length === 0) {
+        lista.innerHTML = `
+          <li>
+            <div class="state-empty">
+              <span class="state-empty-icon">📅</span>
+              <span class="state-empty-text">No hay citas programadas</span>
+            </div>
+          </li>`;
+        return;
+      }
+
+      data.forEach(cita => {
+        const fechaFormato = cita.fecha_cita
+          ? new Date(cita.fecha_cita).toLocaleString('es-EC', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : 'Sin fecha';
+
+        const ahora = new Date();
+        const fechaCita = new Date(cita.fecha_cita);
+        const esPasada = fechaCita < ahora;
+        const esPronto = !esPasada && (fechaCita - ahora) < 3600000; // Menos de 1 hora
+
+        let estadoColor = esPasada ? 'var(--danger)' : (esPronto ? '#f59e0b' : 'var(--text-muted)');
+
+        lista.innerHTML += `
+          <li class="patient-item">
+            <div class="patient-header">
+              <div>
+                <div class="patient-title">${cita.nombre}</div>
+                <div class="patient-subtitle">Cédula: ${cita.cedula || 'N/A'} | ${cita.especialidad}</div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: ${estadoColor}; margin-top: 4px;">
+                  📅 ${fechaFormato}${esPasada ? ' — Cita Vencida' : (esPronto ? ' — ¡Próximamente!' : '')}
+                </div>
+              </div>
+              <div class="patient-actions">
+                <button class="btn-action" style="background: var(--success);" onclick="app.confirmarCita('${cita.id}', '${cita.nombre}')">
+                  ✅ Llegó — Enviar a Espera
+                </button>
+                <button class="btn-action" style="background: var(--danger);" onclick="app.cancelarCita('${cita.id}')">
+                  🗑️ Cancelar
+                </button>
+              </div>
+            </div>
+          </li>`;
+      });
+    } catch (err) {
+      console.error('Error agenda:', err);
+      lista.innerHTML = `<li class="patient-item" style="text-align:center;color:red;">Error al cargar la agenda: ${err.message}</li>`;
+    }
+  },
+
+  async confirmarCita(citaId, nombre) {
+    if (!Estado.online || !sb) return;
+    try {
+      // Calcular turno en la especialidad
+      const { data: citaData, error: citaErr } = await sb.from('pacientes_espera')
+        .select('*').eq('id', citaId).limit(1);
+      if (citaErr || !citaData || citaData.length === 0) throw new Error('No se encontró la cita');
+
+      const cita = citaData[0];
+
+      const { data: maxData } = await sb.from('pacientes_espera')
+        .select('numero_turno_area')
+        .eq('especialidad', cita.especialidad)
+        .not('numero_turno_area', 'is', null)
+        .order('numero_turno_area', { ascending: false })
+        .limit(1);
+
+      let numTurno = 1;
+      if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+        numTurno = maxData[0].numero_turno_area + 1;
+      }
+
+      const { error } = await sb.from('pacientes_espera')
+        .update({ estado: 'en_espera', numero_turno_area: numTurno })
+        .eq('id', citaId);
+      if (error) throw error;
+
+      this.toast(`✅ "${nombre}" enviado a sala de espera. Turno #${numTurno}`, 'success');
+      this.cargarAgenda();
+      this.imprimirTicket({ nombre: cita.nombre, especialidad: cita.especialidad, numero_turno_area: numTurno });
+    } catch (e) {
+      console.error(e);
+      this.toast('Error al confirmar cita: ' + e.message, 'error');
+    }
+  },
+
+  async cancelarCita(citaId) {
+    if (!confirm('¿Estás seguro de cancelar esta cita?')) return;
+    if (!Estado.online || !sb) return;
+    try {
+      const { error } = await sb.from('pacientes_espera')
+        .update({ estado: 'cancelado' })
+        .eq('id', citaId);
+      if (error) throw error;
+      this.toast('🗑️ Cita cancelada', 'success');
+      this.cargarAgenda();
+    } catch (e) {
+      this.toast('Error al cancelar: ' + e.message, 'error');
     }
   },
 
@@ -654,6 +1017,11 @@ const app = {
 
     const isFarmacia = Estado.areaId === 'Farmacia';
 
+    const fControls = document.getElementById('farmaciaControls');
+    if (fControls) fControls.style.display = isFarmacia ? 'block' : 'none';
+    const fNotas = document.getElementById('farmaciaNotas');
+    if (fNotas) fNotas.value = '';
+
     // Bloquear edición si es Farmacia
     const camposFormulario = [
       'consNombre', 'consCedula', 'consCelular', 'consDireccion',
@@ -730,6 +1098,13 @@ const app = {
 
     let codigoReceta = null;
     const isFarmacia = Estado.areaId === 'Farmacia';
+
+    if (isFarmacia) {
+      const checkedOpt = document.querySelector('input[name="estado_entrega"]:checked');
+      if (checkedOpt) sv.farmacia_entrega = checkedOpt.value;
+      const fNotas = document.getElementById('farmaciaNotas');
+      if (fNotas) sv.farmacia_notas = fNotas.value.trim();
+    }
 
     // Solo los doctores (no Farmacia) pueden generar nuevas recetas y enviar a Farmacia
     if (recetaTexto && !isFarmacia) {
@@ -822,6 +1197,81 @@ const app = {
 
   cerrarPantallaExitoConsulta() {
     this.mostrarVista('misPacientes');
+  },
+
+  descargarRecetaPDF() {
+    const btn = document.querySelector('#formConsultaSuccess button.btn-large');
+    const originalText = btn.innerText;
+    btn.innerText = 'Generando PDF...';
+    btn.disabled = true;
+
+    const pacienteNombre = document.getElementById('consNombre').value.trim();
+    const pacienteCedula = document.getElementById('consCedula').value.trim();
+    const diagnostico = document.getElementById('consDiagnostico').value.trim();
+    const receta = document.getElementById('consReceta').value.trim();
+    const codigo = document.getElementById('consultaCodigoGenerado').innerText;
+    const fecha = new Date().toLocaleDateString('es-EC');
+
+    const div = document.createElement('div');
+    div.style.cssText = 'padding: 40px; font-family: Arial, sans-serif; color: #333; background: #fff; line-height: 1.6; position: absolute; left: -9999px; width: 800px;';
+
+    div.innerHTML = `
+      <div style="text-align: center; border-bottom: 2px solid #0ea5e9; padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="color: #0ea5e9; margin: 0; font-size: 28px;">RENOVACIÓN MONTUFAREÑA</h1>
+        <p style="margin: 5px 0 0; font-size: 14px; color: #64748b;">Unidad de Salud y Atención Integral</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 14px;">
+        <div>
+          <p style="margin: 0;"><strong>Paciente:</strong> ${pacienteNombre}</p>
+          <p style="margin: 5px 0 0;"><strong>Cédula:</strong> ${pacienteCedula}</p>
+        </div>
+        <div style="text-align: right;">
+          <p style="margin: 0;"><strong>Fecha:</strong> ${fecha}</p>
+          <p style="margin: 5px 0 0;"><strong>Código Receta:</strong> <span style="color: #0ea5e9; font-weight: bold;">${codigo}</span></p>
+        </div>
+      </div>
+      ${diagnostico ? `
+      <div style="margin-bottom: 20px;">
+        <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 16px; color: #0ea5e9;">Diagnóstico / Observaciones</h3>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; font-size: 14px; white-space: pre-wrap;">${diagnostico}</div>
+      </div>` : ''}
+      <div>
+        <h3 style="margin-top: 0; margin-bottom: 10px; font-size: 16px; color: #10b981;">Receta Médica (Rp.)</h3>
+        <div style="border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; font-size: 14px; white-space: pre-wrap; min-height: 150px;">${receta}</div>
+      </div>
+      <div style="margin-top: 80px; text-align: center;">
+        <div style="border-top: 1px solid #94a3b8; width: 250px; margin: 0 auto; padding-top: 10px;">
+          <p style="margin: 0; font-weight: bold;">Firma del Médico</p>
+          <p style="margin: 0; font-size: 12px; color: #64748b;">${Estado.userName} - ${Estado.areaId}</p>
+        </div>
+      </div>
+      <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #94a3b8;">
+        Documento generado automáticamente por el Sistema de Turnos.
+      </div>
+    `;
+
+    document.body.appendChild(div);
+
+    const opt = {
+      margin: 10,
+      filename: `Receta_${pacienteNombre.replace(/ /g, '_')}_${fecha.replace(/\//g, '-')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(div).save().then(() => {
+      document.body.removeChild(div);
+      btn.innerText = originalText;
+      btn.disabled = false;
+      this.toast('✅ PDF generado correctamente', 'success');
+    }).catch(e => {
+      console.error(e);
+      document.body.removeChild(div);
+      btn.innerText = originalText;
+      btn.disabled = false;
+      this.toast('Error generando PDF', 'error');
+    });
   },
 
   // ---- EXPORTAR EXCEL ----
@@ -1188,16 +1638,16 @@ const app = {
 
     // El primer registro (más reciente) usaremos para datos generales del paciente
     const p = registros[0];
-    
+
     // Generar timeline de visitas
     let visitasHTML = '';
-    
+
     registros.forEach((reg) => {
       let sv = {};
       try { sv = JSON.parse(reg.signos_vitales || '{}'); } catch (e) { }
 
       const fecha = new Date(reg.created_at).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
-      
+
       const estadoClases = {
         'atendido': 'background: var(--success); color: white;',
         'en_consulta': 'background: var(--primary); color: white;',
@@ -1406,7 +1856,238 @@ const app = {
     }
   },
 
+  // ---- DASHBOARD (ANALYTICS) ----
+  abrirDashboard() {
+    this.mostrarVista('dashboard');
+    this.generarDashboard();
+  },
+
+  async generarDashboard() {
+    if (!Estado.online || !sb) return;
+    try {
+      // Obtener todos los turnos del día (la cola actual)
+      const { data, error } = await sb.from('pacientes_espera').select('*');
+      if (error) throw error;
+
+      const total = data.length;
+      const atendidos = data.filter(d => d.estado === 'atendido').length;
+      const enEspera = data.filter(d => d.estado === 'en_espera' || d.estado === 'pendiente').length;
+      const enConsulta = data.filter(d => d.estado === 'en_consulta').length;
+
+      document.getElementById('dashTotalPacientes').innerText = total;
+      document.getElementById('dashTotalAtendidos').innerText = atendidos;
+      document.getElementById('dashTotalEspera').innerText = enEspera;
+
+      // Agrupar por áreas
+      const areasCount = {};
+      data.forEach(d => {
+        const area = d.especialidad || 'Desconocido';
+        areasCount[area] = (areasCount[area] || 0) + 1;
+      });
+
+      this._renderChartAreas(Object.keys(areasCount), Object.values(areasCount));
+
+      // Agrupar por estados
+      const estadosCount = { 'Atendido': atendidos, 'En Espera/Pendiente': enEspera, 'En Consulta': enConsulta };
+      this._renderChartEstados(Object.keys(estadosCount), Object.values(estadosCount));
+
+    } catch (e) {
+      console.error(e);
+      this.toast('Error cargando estadísticas', 'error');
+    }
+  },
+
+  _renderChartAreas(labels, data) {
+    const ctx = document.getElementById('chartAreas');
+    if (!ctx) return;
+    if (window.chartAreasInstance) window.chartAreasInstance.destroy();
+
+    window.chartAreasInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#94a3b8'],
+          borderWidth: 0
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+    });
+  },
+
+  _renderChartEstados(labels, data) {
+    const ctx = document.getElementById('chartEstados');
+    if (!ctx) return;
+    if (window.chartEstadosInstance) window.chartEstadosInstance.destroy();
+
+    window.chartEstadosInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Cantidad',
+          data: data,
+          backgroundColor: ['#10b981', '#f59e0b', '#3b82f6'],
+          borderRadius: 6
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
+    });
+  },
+
   // ---- TOAST ----
+  // ============================================================
+  // HISTORIA CLÍNICA
+  // ============================================================
+  abrirHistoriaClinica() {
+    this.mostrarVista('historiaClinica');
+    document.getElementById('historiaClinicaResults').style.display = 'none';
+    document.getElementById('historiaClinicaEmpty').style.display = 'block';
+    document.getElementById('historiaClinicaLoading').style.display = 'none';
+    const input = document.getElementById('inputBuscarHistoria');
+    if (input) { input.value = ''; input.focus(); }
+  },
+
+  async buscarHistoriaClinica() {
+    const query = (document.getElementById('inputBuscarHistoria').value || '').trim();
+    if (!query) {
+      this.toast('Ingresa una cédula o nombre para buscar', 'error');
+      return;
+    }
+    if (!Estado.online || !sb) {
+      this.toast('Sin conexión a la base de datos', 'error');
+      return;
+    }
+
+    document.getElementById('historiaClinicaEmpty').style.display = 'none';
+    document.getElementById('historiaClinicaResults').style.display = 'none';
+    document.getElementById('historiaClinicaLoading').style.display = 'block';
+
+    try {
+      // Buscar por cédula exacta primero, luego por nombre parcial
+      let { data, error } = await sb.from('pacientes_espera')
+        .select('*')
+        .eq('cedula', query)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Si no hay resultado por cédula, buscar por nombre
+      if (!data || data.length === 0) {
+        const resp = await sb.from('pacientes_espera')
+          .select('*')
+          .ilike('nombre', `%${query}%`)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (resp.error) throw resp.error;
+        data = resp.data;
+      }
+
+      document.getElementById('historiaClinicaLoading').style.display = 'none';
+      this.renderizarHistoriaClinica(data || [], query);
+
+    } catch (e) {
+      console.error(e);
+      document.getElementById('historiaClinicaLoading').style.display = 'none';
+      document.getElementById('historiaClinicaEmpty').style.display = 'block';
+      this.toast('Error en la búsqueda: ' + e.message, 'error');
+    }
+  },
+
+  renderizarHistoriaClinica(registros, query) {
+    const container = document.getElementById('historiaClinicaResults');
+    if (!registros || registros.length === 0) {
+      document.getElementById('historiaClinicaEmpty').querySelector('.state-empty-text').innerText =
+        `No se encontraron registros para "${query}"`;
+      document.getElementById('historiaClinicaEmpty').style.display = 'block';
+      return;
+    }
+
+    // Agrupar por paciente (cédula o nombre)
+    const pacientes = {};
+    registros.forEach(r => {
+      const key = r.cedula || r.nombre;
+      if (!pacientes[key]) {
+        pacientes[key] = { nombre: r.nombre, cedula: r.cedula, celular: r.celular, direccion: r.direccion, visitas: [] };
+      }
+      // Mantener el nombre más limpio (sin prefijos)
+      if (!r.nombre.startsWith('[')) pacientes[key].nombre = r.nombre;
+      if (r.celular) pacientes[key].celular = r.celular;
+      if (r.direccion) pacientes[key].direccion = r.direccion;
+      pacientes[key].visitas.push(r);
+    });
+
+    let html = '';
+    Object.values(pacientes).forEach(pac => {
+      const totalVisitas = pac.visitas.length;
+      const ultimaVisita = pac.visitas[0];
+      const sv = (() => { try { return JSON.parse(ultimaVisita.signos_vitales || '{}'); } catch (e) { return {}; } })();
+
+      html += `
+        <div style="border: 1.5px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 2rem; overflow: hidden;">
+          <!-- Cabecera del paciente -->
+          <div style="background: linear-gradient(135deg, var(--primary), #0369a1); color: white; padding: 1.5rem 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 style="margin: 0 0 0.25rem; font-size: 1.4rem; font-weight: 800;">${pac.nombre}</h3>
+                <p style="margin: 0; opacity: 0.85; font-size: 0.9rem;">
+                  🪪 Cédula: <strong>${pac.cedula || 'N/A'}</strong>
+                  &nbsp;|&nbsp; 📱 ${pac.celular || 'N/A'}
+                  &nbsp;|&nbsp; 📍 ${pac.direccion || 'N/A'}
+                </p>
+              </div>
+              <div style="text-align: right; opacity: 0.9;">
+                <div style="font-size: 1.6rem; font-weight: 800;">${totalVisitas}</div>
+                <div style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px;">Atenciones</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Última ficha -->
+          ${sv.edad || sv.peso ? `
+          <div style="background: var(--bg); padding: 1.25rem 2rem; border-bottom: 1px solid var(--border);">
+            <h4 style="margin: 0 0 0.75rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Última Ficha Médica</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
+              ${sv.edad ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.edad}</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Edad</div></div>` : ''}
+              ${sv.peso ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.peso} kg</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Peso</div></div>` : ''}
+              ${sv.estatura ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.estatura}</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Estatura</div></div>` : ''}
+              ${sv.presion ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.presion}</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Presión</div></div>` : ''}
+              ${sv.temperatura ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.temperatura}°C</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Temperatura</div></div>` : ''}
+              ${sv.saturacion ? `<div style="text-align:center; background: var(--surface-solid); padding: 0.75rem; border-radius: var(--radius-md);"><div style="font-size: 1.3rem; font-weight: 700; color: var(--primary);">${sv.saturacion}%</div><div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">SpO₂</div></div>` : ''}
+            </div>
+          </div>` : ''}
+
+          <!-- Timeline de visitas -->
+          <div style="padding: 1.5rem 2rem;">
+            <h4 style="margin: 0 0 1rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);">Línea de Tiempo de Atenciones</h4>
+            <div style="position: relative; padding-left: 1.5rem; border-left: 2px solid var(--border);">
+              ${pac.visitas.map(v => {
+        const svV = (() => { try { return JSON.parse(v.signos_vitales || '{}'); } catch (e) { return {}; } })();
+        const fecha = v.created_at ? new Date(v.created_at).toLocaleString('es-EC') : 'Fecha desconocida';
+        const nombreLimpio = v.nombre.startsWith('[') ? v.nombre.replace(/^\[.*?\]\s*/, '') : v.nombre;
+        return `
+                  <div style="margin-bottom: 1.5rem; position: relative;">
+                    <div style="position: absolute; left: -1.9rem; top: 0.3rem; width: 12px; height: 12px; border-radius: 50%; background: var(--primary);"></div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.3rem;">${fecha}</div>
+                    <div style="font-weight: 700; color: var(--text-dark);">
+                      ${v.especialidad || 'N/A'}
+                      <span style="font-weight: 400; color: var(--text-muted);">— Atendido por: ${v.atendido_por || v.creado_por || 'N/A'}</span>
+                    </div>
+                    ${svV.diagnostico ? `<div style="margin-top: 0.5rem; font-size: 0.88rem; background: rgba(0,0,0,0.03); padding: 0.6rem 1rem; border-radius: 8px; border-left: 3px solid var(--primary);"><strong>Dx:</strong> ${svV.diagnostico}</div>` : ''}
+                    ${svV.receta ? `<div style="margin-top: 0.4rem; font-size: 0.85rem; background: rgba(16,185,129,0.05); padding: 0.6rem 1rem; border-radius: 8px; border-left: 3px solid var(--success);"><strong>Receta:</strong> ${svV.receta}</div>` : ''}
+                    ${svV.farmacia_entrega ? `<div style="margin-top: 0.3rem; font-size: 0.8rem; color: var(--text-muted);">💊 Farmacia: <strong>${svV.farmacia_entrega}</strong>${svV.farmacia_notas ? ' — ' + svV.farmacia_notas : ''}</div>` : ''}
+                  </div>`;
+      }).join('')}
+            </div>
+          </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+    container.style.display = 'block';
+  },
+
   toast(msg, tipo) {
     tipo = tipo || 'success';
     const c = document.getElementById('toastContainer');
