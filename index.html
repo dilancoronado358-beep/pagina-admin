@@ -56,6 +56,7 @@
     <div class="user-info" id="userInfoDisplay">
       <span id="roleBadge"></span>
       <strong id="displayUserName"></strong>
+      <button class="btn-action" style="margin-right: 0.5rem; background: var(--primary);" onclick="app.abrirHistoriaClinica()" id="btnNavHistoriaClinica">📖 Historia Clínica</button>
       <button class="logout-btn" onclick="app.cerrarSesion()">Salir</button>
     </div>
   </header>
@@ -346,6 +347,47 @@
           </button>
         </div>
 
+      </div>
+    </div>
+
+    <!-- VISTA: Historia Clinica -->
+    <div id="view-historiaClinica" class="view">
+      <div class="card">
+        <div class="card-header" style="margin-bottom:1rem;">
+          <h2>📖 Historia Clínica</h2>
+          <div class="card-header-actions">
+            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al Panel</button>
+          </div>
+        </div>
+        <p style="margin-bottom: 1.5rem;">Busca un paciente por su número de cédula o nombres completos para ver todo su historial de atenciones.</p>
+
+        <div style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label for="inputBuscarHistoria">Cédula o Nombres Completos</label>
+            <input type="text" id="inputBuscarHistoria" placeholder="Ej: 100xxxxxxx o Juan Pérez" onkeypress="if(event.key === 'Enter') app.buscarHistoriaClinica()">
+          </div>
+          <button class="btn-large btn-success" style="padding: 0.75rem 2rem; margin-bottom: 0; min-width: auto;" onclick="app.buscarHistoriaClinica()">
+            🔍 Buscar
+          </button>
+        </div>
+
+        <div id="historiaClinicaLoading" style="display: none; text-align: center; padding: 2rem;">
+          <div class="state-empty animate-pulse">
+             <span class="state-empty-icon">⏳</span>
+             <span class="state-empty-text">Buscando historial médico...</span>
+          </div>
+        </div>
+
+        <div id="historiaClinicaEmpty" style="display: none; text-align: center; padding: 2rem;">
+          <div class="state-empty">
+             <span class="state-empty-icon">📂</span>
+             <span class="state-empty-text">Realiza una búsqueda para ver el historial</span>
+          </div>
+        </div>
+
+        <div id="historiaClinicaResults" style="display: none;">
+          <!-- Aquí se renderiza la info del paciente y su timeline de visitas -->
+        </div>
       </div>
     </div>
 

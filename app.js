@@ -1124,6 +1124,170 @@ const app = {
   },
 
   // ============================================================
+  // HISTORIA CLÍNICA
+  // ============================================================
+
+  abrirHistoriaClinica() {
+    document.getElementById('inputBuscarHistoria').value = '';
+    document.getElementById('historiaClinicaResults').style.display = 'none';
+    document.getElementById('historiaClinicaEmpty').style.display = 'block';
+    document.getElementById('historiaClinicaLoading').style.display = 'none';
+    this.mostrarVista('historiaClinica');
+  },
+
+  async buscarHistoriaClinica() {
+    const termino = document.getElementById('inputBuscarHistoria').value.trim();
+    if (!termino) {
+      this.toast('Por favor, ingresa una cédula o nombre para buscar', 'error');
+      return;
+    }
+
+    const btn = document.querySelector('#view-historiaClinica button.btn-success');
+    if (btn) btn.disabled = true;
+
+    document.getElementById('historiaClinicaEmpty').style.display = 'none';
+    document.getElementById('historiaClinicaResults').style.display = 'none';
+    document.getElementById('historiaClinicaLoading').style.display = 'block';
+
+    try {
+      if (!Estado.online || !sb) throw new Error('Sin conexión a Base de Datos');
+
+      // Buscar por cédula o nombre (ilike)
+      const { data, error } = await sb.from('pacientes_espera')
+        .select('*')
+        .or(`cedula.ilike.%${termino}%,nombre.ilike.%${termino}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      this.renderizarHistoriaClinica(data, termino);
+
+    } catch (e) {
+      console.error(e);
+      this.toast('Error al buscar historial: ' + e.message, 'error');
+      document.getElementById('historiaClinicaLoading').style.display = 'none';
+      document.getElementById('historiaClinicaEmpty').style.display = 'block';
+    }
+
+    if (btn) btn.disabled = false;
+  },
+
+  renderizarHistoriaClinica(registros, termino) {
+    document.getElementById('historiaClinicaLoading').style.display = 'none';
+    const container = document.getElementById('historiaClinicaResults');
+
+    if (!registros || registros.length === 0) {
+      container.innerHTML = `
+        <div class="state-empty" style="padding: 2rem;">
+           <span class="state-empty-icon">🔍</span>
+           <span class="state-empty-text">No se encontró historial para "${termino}"</span>
+        </div>`;
+      container.style.display = 'block';
+      return;
+    }
+
+    // El primer registro (más reciente) usaremos para datos generales del paciente
+    const p = registros[0];
+    
+    // Generar timeline de visitas
+    let visitasHTML = '';
+    
+    registros.forEach((reg) => {
+      let sv = {};
+      try { sv = JSON.parse(reg.signos_vitales || '{}'); } catch (e) { }
+
+      const fecha = new Date(reg.created_at).toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
+      
+      const estadoClases = {
+        'atendido': 'background: var(--success); color: white;',
+        'en_consulta': 'background: var(--primary); color: white;',
+        'en_espera': 'background: #f59e0b; color: white;',
+        'pendiente': 'background: #f59e0b; color: white;'
+      };
+      const estadoBadge = `<span style="padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; ${estadoClases[reg.estado] || 'background: #cbd5e1; color: #334155;'}">${(reg.estado || '').toUpperCase()}</span>`;
+
+      visitasHTML += `
+        <div style="border-left: 3px solid var(--primary); margin-left: 1rem; padding-left: 1.5rem; padding-bottom: 2rem; position: relative;">
+          <div style="position: absolute; left: -11px; top: 0; width: 18px; height: 18px; background: white; border: 3px solid var(--primary); border-radius: 50%;"></div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; margin-top: -5px;">
+            <strong style="font-size: 1.1rem; color: var(--text-color);">${fecha}</strong>
+            ${estadoBadge}
+          </div>
+          <div style="background: var(--bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; margin-top: 0.5rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+              <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Área / Especialidad</div>
+                <div style="font-weight: 600;">${reg.especialidad || 'N/A'} ${reg.numero_turno_area ? '(Turno ' + reg.numero_turno_area + ')' : ''}</div>
+              </div>
+              <div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Atendido Por</div>
+                <div style="font-weight: 600;">${reg.atendido_por || 'N/A'}</div>
+              </div>
+            </div>
+            
+            ${Object.keys(sv).length > 0 ? `
+              <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Signos Vitales</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                ${sv.edad ? `<span style="font-size: 0.85rem;"><strong>Edad:</strong> ${sv.edad}</span>` : ''}
+                ${sv.peso ? `<span style="font-size: 0.85rem;"><strong>Peso:</strong> ${sv.peso}</span>` : ''}
+                ${sv.estatura ? `<span style="font-size: 0.85rem;"><strong>Est:</strong> ${sv.estatura}</span>` : ''}
+                ${sv.presion ? `<span style="font-size: 0.85rem;"><strong>PA:</strong> ${sv.presion}</span>` : ''}
+                ${sv.temperatura ? `<span style="font-size: 0.85rem;"><strong>Temp:</strong> ${sv.temperatura}</span>` : ''}
+                ${sv.frecuencia ? `<span style="font-size: 0.85rem;"><strong>FC:</strong> ${sv.frecuencia}</span>` : ''}
+                ${sv.saturacion ? `<span style="font-size: 0.85rem;"><strong>SatO2:</strong> ${sv.saturacion}</span>` : ''}
+              </div>
+            ` : '<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; font-style: italic;">No hay signos vitales registrados</div>'}
+
+            ${sv.diagnostico ? `
+              <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Diagnóstico / Observaciones</div>
+              <div style="background: rgba(14, 165, 233, 0.05); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; margin-bottom: 1rem; border: 1px solid rgba(14, 165, 233, 0.2); white-space: pre-wrap;">${sv.diagnostico}</div>
+            ` : ''}
+
+            ${sv.receta ? `
+              <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Receta Médica ${sv.codigo_receta ? '(Cód: ' + sv.codigo_receta + ')' : ''}</div>
+              <div style="background: rgba(16, 185, 129, 0.05); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; border: 1px solid rgba(16, 185, 129, 0.2); white-space: pre-wrap;">${sv.receta}</div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    container.innerHTML = `
+      <div style="margin-bottom: 2rem; background: var(--bg); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+        <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+          <span>👤 Perfil del Paciente</span>
+          <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">${registros.length} atención(es) registrada(s)</span>
+        </h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Nombres y Apellidos</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">${p.nombre || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Número de Cédula</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">${p.cedula || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Número de Celular</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">${p.celular || 'N/A'}</div>
+          </div>
+          <div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">Dirección</div>
+            <div style="font-size: 1.1rem; font-weight: 600;">${p.direccion || 'N/A'}</div>
+          </div>
+        </div>
+      </div>
+      
+      <h3 style="margin-bottom: 1.5rem;">📅 Línea de Tiempo de Atenciones</h3>
+      <div style="padding-top: 10px;">
+        ${visitasHTML}
+      </div>
+    `;
+
+    container.style.display = 'block';
+  },
+
+  // ============================================================
   // ROL: ADMIN (Panel de Control de Usuarios)
   // ============================================================
 
