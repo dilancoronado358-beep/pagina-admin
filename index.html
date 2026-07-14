@@ -109,15 +109,15 @@
         <p>Complete los datos del paciente y seleccione la especialidad correspondiente.</p>
 
         <div class="form-grid">
-          <div class="form-group full-width">
-            <label for="pacienteNameInput">Nombres y Apellidos Completos</label>
-            <input type="text" id="pacienteNameInput" placeholder="Ej: Juan Carlos Pérez López">
+          <div class="form-group">
+            <label for="pacienteCedula">Número de Cédula</label>
+            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx" onblur="app.buscarPacienteExistente()" autofocus>
+            <div id="cedulaFeedback" style="font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
           </div>
 
           <div class="form-group">
-            <label for="pacienteCedula">Número de Cédula</label>
-            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx" onblur="app.buscarPacienteExistente()">
-            <div id="cedulaFeedback" style="font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
+            <label for="pacienteNameInput">Nombres y Apellidos Completos</label>
+            <input type="text" id="pacienteNameInput" placeholder="Ej: Juan Carlos Pérez López">
           </div>
 
           <div class="form-group">
