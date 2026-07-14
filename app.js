@@ -243,6 +243,36 @@ const app = {
 
       if (!this.tvPrimeraCargaHecha) {
         this.tvUltimos = llamadosActuales;
+        
+        // Mostrar datos en pantalla inmediatamente si ya hay pacientes en consulta
+        if (data.length > 0) {
+          const paciente = data[0];
+          const turnoTxt = paciente.numero_turno_area
+            ? paciente.especialidad.substring(0, 3).toUpperCase() + '-' + paciente.numero_turno_area
+            : 'Nuevo Paciente';
+
+          const mainContent = document.getElementById('tvContent');
+          if (mainContent) {
+            mainContent.innerHTML = `
+              <div style="font-size: 6rem; color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 1rem;">${turnoTxt}</div>
+              <div style="font-size: 4rem; color: white; font-weight: 700; margin-bottom: 2rem;">${paciente.nombre}</div>
+              <div style="font-size: 2.5rem; color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 1.5rem 4rem; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
+            `;
+          }
+
+          const historyContainer = document.getElementById('tvUltimosLlamados');
+          if (historyContainer) {
+            historyContainer.innerHTML = '';
+            for (let i = 1; i < Math.min(data.length, 6); i++) {
+              const p = data[i];
+              const tTxt = p.numero_turno_area ? p.especialidad.substring(0, 3).toUpperCase() + '-' + p.numero_turno_area : 'Turno';
+              historyContainer.innerHTML += `<div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; min-width: 200px; border-left: 4px solid #38bdf8;">
+                <div style="font-size: 1.5rem; font-weight: bold; color: white;">${tTxt}</div><div style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">${p.especialidad}</div>
+              </div>`;
+            }
+          }
+        }
+        
         this.tvPrimeraCargaHecha = true;
         return;
       }

@@ -583,11 +583,15 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
           <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
             <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Pacientes por Área</h3>
-            <canvas id="chartAreas"></canvas>
+            <div style="position: relative; height: 300px;">
+              <canvas id="chartAreas"></canvas>
+            </div>
           </div>
           <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
             <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Estado General</h3>
-            <canvas id="chartEstados"></canvas>
+            <div style="position: relative; height: 300px;">
+              <canvas id="chartEstados"></canvas>
+            </div>
           </div>
         </div>
       </div>
