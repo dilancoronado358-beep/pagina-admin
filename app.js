@@ -340,6 +340,7 @@ const app = {
       }
     }
 
+    // 1. Sonido de campanilla (Oscillator)
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -347,20 +348,36 @@ const app = {
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.5);
+      osc.frequency.setValueAtTime(700, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.6);
       gain.gain.setValueAtTime(1, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
       osc.start();
-      osc.stop(ctx.currentTime + 1);
+      osc.stop(ctx.currentTime + 1.2);
+    } catch (e) {
+      console.error('AudioContext bloqueado o error:', e);
+    }
 
+    // 2. Voz anunciando el paciente (SpeechSynthesis)
+    try {
       setTimeout(() => {
-        const u = new SpeechSynthesisUtterance(`Turno ${turnoTxt}, paciente ${paciente.nombre}. Por favor acercarse a ${paciente.especialidad}`);
+        // Buscar una voz en español si está disponible
+        let voces = window.speechSynthesis.getVoices();
+        let vozEs = voces.find(v => v.lang.startsWith('es-')) || null;
+        
+        // Crear el mensaje hablado
+        const textoVoz = `Atención. Paciente ${paciente.nombre}, por favor pasar a ${paciente.especialidad}.`;
+        const u = new SpeechSynthesisUtterance(textoVoz);
         u.lang = 'es-ES';
-        u.rate = 0.9;
-        speechSynthesis.speak(u);
-      }, 800);
-    } catch (e) { console.error('Audio error', e); }
+        u.rate = 0.85; // Velocidad un poco más lenta y clara
+        u.pitch = 1;
+        if (vozEs) u.voice = vozEs;
+        
+        window.speechSynthesis.speak(u);
+      }, 1000);
+    } catch (e) { 
+      console.error('Error de voz (SpeechSynthesis):', e); 
+    }
   },
 
   // ============================================================
