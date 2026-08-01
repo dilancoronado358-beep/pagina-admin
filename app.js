@@ -2152,7 +2152,7 @@ const app = {
       // Insertar registro fantasma para marcar el inicio exacto en el tiempo de la BD
       const { data, error } = await sb.from('pacientes_espera').insert({
         nombre: '[SISTEMA_NUEVA_BRIGADA]',
-        estado: 'sistema',
+        estado: 'atendido',
         creado_por: Estado.userName
       }).select('created_at').single();
       
