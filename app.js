@@ -1322,16 +1322,27 @@ const app = {
           numTurno = maxData[0].numero_turno_area + 1;
         }
 
-        const { error: errDeriv } = await sb.from('pacientes_espera')
-          .update({
-            estado: 'pendiente', // Cambiado de 'en_espera' para saltar a la enfermera y que el nuevo doctor pueda llamarlo de inmediato
-            especialidad: derivacionArea,
-            numero_turno_area: numTurno,
-            area_designada: null
-          })
-          .eq('id', pacienteId);
+        // Insertar un NUEVO turno para la especialidad derivada (preserva el historial de la consulta actual)
+        const { error: errDeriv } = await sb.from('pacientes_espera').insert({
+          nombre: nombreFinal,
+          cedula: cedulaFinal,
+          celular: celularFinal,
+          direccion: direccionFinal,
+          especialidad: derivacionArea,
+          numero_turno_area: numTurno,
+          creado_por: Estado.userName,
+          atendido_por: 'Derivado desde ' + Estado.areaId,
+          estado: 'pendiente', // Listo para que el nuevo doctor lo llame
+          signos_vitales: svJson
+        });
 
         if (errDeriv) throw errDeriv;
+        
+        // Marcar la consulta actual como finalizada
+        const { error: errEstado } = await sb.from('pacientes_espera')
+          .update({ estado: 'atendido' })
+          .eq('id', pacienteId);
+        if (errEstado) throw errEstado;
         
         this.toast(`✅ Paciente derivado exitosamente a ${derivacionArea} (Turno #${numTurno})`, 'success');
         this.mostrarVista('misPacientes');
