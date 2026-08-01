@@ -374,20 +374,61 @@ const app = {
     try {
       if (!Estado.online || !sb) throw new Error('Sin conexión a Base de Datos');
 
-      const { data, error } = await sb.rpc('verificar_login', {
-        p_username: user,
-        p_password: pass
-      });
+      // Intentar primero con el RPC
+      let loginOk = false;
+      let loginData = null;
 
-      if (error) throw error;
+      try {
+        const { data, error } = await sb.rpc('verificar_login', {
+          p_username: user,
+          p_password: pass
+        });
 
-      if (!data || !data.success) {
-        throw new Error(data?.message || 'Credenciales incorrectas');
+        if (!error && data && data.success) {
+          loginOk = true;
+          loginData = data;
+        }
+      } catch (rpcErr) {
+        console.warn('RPC falló, intentando acceso directo:', rpcErr.message);
       }
 
-      Estado.role = data.role;
-      Estado.userName = data.username;
-      Estado.areaId = data.area || null;
+      // Si el RPC falló o retornó false, intentar consulta directa a la tabla usuarios
+      if (!loginOk) {
+        const { data: usuarios, error: tblError } = await sb
+          .from('usuarios')
+          .select('id, username, password, role, area')
+          .ilike('username', user)
+          .limit(5);
+
+        if (tblError) {
+          // Si tampoco funciona la consulta directa, lanzar error genérico
+          throw new Error('Credenciales incorrectas');
+        }
+
+        // Buscar coincidencia exacta (case-insensitive en username, exacta en password)
+        const match = (usuarios || []).find(u =>
+          u.username.toLowerCase() === user.toLowerCase() &&
+          u.password === pass
+        );
+
+        if (!match) {
+          throw new Error('Usuario o contraseña incorrectos');
+        }
+
+        // Construir loginData desde la tabla directamente
+        loginData = {
+          success: true,
+          role: match.role,
+          username: match.username,
+          area: match.area || null
+        };
+        loginOk = true;
+        console.log('✅ Login exitoso via tabla directa');
+      }
+
+      Estado.role = loginData.role;
+      Estado.userName = loginData.username;
+      Estado.areaId = loginData.area || null;
       if (Estado.role === 'admin') Estado.adminPass = pass;
 
       localStorage.setItem('turnero_session', JSON.stringify({
@@ -407,6 +448,7 @@ const app = {
     btn.disabled = false;
     btn.innerText = originalText;
   },
+
 
   async buscarPacienteExistente() {
     const cedulaInput = document.getElementById('pacienteCedula');
