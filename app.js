@@ -261,10 +261,13 @@ const app = {
 
       if (!data) return;
 
-      const llamadosActuales = data.map(t => t.id);
-
       if (!this.tvPrimeraCargaHecha) {
-        this.tvUltimos = llamadosActuales;
+        this.tvUltimos = {};
+        data.forEach(t => {
+          let sv = {};
+          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+          this.tvUltimos[t.id] = sv.llamados || 1;
+        });
         
         // Mostrar datos en pantalla inmediatamente si ya hay pacientes en consulta
         if (data.length > 0) {
@@ -299,14 +302,25 @@ const app = {
         return;
       }
 
-      const nuevos = data.filter(t => !this.tvUltimos.includes(t.id));
+      // Encontrar pacientes que son nuevos o cuyo contador de 'llamados' ha incrementado
+      const nuevos = data.filter(t => {
+        let sv = {};
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+        const count = sv.llamados || 1;
+        return this.tvUltimos[t.id] !== count;
+      });
 
       if (nuevos.length > 0) {
-        const paciente = nuevos[0]; // Tomar el primero nuevo
+        const paciente = nuevos[0]; // Tomar el primero nuevo o re-llamado
         this.anunciarTurnoTV(paciente);
 
         // Actualizar lista
-        this.tvUltimos = llamadosActuales;
+        this.tvUltimos = {};
+        data.forEach(t => {
+          let sv = {};
+          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+          this.tvUltimos[t.id] = sv.llamados || 1;
+        });
       }
 
     } catch (e) {
@@ -340,44 +354,38 @@ const app = {
       }
     }
 
-    // 1. Sonido de campanilla (Oscillator)
+    // 1. Sonido de campanilla agradable (Ding-Dong tipo aeropuerto/hospital)
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(700, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.6);
-      gain.gain.setValueAtTime(1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-      osc.start();
-      osc.stop(ctx.currentTime + 1.2);
+      
+      const playTone = (freq, startTime, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        
+        osc.type = 'sine'; // Sonido suave
+        osc.frequency.setValueAtTime(freq, startTime);
+        
+        // Envolvente de volumen tipo campana (ataque rápido, decaimiento lento)
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+        
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      // Ding (Nota Mi)
+      playTone(659.25, ctx.currentTime, 1.5);
+      // Dong (Nota Do, medio segundo después)
+      playTone(523.25, ctx.currentTime + 0.5, 2.0);
+
     } catch (e) {
       console.error('AudioContext bloqueado o error:', e);
     }
 
-    // 2. Voz anunciando el paciente (SpeechSynthesis)
-    try {
-      setTimeout(() => {
-        // Buscar una voz en español si está disponible
-        let voces = window.speechSynthesis.getVoices();
-        let vozEs = voces.find(v => v.lang.startsWith('es-')) || null;
-        
-        // Crear el mensaje hablado
-        const textoVoz = `Atención. Paciente ${paciente.nombre}, por favor pasar a ${paciente.especialidad}.`;
-        const u = new SpeechSynthesisUtterance(textoVoz);
-        u.lang = 'es-ES';
-        u.rate = 0.85; // Velocidad un poco más lenta y clara
-        u.pitch = 1;
-        if (vozEs) u.voice = vozEs;
-        
-        window.speechSynthesis.speak(u);
-      }, 1000);
-    } catch (e) { 
-      console.error('Error de voz (SpeechSynthesis):', e); 
-    }
+    // La voz fue eliminada a petición del usuario para hacer el llamado más discreto y profesional.
   },
 
   // ============================================================
@@ -1113,9 +1121,20 @@ const app = {
           const ec = t.estado === 'en_consulta';
           const enEspera = t.estado === 'en_espera';
           let btns = '';
-          if (t.estado === 'pendiente') btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
-          if (t.estado === 'en_consulta') btns = `<button class="btn-action btn-done" onclick="app.abrirConsulta('${t.id}')" style="background:var(--success);">👨‍⚕️ Abrir Consulta</button>`;
-          if (t.estado === 'en_espera') btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
+          if (t.estado === 'pendiente') {
+            btns = `<button class="btn-action btn-call" onclick="app.cambiarEstado('${t.id}','en_consulta')">📢 Llamar</button>`;
+          }
+          if (t.estado === 'en_consulta') {
+            btns = `
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="btn-action" style="background: var(--primary); padding: 0.5rem 0.8rem;" onclick="app.volverALlamar('${t.id}')" title="Hacer sonar la TV nuevamente">🔔 Re-Llamar</button>
+                <button class="btn-action btn-done" onclick="app.abrirConsulta('${t.id}')" style="background:var(--success); padding: 0.5rem 0.8rem;">👨‍⚕️ Abrir Consulta</button>
+              </div>
+            `;
+          }
+          if (t.estado === 'en_espera') {
+            btns = `<span style="color: #f59e0b; font-weight: bold; font-size: 0.9rem; background: #fef3c7; padding: 4px 8px; border-radius: 6px;">⏳ En Signos Vitales</span>`;
+          }
 
           let sv = {};
           try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
@@ -1166,6 +1185,27 @@ const app = {
     }
     if (nuevoEstado === 'en_consulta') this.toast('Paciente llamado', 'success');
     await this.cargarPacientesArea();
+  },
+
+  async volverALlamar(pacienteId) {
+    if (!Estado.online || !sb) return;
+    const paciente = Estado.turnosArea?.find(p => p.id === pacienteId);
+    if (!paciente) return;
+    
+    let sv = {};
+    try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch(e){}
+    sv.llamados = (sv.llamados || 1) + 1; // Incrementar contador de llamadas
+    
+    try {
+      const { error } = await sb.from('pacientes_espera')
+        .update({ signos_vitales: JSON.stringify(sv) })
+        .eq('id', pacienteId);
+      if (error) throw error;
+      
+      this.toast('🔔 Volviendo a llamar en TV...', 'success');
+    } catch (e) {
+      this.toast('Error al re-llamar', 'error');
+    }
   },
 
   filtrarDoctor() {
