@@ -1192,6 +1192,21 @@ const app = {
       }
     });
 
+    const divDerivacion = document.getElementById('divDerivacionContainer');
+    const selectDerivacion = document.getElementById('consDerivacion');
+    if (divDerivacion && selectDerivacion) {
+      selectDerivacion.innerHTML = '<option value="">-- No Derivar --</option>';
+      if (Estado.areaId === 'Traumatología') {
+        selectDerivacion.innerHTML += '<option value="Fisioterapia">Derivar a Fisioterapia</option>';
+        divDerivacion.style.display = 'block';
+      } else if (Estado.areaId === 'Medicina General') {
+        selectDerivacion.innerHTML += '<option value="Imagenología">Derivar a Imagenología</option>';
+        divDerivacion.style.display = 'block';
+      } else {
+        divDerivacion.style.display = 'none';
+      }
+    }
+
     const btnGuardar = document.getElementById('btnGuardarConsulta');
     if (btnGuardar) {
       if (isFarmacia) {
@@ -1269,28 +1284,52 @@ const app = {
     }
 
     try {
-      // 1. Actualizar paciente actual y marcarlo como atendido
+      const svJson = JSON.stringify(sv);
       const nombreFinal = document.getElementById('consNombre').value.trim();
       const cedulaFinal = document.getElementById('consCedula').value.trim();
       const celularFinal = document.getElementById('consCelular').value.trim();
       const direccionFinal = document.getElementById('consDireccion').value.trim();
 
-      const { error: err1 } = await sb.from('pacientes_espera')
-        .update({
-          estado: 'atendido',
-          nombre: nombreFinal,
-          cedula: cedulaFinal,
-          celular: celularFinal,
-          direccion: direccionFinal,
-          signos_vitales: JSON.stringify(sv)
-        })
+      const { error } = await sb.from('pacientes_espera')
+        .update({ signos_vitales: svJson })
         .eq('id', pacienteId);
-      if (err1) throw err1;
 
-      // 2. Si hay receta y NO somos Farmacia, enviar a Farmacia creando un nuevo turno
-      if (recetaTexto && !isFarmacia) {
+      if (error) throw error;
 
-        // Calcular turno de farmacia
+      const derivacionArea = document.getElementById('consDerivacion') ? document.getElementById('consDerivacion').value : '';
+
+      if (derivacionArea) {
+        // Calcular número de turno para la nueva área
+        let numTurno = 1;
+        const { data: maxData } = await sb.from('pacientes_espera')
+          .select('numero_turno_area')
+          .eq('especialidad', derivacionArea)
+          .not('numero_turno_area', 'is', null)
+          .gte('created_at', Estado.brigadaDesde)
+          .order('numero_turno_area', { ascending: false })
+          .limit(1);
+
+        if (maxData && maxData.length > 0 && maxData[0].numero_turno_area) {
+          numTurno = maxData[0].numero_turno_area + 1;
+        }
+
+        const { error: errDeriv } = await sb.from('pacientes_espera')
+          .update({
+            estado: 'en_espera',
+            especialidad: derivacionArea,
+            numero_turno_area: numTurno,
+            area_designada: null
+          })
+          .eq('id', pacienteId);
+
+        if (errDeriv) throw errDeriv;
+        
+        this.toast(`✅ Paciente derivado exitosamente a ${derivacionArea} (Turno #${numTurno})`, 'success');
+        this.mostrarVista('misPacientes');
+      } else if (recetaTexto && !isFarmacia) {
+        const genCodigo = Math.floor(1000 + Math.random() * 9000).toString();
+        codigoReceta = genCodigo;
+        
         const { data: maxData } = await sb.from('pacientes_espera')
           .select('numero_turno_area')
           .eq('especialidad', 'Farmacia')
@@ -1303,7 +1342,7 @@ const app = {
           numTurnoFarmacia = maxData[0].numero_turno_area + 1;
         }
 
-        const { error: err2 } = await sb.from('pacientes_espera').insert({
+        const { error: errFarmacia } = await sb.from('pacientes_espera').insert({
           nombre: `[Receta: ${codigoReceta}] ${nombreFinal}`,
           cedula: cedulaFinal,
           celular: celularFinal,
@@ -1312,25 +1351,33 @@ const app = {
           numero_turno_area: numTurnoFarmacia,
           creado_por: Estado.userName,
           atendido_por: 'Enviado desde ' + Estado.areaId,
-          estado: 'pendiente', // Aparece directo en la lista de Farmacia
-          signos_vitales: JSON.stringify(sv)
+          estado: 'pendiente',
+          signos_vitales: svJson
         });
-        if (err2) throw err2;
+        if (errFarmacia) throw errFarmacia;
 
-        // Mostrar pantalla de éxito con el código (no cerramos la vista aún)
-        const formContent = document.getElementById('formConsultaContent');
-        const successScreen = document.getElementById('formConsultaSuccess');
-        const codeDisplay = document.getElementById('consultaCodigoGenerado');
+        const { error: errEstado } = await sb.from('pacientes_espera')
+          .update({ estado: 'atendido' })
+          .eq('id', pacienteId);
+        if (errEstado) throw errEstado;
 
-        if (formContent && successScreen && codeDisplay) {
-          formContent.style.display = 'none';
-          codeDisplay.innerText = codigoReceta;
-          successScreen.style.display = 'block';
-        } else {
-          this.toast(`✅ Consulta finalizada. Receta ${codigoReceta} enviada a Farmacia.`, 'success');
-          this.mostrarVista('misPacientes');
-        }
+        document.getElementById('formConsultaContent').style.display = 'none';
+        document.getElementById('formConsultaSuccess').style.display = 'block';
+        document.getElementById('consultaCodigoGenerado').innerText = codigoReceta;
+        this.toast(`✅ Consulta finalizada. Receta ${codigoReceta} enviada a Farmacia.`, 'success');
+
       } else {
+        const { error: errFinal } = await sb.from('pacientes_espera')
+          .update({
+            estado: 'atendido',
+            nombre: nombreFinal,
+            cedula: cedulaFinal,
+            celular: celularFinal,
+            direccion: direccionFinal
+          })
+          .eq('id', pacienteId);
+        if (errFinal) throw errFinal;
+
         if (isFarmacia) {
           this.toast('✅ Medicamentos entregados. Turno finalizado.', 'success');
         } else {
