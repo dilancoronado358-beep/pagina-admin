@@ -72,7 +72,7 @@ const app = {
     try {
       if (!window.supabase) throw new Error('SDK no disponible');
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      
+
       // Obtener el inicio de la brigada activa directamente desde la base de datos
       // Esto soluciona problemas de zona horaria y sincroniza a todas las computadoras
       const { data: bData, error: bError } = await sb.from('pacientes_espera')
@@ -80,7 +80,7 @@ const app = {
         .eq('nombre', '[SISTEMA_NUEVA_BRIGADA]')
         .order('created_at', { ascending: false })
         .limit(1);
-        
+
       if (bData && bData.length > 0) {
         Estado.brigadaDesde = bData[0].created_at;
         localStorage.setItem('brigada_activa_desde', Estado.brigadaDesde);
@@ -95,7 +95,7 @@ const app = {
     } catch (e) {
       Estado.online = false;
       console.warn('⚠️ Modo offline / tabla no lista:', e.message);
-      
+
       // Fallback a localStorage si no hay internet
       const brigadaGuardada = localStorage.getItem('brigada_activa_desde');
       Estado.brigadaDesde = brigadaGuardada || '2000-01-01T00:00:00.000Z';
@@ -265,10 +265,10 @@ const app = {
         this.tvUltimos = {};
         data.forEach(t => {
           let sv = {};
-          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
           this.tvUltimos[t.id] = sv.llamados || 1;
         });
-        
+
         // Mostrar datos en pantalla inmediatamente si ya hay pacientes en consulta
         if (data.length > 0) {
           const paciente = data[0];
@@ -297,7 +297,7 @@ const app = {
             }
           }
         }
-        
+
         this.tvPrimeraCargaHecha = true;
         return;
       }
@@ -305,7 +305,7 @@ const app = {
       // Encontrar pacientes que son nuevos o cuyo contador de 'llamados' ha incrementado
       const nuevos = data.filter(t => {
         let sv = {};
-        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+        try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
         const count = sv.llamados || 1;
         return this.tvUltimos[t.id] !== count;
       });
@@ -318,7 +318,7 @@ const app = {
         this.tvUltimos = {};
         data.forEach(t => {
           let sv = {};
-          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch(e){}
+          try { sv = JSON.parse(t.signos_vitales || '{}'); } catch (e) { }
           this.tvUltimos[t.id] = sv.llamados || 1;
         });
       }
@@ -357,21 +357,21 @@ const app = {
     // 1. Sonido de campanilla agradable (Ding-Dong tipo aeropuerto/hospital)
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      
+
       const playTone = (freq, startTime, duration) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        
+
         osc.type = 'sine'; // Sonido suave
         osc.frequency.setValueAtTime(freq, startTime);
-        
+
         // Envolvente de volumen tipo campana (ataque rápido, decaimiento lento)
         gain.gain.setValueAtTime(0, startTime);
         gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-        
+
         osc.start(startTime);
         osc.stop(startTime + duration);
       };
@@ -385,7 +385,35 @@ const app = {
       console.error('AudioContext bloqueado o error:', e);
     }
 
-    // La voz fue eliminada a petición del usuario para hacer el llamado más discreto y profesional.
+    // 2. Voz anunciando el paciente (SpeechSynthesis)
+    try {
+      setTimeout(() => {
+        let voces = window.speechSynthesis.getVoices();
+
+        // Buscar voces en español
+        let vocesEs = voces.filter(v => v.lang.startsWith('es'));
+
+        // Priorizar voces de alta calidad (Naturales, Online, Google, Microsoft)
+        let vozIdeal = vocesEs.find(v => v.name.includes('Natural') || v.name.includes('Online'))
+          || vocesEs.find(v => v.name.includes('Google') || v.name.includes('Microsoft'))
+          || vocesEs[0]; // Fallback a la primera disponible
+
+        // Crear el mensaje hablado (corto y directo)
+        const textoVoz = `Atención paciente: ${paciente.nombre}. Por favor, acercarse a ${paciente.especialidad}.`;
+        const u = new SpeechSynthesisUtterance(textoVoz);
+        u.lang = 'es-ES';
+        u.rate = 0.85; // Velocidad pausada para mayor claridad
+        u.pitch = 1.0;
+
+        if (vozIdeal) {
+          u.voice = vozIdeal;
+        }
+
+        window.speechSynthesis.speak(u);
+      }, 1600); // Inicia justo cuando el Ding-Dong comienza a desvanecerse
+    } catch (e) {
+      console.error('Error de voz (SpeechSynthesis):', e);
+    }
   },
 
   // ============================================================
@@ -1191,17 +1219,17 @@ const app = {
     if (!Estado.online || !sb) return;
     const paciente = Estado.turnosArea?.find(p => p.id === pacienteId);
     if (!paciente) return;
-    
+
     let sv = {};
-    try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch(e){}
+    try { sv = JSON.parse(paciente.signos_vitales || '{}'); } catch (e) { }
     sv.llamados = (sv.llamados || 1) + 1; // Incrementar contador de llamadas
-    
+
     try {
       const { error } = await sb.from('pacientes_espera')
         .update({ signos_vitales: JSON.stringify(sv) })
         .eq('id', pacienteId);
       if (error) throw error;
-      
+
       this.toast('🔔 Volviendo a llamar en TV...', 'success');
     } catch (e) {
       this.toast('Error al re-llamar', 'error');
@@ -1394,19 +1422,19 @@ const app = {
         });
 
         if (errDeriv) throw errDeriv;
-        
+
         // Marcar la consulta actual como finalizada
         const { error: errEstado } = await sb.from('pacientes_espera')
           .update({ estado: 'atendido' })
           .eq('id', pacienteId);
         if (errEstado) throw errEstado;
-        
+
         this.toast(`✅ Paciente derivado exitosamente a ${derivacionArea} (Turno #${numTurno})`, 'success');
         this.mostrarVista('misPacientes');
       } else if (recetaTexto && !isFarmacia) {
         const genCodigo = Math.floor(1000 + Math.random() * 9000).toString();
         codigoReceta = genCodigo;
-        
+
         const { data: maxData } = await sb.from('pacientes_espera')
           .select('numero_turno_area')
           .eq('especialidad', 'Farmacia')
@@ -2223,9 +2251,9 @@ const app = {
         estado: 'atendido',
         creado_por: Estado.userName
       }).select('created_at').single();
-      
+
       if (error) throw error;
-      
+
       Estado.brigadaDesde = data.created_at;
       localStorage.setItem('brigada_activa_desde', data.created_at);
 
