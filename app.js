@@ -1324,7 +1324,7 @@ const app = {
 
         const { error: errDeriv } = await sb.from('pacientes_espera')
           .update({
-            estado: 'en_espera',
+            estado: 'pendiente', // Cambiado de 'en_espera' para saltar a la enfermera y que el nuevo doctor pueda llamarlo de inmediato
             especialidad: derivacionArea,
             numero_turno_area: numTurno,
             area_designada: null
