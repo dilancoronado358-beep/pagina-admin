@@ -374,58 +374,109 @@ const app = {
     try {
       if (!Estado.online || !sb) throw new Error('Sin conexión a Base de Datos');
 
-      // Intentar primero con el RPC
       let loginOk = false;
       let loginData = null;
 
+      // ── INTENTO 1: RPC verificar_login ──────────────────────────
       try {
         const { data, error } = await sb.rpc('verificar_login', {
           p_username: user,
           p_password: pass
         });
-
         if (!error && data && data.success) {
           loginOk = true;
           loginData = data;
+        } else {
+          console.error('RPC1:', error?.message || data?.message || JSON.stringify(data));
         }
-      } catch (rpcErr) {
-        console.warn('RPC falló, intentando acceso directo:', rpcErr.message);
-      }
+      } catch (e) { console.error('RPC1-ex:', e.message); }
 
-      // Si el RPC falló o retornó false, intentar consulta directa a la tabla usuarios
+      // ── INTENTO 2: RPC username en minúsculas ────────────────────
       if (!loginOk) {
-        const { data: usuarios, error: tblError } = await sb
-          .from('usuarios')
-          .select('id, username, password, role, area')
-          .ilike('username', user)
-          .limit(5);
-
-        if (tblError) {
-          // Si tampoco funciona la consulta directa, lanzar error genérico
-          throw new Error('Credenciales incorrectas');
-        }
-
-        // Buscar coincidencia exacta (case-insensitive en username, exacta en password)
-        const match = (usuarios || []).find(u =>
-          u.username.toLowerCase() === user.toLowerCase() &&
-          u.password === pass
-        );
-
-        if (!match) {
-          throw new Error('Usuario o contraseña incorrectos');
-        }
-
-        // Construir loginData desde la tabla directamente
-        loginData = {
-          success: true,
-          role: match.role,
-          username: match.username,
-          area: match.area || null
-        };
-        loginOk = true;
-        console.log('✅ Login exitoso via tabla directa');
+        try {
+          const { data, error } = await sb.rpc('verificar_login', {
+            p_username: user.toLowerCase(),
+            p_password: pass
+          });
+          if (!error && data && data.success) {
+            loginOk = true;
+            loginData = data;
+          } else {
+            console.error('RPC2:', error?.message || data?.message || JSON.stringify(data));
+          }
+        } catch (e) { console.error('RPC2-ex:', e.message); }
       }
 
+      // ── INTENTO 3: fetch() directo al REST API ───────────────────
+      if (!loginOk) {
+        try {
+          const resp = await fetch(
+            `${SUPABASE_URL}/rest/v1/usuarios?select=username,password,role,area&limit=500`,
+            {
+              headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Accept': 'application/json'
+              }
+            }
+          );
+          const rows = await resp.json();
+          console.error('Fetch-tabla status:', resp.status, 'filas:', Array.isArray(rows) ? rows.length : JSON.stringify(rows));
+
+          if (Array.isArray(rows) && rows.length > 0) {
+            const match = rows.find(u =>
+              u.username?.toLowerCase() === user.toLowerCase() &&
+              u.password === pass
+            );
+            if (match) {
+              loginOk = true;
+              loginData = { success: true, role: match.role, username: match.username, area: match.area || null };
+            } else {
+              const soloUser = rows.find(u => u.username?.toLowerCase() === user.toLowerCase());
+              if (soloUser) {
+                // ¡Usuario encontrado! Intentar con contraseña exacta de BD
+                throw new Error(`Pass incorrecta. BD tiene: "${soloUser.password}" — escribiste: "${pass}"`);
+              } else {
+                throw new Error(`Usuario "${user}" no existe en la base de datos`);
+              }
+            }
+          } else if (!Array.isArray(rows)) {
+            // RLS está bloqueando — intentar leer solo este usuario
+            const resp2 = await fetch(
+              `${SUPABASE_URL}/rest/v1/usuarios?username=eq.${encodeURIComponent(user)}&select=username,password,role,area`,
+              {
+                headers: {
+                  'apikey': SUPABASE_KEY,
+                  'Authorization': `Bearer ${SUPABASE_KEY}`,
+                  'Accept': 'application/json'
+                }
+              }
+            );
+            const rows2 = await resp2.json();
+            console.error('Fetch-single status:', resp2.status, JSON.stringify(rows2));
+
+            if (Array.isArray(rows2) && rows2.length > 0 && rows2[0].password === pass) {
+              loginOk = true;
+              const m = rows2[0];
+              loginData = { success: true, role: m.role, username: m.username, area: m.area || null };
+            } else if (Array.isArray(rows2) && rows2.length > 0) {
+              throw new Error(`Pass incorrecta. BD tiene: "${rows2[0].password}"`);
+            } else {
+              throw new Error(`Tabla protegida por RLS — status ${resp2.status}: ${JSON.stringify(rows2).substring(0, 80)}`);
+            }
+          } else {
+            throw new Error('Tabla usuarios vacía o sin acceso (0 filas)');
+          }
+        } catch (e) {
+          if (e.message.startsWith('Pass') || e.message.startsWith('Usuario') || e.message.startsWith('Tabla')) throw e;
+          console.error('Fetch-ex:', e.message);
+          throw new Error('Error de red: ' + e.message);
+        }
+      }
+
+      if (!loginOk) throw new Error('No se pudo verificar credenciales');
+
+      // ── Login exitoso ─────────────────────────────────────────────
       Estado.role = loginData.role;
       Estado.userName = loginData.username;
       Estado.areaId = loginData.area || null;
@@ -441,7 +492,7 @@ const app = {
       this.restaurarVistaSegunRol();
 
     } catch (e) {
-      console.error(e);
+      console.error('Login error final:', e.message);
       this.toast(e.message, 'error');
     }
 
