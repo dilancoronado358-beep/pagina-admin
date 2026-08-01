@@ -69,27 +69,36 @@ const app = {
     Estado.areas = AREAS_ESTATICAS;
     this.llenarSelects();
 
-    // Cargar brigada activa desde localStorage
-    const brigadaGuardada = localStorage.getItem('brigada_activa_desde');
-    if (brigadaGuardada) {
-      Estado.brigadaDesde = brigadaGuardada;
-    } else {
-      // Si no hay brigada guardada, establecer una por defecto muy antigua para mostrar todo
-      Estado.brigadaDesde = '2000-01-01T00:00:00.000Z';
-      localStorage.setItem('brigada_activa_desde', Estado.brigadaDesde);
-    }
-
     try {
       if (!window.supabase) throw new Error('SDK no disponible');
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      const { error } = await sb.from('pacientes_espera').select('id').limit(1);
-      if (error) throw error;
+      
+      // Obtener el inicio de la brigada activa directamente desde la base de datos
+      // Esto soluciona problemas de zona horaria y sincroniza a todas las computadoras
+      const { data: bData, error: bError } = await sb.from('pacientes_espera')
+        .select('created_at')
+        .eq('nombre', '[SISTEMA_NUEVA_BRIGADA]')
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (bData && bData.length > 0) {
+        Estado.brigadaDesde = bData[0].created_at;
+        localStorage.setItem('brigada_activa_desde', Estado.brigadaDesde);
+      } else {
+        Estado.brigadaDesde = '2000-01-01T00:00:00.000Z';
+        localStorage.setItem('brigada_activa_desde', Estado.brigadaDesde);
+      }
+
       Estado.online = true;
-      console.log('✅ Supabase en línea');
+      console.log('✅ Supabase en línea - Brigada desde:', Estado.brigadaDesde);
       this.verificarSesionGuardada();
     } catch (e) {
       Estado.online = false;
       console.warn('⚠️ Modo offline / tabla no lista:', e.message);
+      
+      // Fallback a localStorage si no hay internet
+      const brigadaGuardada = localStorage.getItem('brigada_activa_desde');
+      Estado.brigadaDesde = brigadaGuardada || '2000-01-01T00:00:00.000Z';
     }
   },
 
@@ -1674,7 +1683,9 @@ const app = {
     this.toast('⏳ Generando reporte Excel...', 'success');
 
     try {
-      let query = sb.from('pacientes_espera').select('*');
+      let query = sb.from('pacientes_espera').select('*')
+        .gte('created_at', Estado.brigadaDesde)
+        .neq('nombre', '[SISTEMA_NUEVA_BRIGADA]');
 
       // Filtrar por especialidad
       if (especialidadSel !== 'TODAS LAS ESPECIALIDADES') {
@@ -2123,7 +2134,7 @@ const app = {
     setTimeout(() => { const inp = document.getElementById('confirmNuevaBrigada'); if (inp) inp.focus(); }, 100);
   },
 
-  _confirmarNuevaBrigada() {
+  async _confirmarNuevaBrigada() {
     const val = (document.getElementById('confirmNuevaBrigada')?.value || '').trim().toUpperCase();
     if (val !== 'NUEVA BRIGADA') {
       // Shake animation en el input
@@ -2137,22 +2148,34 @@ const app = {
       return;
     }
 
-    // Establecer nuevo timestamp de brigada
-    const ahora = new Date().toISOString();
-    Estado.brigadaDesde = ahora;
-    localStorage.setItem('brigada_activa_desde', ahora);
+    try {
+      // Insertar registro fantasma para marcar el inicio exacto en el tiempo de la BD
+      const { data, error } = await sb.from('pacientes_espera').insert({
+        nombre: '[SISTEMA_NUEVA_BRIGADA]',
+        estado: 'sistema',
+        creado_por: Estado.userName
+      }).select('created_at').single();
+      
+      if (error) throw error;
+      
+      Estado.brigadaDesde = data.created_at;
+      localStorage.setItem('brigada_activa_desde', data.created_at);
 
-    // Cerrar modal
-    const modal = document.getElementById('modalNuevaBrigada');
-    if (modal) modal.remove();
+      // Cerrar modal
+      const modal = document.getElementById('modalNuevaBrigada');
+      if (modal) modal.remove();
 
-    // Actualizar la UI
-    this._actualizarInfoBrigada();
-    this.adminCargarUsuarios();
+      // Actualizar la UI
+      this._actualizarInfoBrigada();
+      this.adminCargarUsuarios();
 
-    // Notificación de éxito
-    this.toast('🚀 ¡Nueva brigada iniciada! El sistema está limpio y listo.', 'success');
-    setTimeout(() => this.toast('📂 Los datos anteriores están guardados en Historia Clínica.', 'success'), 1500);
+      // Notificación de éxito
+      this.toast('🚀 ¡Nueva brigada iniciada! El sistema está limpio y listo.', 'success');
+      setTimeout(() => this.toast('📂 Los datos anteriores están guardados en Historia Clínica.', 'success'), 1500);
+    } catch (e) {
+      console.error(e);
+      this.toast('Error al iniciar la nueva brigada: ' + e.message, 'error');
+    }
   },
 
   _actualizarInfoBrigada() {
