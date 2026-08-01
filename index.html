@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Turnos - Renovación Montufareña</title>
-  <meta name="description" content="Sistema de gestión de turnos médicos para la Unidad de Salud Renovación Montufareña">
+  <meta name="description"
+    content="Sistema de gestión de turnos médicos para la Unidad de Salud Renovación Montufareña">
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -43,8 +44,11 @@
         <button id="btnIngresar" class="btn-large" style="margin-top: 1.75rem;" onclick="app.iniciarSesion()">
           Ingresar al Sistema
         </button>
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-          <button class="btn-action" style="background: transparent; border: 1.5px solid var(--primary); color: var(--primary); width: 100%; padding: 0.75rem;" onclick="app.abrirModoTV()">📺 Abrir Pantalla Pública (TV)</button>
+        <div
+          style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+          <button class="btn-action"
+            style="background: transparent; border: 1.5px solid var(--primary); color: var(--primary); width: 100%; padding: 0.75rem;"
+            onclick="app.abrirModoTV()">📺 Abrir Pantalla Pública (TV)</button>
         </div>
       </div>
     </div>
@@ -72,9 +76,11 @@
        ===================================================== -->
   <nav class="main-nav" id="mainNav" style="display: none;">
     <div class="nav-container">
-      <button class="nav-item active" id="navBtnPrincipal" onclick="app.restaurarVistaSegunRol()">🏠 Panel Principal</button>
+      <button class="nav-item active" id="navBtnPrincipal" onclick="app.restaurarVistaSegunRol()">🏠 Panel
+        Principal</button>
       <button class="nav-item" id="navBtnHistoria" onclick="app.abrirHistoriaClinica()">📖 Historia Clínica</button>
-      <button class="nav-item" id="navBtnDashboard" onclick="app.abrirDashboard()" style="display: none;">📊 Dashboard</button>
+      <button class="nav-item" id="navBtnDashboard" onclick="app.abrirDashboard()" style="display: none;">📊
+        Dashboard</button>
     </div>
   </nav>
 
@@ -84,22 +90,30 @@
   <main>
 
     <!-- VISTA: Pantalla Pública (TV) -->
-    <div id="view-tv" class="view" style="position: fixed; inset: 0; z-index: 9999; background: #0f172a; margin: 0; padding: 0; max-width: none;">
+    <div id="view-tv" class="view"
+      style="position: fixed; inset: 0; z-index: 9999; background: #0f172a; margin: 0; padding: 0; max-width: none;">
       <div style="height: 100vh; width: 100vw; display: flex; flex-direction: column; overflow: hidden;">
-        
-        <div style="background: linear-gradient(135deg, var(--primary), #0369a1); color: white; padding: 1.5rem; text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative; z-index: 10;">
+
+        <div
+          style="background: linear-gradient(135deg, var(--primary), #0369a1); color: white; padding: 1.5rem; text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); position: relative; z-index: 10;">
           SISTEMA DE TURNOS - RENOVACIÓN MONTUFAREÑA
-          <button onclick="app.cerrarModoTV()" style="position:absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.9rem;">✕ Cerrar TV</button>
+          <button onclick="app.cerrarModoTV()"
+            style="position:absolute; right: 1.5rem; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 0.9rem;">✕
+            Cerrar TV</button>
         </div>
-        
-        <div id="tvContent" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; overflow-y: auto;">
+
+        <div id="tvContent"
+          style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; overflow-y: auto;">
           <div style="font-size: 2.5rem; color: #64748b; font-weight: 600;">Esperando llamados...</div>
         </div>
-        
-        <div style="background: rgba(15, 23, 42, 0.95); padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 10;">
-          <h3 style="color: #94a3b8; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Últimos Llamados</h3>
+
+        <div
+          style="background: rgba(15, 23, 42, 0.95); padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); z-index: 10;">
+          <h3
+            style="color: #94a3b8; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">
+            Últimos Llamados</h3>
           <div id="tvUltimosLlamados" style="display: flex; gap: 1.5rem; overflow-x: auto;">
-             <!-- items -->
+            <!-- items -->
           </div>
         </div>
 
@@ -115,7 +129,8 @@
         <div class="form-grid">
           <div class="form-group">
             <label for="pacienteCedula">Número de Cédula</label>
-            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx" onblur="app.buscarPacienteExistente()" autofocus>
+            <input type="text" id="pacienteCedula" placeholder="Ej: 100xxxxxxx" onblur="app.buscarPacienteExistente()"
+              autofocus>
             <div id="cedulaFeedback" style="font-size: 0.8rem; margin-top: 0.3rem; display: none;"></div>
           </div>
 
@@ -141,22 +156,27 @@
             </select>
           </div>
 
-          <div class="form-group full-width" style="background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
-            <label style="margin-bottom: 0.8rem; font-weight: 700; color: var(--text-dark);">¿Cuándo es la consulta?</label>
+          <div class="form-group full-width"
+            style="background: rgba(0,0,0,0.02); padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-md);">
+            <label style="margin-bottom: 0.8rem; font-weight: 700; color: var(--text-dark);">¿Cuándo es la
+              consulta?</label>
             <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
               <label class="excel-radio-opt" style="flex:1;">
-                <input type="radio" name="tipo_turno" value="hoy" checked onchange="document.getElementById('fechaCitaContainer').style.display='none'">
+                <input type="radio" name="tipo_turno" value="hoy" checked
+                  onchange="document.getElementById('fechaCitaContainer').style.display='none'">
                 <div class="excel-radio-dot"></div>
                 <span class="excel-radio-label">Para Hoy (Sala de Espera)</span>
               </label>
               <label class="excel-radio-opt" style="flex:1;">
-                <input type="radio" name="tipo_turno" value="programado" onchange="document.getElementById('fechaCitaContainer').style.display='block'">
+                <input type="radio" name="tipo_turno" value="programado"
+                  onchange="document.getElementById('fechaCitaContainer').style.display='block'">
                 <div class="excel-radio-dot"></div>
                 <span class="excel-radio-label">Cita Futura (Agendar)</span>
               </label>
             </div>
-            
-            <div id="fechaCitaContainer" style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
+
+            <div id="fechaCitaContainer"
+              style="display: none; margin-top: 1rem; border-top: 1px dashed var(--border); padding-top: 1rem;">
               <label for="pacienteFechaCita">Fecha y Hora Programada</label>
               <input type="datetime-local" id="pacienteFechaCita">
             </div>
@@ -177,7 +197,8 @@
         <div class="card-header">
           <h2>Pacientes Registrados</h2>
           <div class="card-header-actions">
-            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel</button>
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥
+              Excel</button>
           </div>
         </div>
         <ul class="patient-list" id="turneroHistoryList">
@@ -198,7 +219,8 @@
             <button onclick="app.cargarAgenda()" class="btn-action">🔄 Actualizar</button>
           </div>
         </div>
-        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">Pacientes programados para atención futura. Puedes enviarlos a la sala de espera cuando lleguen.</p>
+        <p style="margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem;">Pacientes programados para atención
+          futura. Puedes enviarlos a la sala de espera cuando lleguen.</p>
         <ul class="patient-list" id="agendaList">
           <li>
             <div class="state-empty">
@@ -217,18 +239,19 @@
         <div class="big-number" id="currentTriajeNumber">--</div>
         <div class="patient-name-display" id="currentTriajeName">Esperando pacientes...</div>
       </div>
-
+      f
       <div class="card">
         <div class="card-header">
           <h2>Cola de Recepción</h2>
           <div class="card-header-actions">
-            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel</button>
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥
+              Excel</button>
             <button onclick="app.cargarPacientesTriaje()" class="btn-action">🔄 Actualizar</button>
           </div>
         </div>
 
-        <input type="text" class="search-input" id="inputFiltroTriaje"
-          onkeyup="app.filtrarTriaje()" placeholder="Buscar por nombre, cédula o área...">
+        <input type="text" class="search-input" id="inputFiltroTriaje" onkeyup="app.filtrarTriaje()"
+          placeholder="Buscar por nombre, cédula o área...">
 
         <ul class="patient-list" id="triajeList">
           <li>
@@ -245,7 +268,8 @@
     <div id="view-formTriaje" class="view">
       <div class="card">
         <h2>🩺 Registro de Signos Vitales</h2>
-        <h3 id="triajePacienteName" style="font-size:1.1rem; color:var(--text-muted); font-weight:600; margin-bottom:1.75rem;">
+        <h3 id="triajePacienteName"
+          style="font-size:1.1rem; color:var(--text-muted); font-weight:600; margin-bottom:1.75rem;">
           Paciente:
         </h3>
 
@@ -307,13 +331,14 @@
         <div class="card-header">
           <h2>Lista de Espera</h2>
           <div class="card-header-actions">
-            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel</button>
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥
+              Excel</button>
             <button onclick="app.cargarPacientesArea()" class="btn-action">🔄 Actualizar</button>
           </div>
         </div>
-        
-        <input type="text" class="search-input" id="inputFiltroDoctor"
-          onkeyup="app.filtrarDoctor()" placeholder="Buscar por nombre o cédula...">
+
+        <input type="text" class="search-input" id="inputFiltroDoctor" onkeyup="app.filtrarDoctor()"
+          placeholder="Buscar por nombre o cédula...">
 
         <ul class="patient-list" id="patientList">
           <li>
@@ -330,7 +355,8 @@
     <div id="view-formConsulta" class="view">
       <div class="card">
         <h2>👨‍⚕️ Consulta Médica</h2>
-        <h3 id="consultaPacienteName" style="font-size:1.1rem; color:var(--text-muted); font-weight:600; margin-bottom:1.75rem;">
+        <h3 id="consultaPacienteName"
+          style="font-size:1.1rem; color:var(--text-muted); font-weight:600; margin-bottom:1.75rem;">
           Paciente:
         </h3>
 
@@ -338,114 +364,128 @@
 
         <div id="formConsultaContent">
           <div class="card-section">
-          <h3>👤 Datos del Paciente</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes modificar los datos registrados en recepción si hay algún error.</p>
+            <h3>👤 Datos del Paciente</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes
+              modificar los datos registrados en recepción si hay algún error.</p>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label>Nombres y Apellidos</label>
+                <input type="text" id="consNombre">
+              </div>
+              <div class="form-group">
+                <label>Cédula</label>
+                <input type="text" id="consCedula">
+              </div>
+              <div class="form-group">
+                <label>Celular</label>
+                <input type="tel" id="consCelular">
+              </div>
+              <div class="form-group full-width">
+                <label>Dirección</label>
+                <input type="text" id="consDireccion">
+              </div>
+            </div>
+          </div>
+
+          <div class="card-section"
+            style="background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.2);">
+            <h3>🩺 Signos Vitales (Triaje)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes
+              modificar estos valores si es necesario.</p>
+            <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));">
+              <div class="form-group">
+                <label>Edad</label>
+                <input type="number" id="consEdad">
+              </div>
+              <div class="form-group">
+                <label>Peso</label>
+                <input type="text" id="consPeso">
+              </div>
+              <div class="form-group">
+                <label>Estatura</label>
+                <input type="text" id="consEstatura">
+              </div>
+              <div class="form-group">
+                <label>Presión Art.</label>
+                <input type="text" id="consPresion">
+              </div>
+              <div class="form-group">
+                <label>Temp.</label>
+                <input type="text" id="consTemperatura">
+              </div>
+              <div class="form-group">
+                <label>Frec. Card.</label>
+                <input type="text" id="consFrecuencia">
+              </div>
+              <div class="form-group">
+                <label>Sat. O₂</label>
+                <input type="text" id="consSaturacion">
+              </div>
+            </div>
+          </div>
+
           <div class="form-grid">
             <div class="form-group full-width">
-              <label>Nombres y Apellidos</label>
-              <input type="text" id="consNombre">
+              <label for="consDiagnostico">Estado o Problemas del Paciente (Diagnóstico)</label>
+              <textarea id="consDiagnostico" rows="4"
+                placeholder="Describe los síntomas, diagnóstico y observaciones..."></textarea>
             </div>
-            <div class="form-group">
-              <label>Cédula</label>
-              <input type="text" id="consCedula">
+
+            <div class="form-group full-width">
+              <label for="consReceta">Receta Médica (Opcional)</label>
+              <textarea id="consReceta" rows="4"
+                placeholder="Escribe los medicamentos e indicaciones... (Si llenas esto, el paciente será enviado a Farmacia)"></textarea>
             </div>
-            <div class="form-group">
-              <label>Celular</label>
-              <input type="tel" id="consCelular">
+          </div>
+
+          <div id="farmaciaControls"
+            style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); width: 100%;">
+            <h3 style="margin-bottom: 1rem; color: var(--text-dark); font-size: 1.1rem;">Control de Entrega (Farmacia)
+            </h3>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+              <label class="excel-radio-opt" style="flex:1;">
+                <input type="radio" name="estado_entrega" value="Completo" checked>
+                <div class="excel-radio-dot"></div>
+                <span class="excel-radio-label">Entregado Completo</span>
+              </label>
+              <label class="excel-radio-opt" style="flex:1;">
+                <input type="radio" name="estado_entrega" value="Parcial">
+                <div class="excel-radio-dot"></div>
+                <span class="excel-radio-label">Entregado Parcial</span>
+              </label>
+              <label class="excel-radio-opt" style="flex:1;">
+                <input type="radio" name="estado_entrega" value="Sin Stock">
+                <div class="excel-radio-dot"></div>
+                <span class="excel-radio-label">Sin Stock</span>
+              </label>
             </div>
             <div class="form-group full-width">
-              <label>Dirección</label>
-              <input type="text" id="consDireccion">
+              <label for="farmaciaNotas">Notas / Observaciones de Farmacia</label>
+              <textarea id="farmaciaNotas" rows="2" placeholder="Ej: No hubo paracetamol de 500mg..."></textarea>
             </div>
           </div>
-        </div>
 
-        <div class="card-section" style="background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.2);">
-          <h3>🩺 Signos Vitales (Triaje)</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; margin-top: -0.8rem;">Puedes modificar estos valores si es necesario.</p>
-          <div class="form-grid" style="grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));">
-            <div class="form-group">
-              <label>Edad</label>
-              <input type="number" id="consEdad">
-            </div>
-            <div class="form-group">
-              <label>Peso</label>
-              <input type="text" id="consPeso">
-            </div>
-            <div class="form-group">
-              <label>Estatura</label>
-              <input type="text" id="consEstatura">
-            </div>
-            <div class="form-group">
-              <label>Presión Art.</label>
-              <input type="text" id="consPresion">
-            </div>
-            <div class="form-group">
-              <label>Temp.</label>
-              <input type="text" id="consTemperatura">
-            </div>
-            <div class="form-group">
-              <label>Frec. Card.</label>
-              <input type="text" id="consFrecuencia">
-            </div>
-            <div class="form-group">
-              <label>Sat. O₂</label>
-              <input type="text" id="consSaturacion">
-            </div>
-          </div>
-        </div>
-
-        <div class="form-grid">
-          <div class="form-group full-width">
-            <label for="consDiagnostico">Estado o Problemas del Paciente (Diagnóstico)</label>
-            <textarea id="consDiagnostico" rows="4" placeholder="Describe los síntomas, diagnóstico y observaciones..."></textarea>
-          </div>
-          
-          <div class="form-group full-width">
-            <label for="consReceta">Receta Médica (Opcional)</label>
-            <textarea id="consReceta" rows="4" placeholder="Escribe los medicamentos e indicaciones... (Si llenas esto, el paciente será enviado a Farmacia)"></textarea>
-          </div>
-        </div>
-
-        <div id="farmaciaControls" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); width: 100%;">
-          <h3 style="margin-bottom: 1rem; color: var(--text-dark); font-size: 1.1rem;">Control de Entrega (Farmacia)</h3>
-          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-            <label class="excel-radio-opt" style="flex:1;">
-              <input type="radio" name="estado_entrega" value="Completo" checked>
-              <div class="excel-radio-dot"></div>
-              <span class="excel-radio-label">Entregado Completo</span>
-            </label>
-            <label class="excel-radio-opt" style="flex:1;">
-              <input type="radio" name="estado_entrega" value="Parcial">
-              <div class="excel-radio-dot"></div>
-              <span class="excel-radio-label">Entregado Parcial</span>
-            </label>
-            <label class="excel-radio-opt" style="flex:1;">
-              <input type="radio" name="estado_entrega" value="Sin Stock">
-              <div class="excel-radio-dot"></div>
-              <span class="excel-radio-label">Sin Stock</span>
-            </label>
-          </div>
-          <div class="form-group full-width">
-            <label for="farmaciaNotas">Notas / Observaciones de Farmacia</label>
-            <textarea id="farmaciaNotas" rows="2" placeholder="Ej: No hubo paracetamol de 500mg..."></textarea>
-          </div>
-        </div>
-
-          <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()" style="margin-top: 1.5rem;">
+          <button id="btnGuardarConsulta" class="btn-large btn-success" onclick="app.guardarConsulta()"
+            style="margin-top: 1.5rem;">
             ✅ Finalizar Consulta
           </button>
-          <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin Guardar)</button>
+          <button class="btn-volver" onclick="app.mostrarVista('misPacientes')">← Volver a la Lista (Sin
+            Guardar)</button>
         </div>
 
         <div id="formConsultaSuccess" style="display: none; text-align: center; padding: 2rem 0;">
           <div style="font-size: 4rem; margin-bottom: 1rem;">💊</div>
           <h2 style="color: var(--success); margin-bottom: 0.5rem;">¡Receta Enviada a Farmacia!</h2>
           <p style="color: var(--text-muted); margin-bottom: 2rem;">Por favor, entrega este código al paciente:</p>
-          
-          <div style="background: var(--bg); border: 2px dashed var(--primary); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2.5rem; display: inline-block; min-width: 250px;">
-            <div style="font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.5rem;">CÓDIGO DE RECETA</div>
-            <div id="consultaCodigoGenerado" style="font-size: 4.5rem; font-weight: 800; color: var(--primary); letter-spacing: 4px; line-height: 1;">----</div>
+
+          <div
+            style="background: var(--bg); border: 2px dashed var(--primary); border-radius: var(--radius-lg); padding: 2rem; margin-bottom: 2.5rem; display: inline-block; min-width: 250px;">
+            <div
+              style="font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.5rem;">
+              CÓDIGO DE RECETA</div>
+            <div id="consultaCodigoGenerado"
+              style="font-size: 4.5rem; font-weight: 800; color: var(--primary); letter-spacing: 4px; line-height: 1;">
+              ----</div>
           </div>
           <div style="display: flex; gap: 1rem; justify-content: center;">
             <button class="btn-large" style="background: var(--primary);" onclick="app.descargarRecetaPDF()">
@@ -456,9 +496,9 @@
             </button>
           </div>
 
+        </div>
       </div>
-    </div>
-    <!-- Cierre de view-formConsulta -->
+      <!-- Cierre de view-formConsulta -->
     </div>
 
     <!-- VISTA: Historia Clinica -->
@@ -467,32 +507,36 @@
         <div class="card-header" style="margin-bottom:1rem;">
           <h2>📖 Historia Clínica</h2>
           <div class="card-header-actions">
-            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al Panel</button>
+            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al
+              Panel</button>
           </div>
         </div>
-        <p style="margin-bottom: 1.5rem;">Busca un paciente por su número de cédula o nombres completos para ver todo su historial de atenciones.</p>
+        <p style="margin-bottom: 1.5rem;">Busca un paciente por su número de cédula o nombres completos para ver todo su
+          historial de atenciones.</p>
 
         <div style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 2rem;">
           <div class="form-group" style="flex: 1; margin-bottom: 0;">
             <label for="inputBuscarHistoria">Cédula o Nombres Completos</label>
-            <input type="text" id="inputBuscarHistoria" placeholder="Ej: 100xxxxxxx o Juan Pérez" onkeypress="if(event.key === 'Enter') app.buscarHistoriaClinica()">
+            <input type="text" id="inputBuscarHistoria" placeholder="Ej: 100xxxxxxx o Juan Pérez"
+              onkeypress="if(event.key === 'Enter') app.buscarHistoriaClinica()">
           </div>
-          <button class="btn-large btn-success" style="padding: 0.75rem 2rem; margin-bottom: 0; min-width: auto;" onclick="app.buscarHistoriaClinica()">
+          <button class="btn-large btn-success" style="padding: 0.75rem 2rem; margin-bottom: 0; min-width: auto;"
+            onclick="app.buscarHistoriaClinica()">
             🔍 Buscar
           </button>
         </div>
 
         <div id="historiaClinicaLoading" style="display: none; text-align: center; padding: 2rem;">
           <div class="state-empty animate-pulse">
-             <span class="state-empty-icon">⏳</span>
-             <span class="state-empty-text">Buscando historial médico...</span>
+            <span class="state-empty-icon">⏳</span>
+            <span class="state-empty-text">Buscando historial médico...</span>
           </div>
         </div>
 
         <div id="historiaClinicaEmpty" style="display: none; text-align: center; padding: 2rem;">
           <div class="state-empty">
-             <span class="state-empty-icon">📂</span>
-             <span class="state-empty-text">Realiza una búsqueda para ver el historial</span>
+            <span class="state-empty-icon">📂</span>
+            <span class="state-empty-text">Realiza una búsqueda para ver el historial</span>
           </div>
         </div>
 
@@ -508,10 +552,18 @@
         <div class="card-header" style="margin-bottom:1rem;">
           <h2>⚙️ Panel de Administración</h2>
           <div class="card-header-actions">
-            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel Pacientes</button>
+            <button onclick="app.descargarExcel()" class="btn-action" style="background: var(--success);">📥 Excel
+              Pacientes</button>
+            <button onclick="app.iniciarNuevaBrigada()" class="btn-action"
+              style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; font-weight: 700; border: none; box-shadow: 0 4px 14px rgba(220,38,38,0.4);">🚀
+              Nueva Brigada</button>
           </div>
         </div>
         <p>Gestiona el personal médico, de recepción y enfermería del sistema.</p>
+        <div id="brigadaInfoLabel"
+          style="margin-bottom: 1rem; padding: 0.75rem 1rem; background: var(--bg); border: 1.5px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem;">
+          📋 Brigada: <strong>Cargando...</strong>
+        </div>
 
         <div class="card-section">
           <h3>➕ Crear Nuevo Usuario</h3>
@@ -564,35 +616,54 @@
         <div class="card-header" style="margin-bottom:1rem;">
           <h2>📊 Panel de Estadísticas (Analytics)</h2>
           <div class="card-header-actions">
-            <button class="btn-action" style="background: var(--primary);" onclick="app.generarDashboard()">🔄 Refrescar</button>
-            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al Panel</button>
+            <button class="btn-action" style="background: var(--primary);" onclick="app.generarDashboard()">🔄
+              Refrescar</button>
+            <button class="btn-volver" onclick="app.restaurarVistaSegunRol()" style="margin-top: 0;">← Volver al
+              Panel</button>
           </div>
         </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Total Hoy</h3>
+
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+          <div
+            style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3
+              style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">
+              Total Hoy</h3>
             <div id="dashTotalPacientes" style="font-size: 2.5rem; font-weight: 800; color: var(--primary);">0</div>
           </div>
-          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">Atendidos</h3>
+          <div
+            style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3
+              style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">
+              Atendidos</h3>
             <div id="dashTotalAtendidos" style="font-size: 2.5rem; font-weight: 800; color: var(--success);">0</div>
           </div>
-          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
-            <h3 style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">En Espera</h3>
+          <div
+            style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg); text-align: center;">
+            <h3
+              style="color: var(--text-muted); margin-bottom: 0.5rem; font-size: 0.9rem; text-transform: uppercase; font-weight: 700;">
+              En Espera</h3>
             <div id="dashTotalEspera" style="font-size: 2.5rem; font-weight: 800; color: #f59e0b;">0</div>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
-          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
-            <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Pacientes por Área</h3>
+        <div
+          style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
+          <div
+            style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
+            <h3
+              style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">
+              Pacientes por Área</h3>
             <div style="position: relative; height: 300px;">
               <canvas id="chartAreas"></canvas>
             </div>
           </div>
-          <div style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
-            <h3 style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">Estado General</h3>
+          <div
+            style="background: var(--bg); border: 1.5px solid var(--border); padding: 1.5rem; border-radius: var(--radius-lg);">
+            <h3
+              style="color: var(--text-dark); margin-bottom: 1rem; text-align: center; font-size: 1.1rem; font-weight: 700;">
+              Estado General</h3>
             <div style="position: relative; height: 300px;">
               <canvas id="chartEstados"></canvas>
             </div>

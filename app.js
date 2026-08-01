@@ -55,7 +55,8 @@ const Estado = {
   areas: [],
   enfermeras: [],
   online: false,
-  autoRefreshInterval: null
+  autoRefreshInterval: null,
+  brigadaDesde: null    // Timestamp ISO de inicio de brigada activa. Solo se muestran pacientes registrados DESDE esta fecha.
 };
 
 // ============================================================
@@ -67,6 +68,16 @@ const app = {
   async init() {
     Estado.areas = AREAS_ESTATICAS;
     this.llenarSelects();
+
+    // Cargar brigada activa desde localStorage
+    const brigadaGuardada = localStorage.getItem('brigada_activa_desde');
+    if (brigadaGuardada) {
+      Estado.brigadaDesde = brigadaGuardada;
+    } else {
+      // Si no hay brigada guardada, establecer una por defecto muy antigua para mostrar todo
+      Estado.brigadaDesde = '2000-01-01T00:00:00.000Z';
+      localStorage.setItem('brigada_activa_desde', Estado.brigadaDesde);
+    }
 
     try {
       if (!window.supabase) throw new Error('SDK no disponible');
@@ -120,6 +131,7 @@ const app = {
       this.cerrarOverlay('👑', 'Administrador');
       this.mostrarVista('admin');
       this.adminCargarUsuarios();
+      setTimeout(() => this._actualizarInfoBrigada(), 100);
     } else if (Estado.role === 'turnero') {
       this.cerrarOverlay('📝', Estado.userName);
       this.mostrarVista('darTurno');
@@ -233,6 +245,7 @@ const app = {
       const { data, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('estado', 'en_consulta')
+        .gte('created_at', Estado.brigadaDesde)
         .order('id', { ascending: false });
 
       if (error) throw error;
@@ -498,6 +511,7 @@ const app = {
             .select('numero_turno_area')
             .eq('especialidad', especialidad)
             .not('numero_turno_area', 'is', null)
+            .gte('created_at', Estado.brigadaDesde)
             .order('numero_turno_area', { ascending: false })
             .limit(1);
 
@@ -610,6 +624,7 @@ const app = {
       const { data, error } = await sb.from('pacientes_espera')
         .select('nombre, cedula, estado, especialidad, numero_turno_area, creado_por')
         .eq('creado_por', Estado.userName)
+        .gte('created_at', Estado.brigadaDesde)
         .order('created_at', { ascending: false })
         .limit(15);
       if (error) throw error;
@@ -656,6 +671,7 @@ const app = {
       const { data, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('estado', 'programado')
+        .gte('created_at', Estado.brigadaDesde)
         .order('fecha_cita', { ascending: true });
       if (error) throw error;
 
@@ -778,10 +794,11 @@ const app = {
     }
 
     try {
-      // La enfermera ve TODOS los que están "en_espera" (sin turno asignado aún)
+      // La enfermera ve TODOS los que están "en_espera" de la BRIGADA ACTIVA
       const { data, error } = await sb.from('pacientes_espera')
         .select('*')
         .eq('estado', 'en_espera')
+        .gte('created_at', Estado.brigadaDesde)
         .order('created_at', { ascending: true });
       if (error) throw error;
 
@@ -892,6 +909,7 @@ const app = {
         const { data: maxData } = await sb.from('pacientes_espera')
           .select('numero_turno_area')
           .eq('especialidad', especialidad)
+          .gte('created_at', Estado.brigadaDesde)
           .not('numero_turno_area', 'is', null)
           .order('numero_turno_area', { ascending: false })
           .limit(1);
@@ -946,6 +964,7 @@ const app = {
         .select('*')
         .eq('especialidad', Estado.areaId)
         .in('estado', ['en_espera', 'pendiente', 'en_consulta'])
+        .gte('created_at', Estado.brigadaDesde)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -1895,6 +1914,117 @@ const app = {
     } catch (e) {
       console.error(e);
       this.toast('Error al eliminar: ' + e.message, 'error');
+    }
+  },
+
+  // ============================================================
+  // NUEVA BRIGADA — Resetea la vista del sistema sin borrar datos
+  // ============================================================
+  iniciarNuevaBrigada() {
+    // Modal de confirmación visual de doble seguridad
+    const modal = document.createElement('div');
+    modal.id = 'modalNuevaBrigada';
+    modal.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem;
+    `;
+    modal.innerHTML = `
+      <div style="
+        background: white; border-radius: 20px; padding: 2.5rem;
+        max-width: 480px; width: 100%; text-align: center;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+        border: 2px solid #fee2e2;
+        animation: slideUp .3s ease;
+      ">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🚑</div>
+        <h2 style="margin: 0 0 0.75rem; color: #dc2626; font-size: 1.5rem; font-weight: 800;">Iniciar Nueva Brigada</h2>
+        <p style="color: #64748b; margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.6;">
+          Esta acción <strong style="color:#dc2626">ocultará</strong> todos los pacientes registrados actualmente.
+          La información <strong>NO se elimina</strong> — queda guardada en el historial y en la Historia Clínica.
+        </p>
+        <p style="color: #64748b; margin-bottom: 1.75rem; font-size: 0.95rem; line-height: 1.6;">
+          Al ingresar una cédula ya registrada, los datos del paciente se recuperarán automáticamente.
+        </p>
+        <div style="background: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 12px; padding: 1rem; margin-bottom: 1.75rem;">
+          <p style="margin: 0; font-size: 0.88rem; color: #92400e; font-weight: 600;">
+            ⚠️ Para confirmar, escribe <strong>NUEVA BRIGADA</strong> en el campo de abajo:
+          </p>
+          <input id="confirmNuevaBrigada" type="text" placeholder="Escribe: NUEVA BRIGADA" style="
+            margin-top: 0.75rem; width: 100%; padding: 0.65rem 1rem;
+            border: 2px solid #f59e0b; border-radius: 8px; font-size: 1rem;
+            text-align: center; font-family: inherit; font-weight: 700;
+            text-transform: uppercase; outline: none; box-sizing: border-box;
+          ">
+        </div>
+        <div style="display: flex; gap: 1rem;">
+          <button onclick="app._confirmarNuevaBrigada()" style="
+            flex: 1; padding: 0.9rem; background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white; border: none; border-radius: 12px; font-size: 1rem;
+            font-weight: 700; cursor: pointer; font-family: inherit;
+            box-shadow: 0 6px 20px rgba(220,38,38,0.35);
+            transition: all .2s;
+          " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            🚀 Iniciar Nueva Brigada
+          </button>
+          <button onclick="document.getElementById('modalNuevaBrigada').remove()" style="
+            padding: 0.9rem 1.5rem; background: #f1f5f9; color: #64748b;
+            border: 1.5px solid #e2e8f0; border-radius: 12px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: all .2s;
+          " onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    setTimeout(() => { const inp = document.getElementById('confirmNuevaBrigada'); if (inp) inp.focus(); }, 100);
+  },
+
+  _confirmarNuevaBrigada() {
+    const val = (document.getElementById('confirmNuevaBrigada')?.value || '').trim().toUpperCase();
+    if (val !== 'NUEVA BRIGADA') {
+      // Shake animation en el input
+      const inp = document.getElementById('confirmNuevaBrigada');
+      if (inp) {
+        inp.style.borderColor = '#dc2626';
+        inp.style.animation = 'shake .4s ease';
+        setTimeout(() => { inp.style.animation = ''; inp.style.borderColor = '#f59e0b'; }, 500);
+      }
+      this.toast('Debes escribir exactamente: NUEVA BRIGADA', 'error');
+      return;
+    }
+
+    // Establecer nuevo timestamp de brigada
+    const ahora = new Date().toISOString();
+    Estado.brigadaDesde = ahora;
+    localStorage.setItem('brigada_activa_desde', ahora);
+
+    // Cerrar modal
+    const modal = document.getElementById('modalNuevaBrigada');
+    if (modal) modal.remove();
+
+    // Actualizar la UI
+    this._actualizarInfoBrigada();
+    this.adminCargarUsuarios();
+
+    // Notificación de éxito
+    this.toast('🚀 ¡Nueva brigada iniciada! El sistema está limpio y listo.', 'success');
+    setTimeout(() => this.toast('📂 Los datos anteriores están guardados en Historia Clínica.', 'success'), 1500);
+  },
+
+  _actualizarInfoBrigada() {
+    const el = document.getElementById('brigadaInfoLabel');
+    if (!el || !Estado.brigadaDesde) return;
+    const fecha = new Date(Estado.brigadaDesde);
+    const esInicial = fecha.getFullYear() === 2000;
+    if (esInicial) {
+      el.innerHTML = `<span style="color: #64748b;">📋 Brigada: <strong>Todos los registros</strong></span>`;
+    } else {
+      const fechaStr = fecha.toLocaleString('es-EC', { dateStyle: 'medium', timeStyle: 'short' });
+      el.innerHTML = `<span style="color: #059669;">🚀 Brigada activa desde: <strong>${fechaStr}</strong></span>`;
     }
   },
 
