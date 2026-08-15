@@ -339,17 +339,17 @@ const app = {
     const mainContent = document.getElementById('tvContent');
     if (mainContent) {
       mainContent.innerHTML = `
-        <div style="font-size: clamp(2.5rem, 10vw, 7rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.5rem; text-shadow: 0 0 40px rgba(56,189,248,0.4); animation: pulse 2s infinite;">${turnoTxt}</div>
-        <div style="font-size: clamp(1.5rem, 5vw, 4rem); color: white; font-weight: 700; margin-bottom: 1.2rem; max-width: 90vw; word-break: break-word; line-height: 1.2; text-align: center;">${paciente.nombre}</div>
-        <div style="font-size: clamp(1rem, 3vw, 2.2rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.8rem 2.5rem; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
+        <div style="font-size: clamp(2rem, 7vh, 4rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.4rem; text-shadow: 0 0 40px rgba(56,189,248,0.4); animation: pulse 2s infinite;">${turnoTxt}</div>
+        <div style="font-size: clamp(1.2rem, 4.5vh, 2.8rem); color: white; font-weight: 700; margin-bottom: 1rem; max-width: 90vw; word-break: break-word; line-height: 1.25; text-align: center;">${paciente.nombre}</div>
+        <div style="font-size: clamp(0.9rem, 2.5vh, 1.6rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.6rem 2rem; border-radius: 16px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
       `;
     }
 
     const historyContainer = document.getElementById('tvUltimosLlamados');
     if (historyContainer) {
       const historyItem = document.createElement('div');
-      historyItem.style.cssText = "background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; min-width: 200px; border-left: 4px solid #38bdf8;";
-      historyItem.innerHTML = `<div style="font-size: 1.5rem; font-weight: bold; color: white;">${turnoTxt}</div><div style="color: #94a3b8; font-size: 0.9rem; margin-top: 5px;">${paciente.especialidad}</div>`;
+      historyItem.style.cssText = "background: rgba(255,255,255,0.05); padding: 0.75rem 1rem; border-radius: 12px; min-width: 160px; border-left: 4px solid #38bdf8; flex-shrink: 0;";
+      historyItem.innerHTML = `<div style="font-size: 1.1rem; font-weight: bold; color: white;">${turnoTxt}</div><div style="color: #94a3b8; font-size: 0.8rem; margin-top: 3px;">${paciente.especialidad}</div>`;
 
       historyContainer.prepend(historyItem);
       if (historyContainer.children.length > 5) {
@@ -357,99 +357,74 @@ const app = {
       }
     }
 
-    // 1. Sonido de campanilla agradable (Ding-Dong tipo aeropuerto/hospital)
+    // 1. Sonido Ding-Dong (AudioContext)
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
-
       const playTone = (freq, startTime, duration) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-
-        osc.type = 'sine'; // Sonido suave
+        osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, startTime);
-
-        // Envolvente de volumen tipo campana (ataque rápido, decaimiento lento)
         gain.gain.setValueAtTime(0, startTime);
         gain.gain.linearRampToValueAtTime(0.6, startTime + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-
         osc.start(startTime);
         osc.stop(startTime + duration);
       };
-
-      // Ding (Nota Mi)
       playTone(659.25, ctx.currentTime, 1.5);
-      // Dong (Nota Do, medio segundo después)
       playTone(523.25, ctx.currentTime + 0.5, 2.0);
-
     } catch (e) {
-      console.error('AudioContext bloqueado o error:', e);
+      console.error('AudioContext error:', e);
     }
 
     // 2. Voz anunciando el paciente (SpeechSynthesis)
-    try {
-      // Cancelar cualquier voz que esté hablando antes
-      window.speechSynthesis.cancel();
+    // FIX CHROME: después de mucho tiempo abierto, el motor se pausa silenciosamente.
+    // Solución: cancel → 100ms → speak → pause+resume inmediato para "despertarlo".
+    setTimeout(() => {
+      try {
+        const synth = window.speechSynthesis;
+        if (!synth) return;
 
-      const textoVoz = `Atención paciente: ${paciente.nombre}. Por favor, acercarse a ${paciente.especialidad}.`;
+        const textoVoz = `Turno ${turnoTxt}. ${paciente.nombre}. Pasar a ${paciente.especialidad}.`;
 
-      const hablar = () => {
-        // Cancelar por si algo quedó en cola
-        window.speechSynthesis.cancel();
+        const hablar = () => {
+          synth.cancel();
+          setTimeout(() => {
+            const voces = synth.getVoices();
+            const vocesEs = voces.filter(v => v.lang.startsWith('es'));
+            const vozIdeal = vocesEs.find(v => /Natural|Online/i.test(v.name))
+              || vocesEs.find(v => /Google|Microsoft/i.test(v.name))
+              || vocesEs[0]
+              || voces[0];
 
-        const u = new SpeechSynthesisUtterance(textoVoz);
-        u.lang = 'es-ES';
-        u.rate = 0.85;
-        u.pitch = 1.0;
-        u.volume = 1.0;
+            const u = new SpeechSynthesisUtterance(textoVoz);
+            u.lang = 'es-ES';
+            u.rate = 0.82;
+            u.pitch = 1.0;
+            u.volume = 1.0;
+            if (vozIdeal) u.voice = vozIdeal;
 
-        const voces = window.speechSynthesis.getVoices();
-        const vocesEs = voces.filter(v => v.lang.startsWith('es'));
+            synth.speak(u);
 
-        // Priorizar voces de alta calidad en español
-        const vozIdeal = vocesEs.find(v => /Natural|Online/i.test(v.name))
-          || vocesEs.find(v => /Google|Microsoft/i.test(v.name))
-          || vocesEs[0];
+            // FIX CLAVE: pause+resume despierta el motor cuando lleva mucho tiempo activo
+            setTimeout(() => { synth.pause(); synth.resume(); }, 50);
 
-        if (vozIdeal) {
-          u.voice = vozIdeal;
-        }
-
-        // Workaround para Chrome: speechSynthesis se cuelga si la página lleva mucho tiempo abierta
-        window.speechSynthesis.speak(u);
-
-        // Chrome a veces se congela en textos largos — reiniciamos si no comenzó en 1s
-        const chequeoCongelado = setTimeout(() => {
-          if (window.speechSynthesis.speaking) return; // Está bien
-          window.speechSynthesis.cancel();
-          window.speechSynthesis.speak(u);
-        }, 1000);
-
-        u.onend = () => clearTimeout(chequeoCongelado);
-        u.onerror = (ev) => {
-          clearTimeout(chequeoCongelado);
-          console.error('SpeechSynthesis error:', ev.error);
+            u.onerror = (ev) => console.error('SpeechSynthesis error:', ev.error);
+          }, 100);
         };
-      };
 
-      // Esperar al evento voiceschanged si las voces aún no están cargadas
-      const iniciar = () => {
-        setTimeout(hablar, 1600); // Inicia después del Ding-Dong
-      };
-
-      if (window.speechSynthesis.getVoices().length > 0) {
-        iniciar();
-      } else {
-        // Las voces aún no están disponibles (ocurre en la primera llamada)
-        window.speechSynthesis.addEventListener('voiceschanged', iniciar, { once: true });
-        // Timeout de seguridad por si el evento nunca dispara
-        setTimeout(iniciar, 2500);
+        if (synth.getVoices().length > 0) {
+          hablar();
+        } else {
+          synth.addEventListener('voiceschanged', hablar, { once: true });
+          setTimeout(hablar, 800);
+        }
+      } catch (e) {
+        console.error('Error de voz:', e);
       }
-    } catch (e) {
-      console.error('Error de voz (SpeechSynthesis):', e);
-    }
+    }, 1800); // esperar después del Ding-Dong
   },
 
   // ============================================================
