@@ -828,7 +828,8 @@ const app = {
     }
   },
 
-  async cargarAgenda() {
+  async cargarAgenda(manual = false) {
+    if (manual) this.toast('Actualizando agenda...', 'info');
     const lista = document.getElementById('agendaList');
     if (!lista) return;
     if (!Estado.online || !sb) return;
@@ -947,7 +948,8 @@ const app = {
   // ROL: ENFERMERA (Triaje y Signos Vitales)
   // ============================================================
 
-  async cargarPacientesTriaje() {
+  async cargarPacientesTriaje(manual = false) {
+    if (manual) this.toast('Actualizando lista de espera...', 'info');
     const listEl = document.getElementById('triajeList');
     if (!listEl) return;
     // Solo mostramos "Cargando..." si la lista está vacía (evita el parpadeo cuando se actualiza sola)
@@ -1116,7 +1118,8 @@ const app = {
   // ROL: DOCTOR / ÁREA (ve solo su cola con turnos asignados)
   // ============================================================
 
-  async cargarPacientesArea() {
+  async cargarPacientesArea(manual = false) {
+    if (manual) this.toast('Actualizando pacientes...', 'info');
     const listEl = document.getElementById('patientList');
     if (!listEl) return;
     // Solo mostramos "Cargando..." si la lista está vacía (evita el parpadeo)
