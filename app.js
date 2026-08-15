@@ -282,9 +282,9 @@ const app = {
           const mainContent = document.getElementById('tvContent');
           if (mainContent) {
             mainContent.innerHTML = `
-              <div style="font-size: clamp(2.5rem, 10vw, 7rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.5rem; text-shadow: 0 0 40px rgba(56,189,248,0.4);">${turnoTxt}</div>
-              <div style="font-size: clamp(1.5rem, 5vw, 4rem); color: white; font-weight: 700; margin-bottom: 1.2rem; max-width: 90vw; word-break: break-word; line-height: 1.2; text-align: center;">${paciente.nombre}</div>
-              <div style="font-size: clamp(1rem, 3vw, 2.2rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.8rem 2.5rem; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
+              <div style="font-size: clamp(4rem, 12vh, 7rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.5rem; text-shadow: 0 0 40px rgba(56,189,248,0.4);">${turnoTxt}</div>
+              <div style="font-size: clamp(2.5rem, 8vh, 4.5rem); color: white; font-weight: 700; margin-bottom: 1.2rem; max-width: 90vw; word-break: break-word; line-height: 1.2; text-align: center;">${paciente.nombre}</div>
+              <div style="font-size: clamp(1.5rem, 4vh, 2.5rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.8rem 2.5rem; border-radius: 20px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
             `;
           }
 
@@ -339,9 +339,9 @@ const app = {
     const mainContent = document.getElementById('tvContent');
     if (mainContent) {
       mainContent.innerHTML = `
-        <div style="font-size: clamp(2rem, 7vh, 4rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.4rem; text-shadow: 0 0 40px rgba(56,189,248,0.4); animation: pulse 2s infinite;">${turnoTxt}</div>
-        <div style="font-size: clamp(1.2rem, 4.5vh, 2.8rem); color: white; font-weight: 700; margin-bottom: 1rem; max-width: 90vw; word-break: break-word; line-height: 1.25; text-align: center;">${paciente.nombre}</div>
-        <div style="font-size: clamp(0.9rem, 2.5vh, 1.6rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.6rem 2rem; border-radius: 16px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
+        <div style="font-size: clamp(4rem, 12vh, 7rem); color: #38bdf8; font-weight: 900; line-height: 1.1; margin-bottom: 0.5rem; text-shadow: 0 0 40px rgba(56,189,248,0.4); animation: pulse 2s infinite;">${turnoTxt}</div>
+        <div style="font-size: clamp(2.5rem, 8vh, 4.5rem); color: white; font-weight: 700; margin-bottom: 1.2rem; max-width: 90vw; word-break: break-word; line-height: 1.25; text-align: center;">${paciente.nombre}</div>
+        <div style="font-size: clamp(1.5rem, 4vh, 2.5rem); color: #cbd5e1; background: rgba(255,255,255,0.1); padding: 0.8rem 2.5rem; border-radius: 16px; border: 2px solid rgba(255,255,255,0.2);">Pasar a <strong style="color: #34d399;">${paciente.especialidad}</strong></div>
       `;
     }
 
