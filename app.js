@@ -228,10 +228,13 @@ const app = {
     this.mostrarVista('tv');
 
     // Activar sonido inicial para permisos de navegador (autoplay policy)
+    // y forzar la carga de voces disponibles
     try {
       const u = new SpeechSynthesisUtterance('');
       u.volume = 0;
       speechSynthesis.speak(u);
+      // Forzar carga inmediata de la lista de voces
+      window.speechSynthesis.getVoices();
     } catch (e) { }
 
     this.tvUltimos = [];
@@ -387,30 +390,63 @@ const app = {
 
     // 2. Voz anunciando el paciente (SpeechSynthesis)
     try {
-      setTimeout(() => {
-        let voces = window.speechSynthesis.getVoices();
+      // Cancelar cualquier voz que esté hablando antes
+      window.speechSynthesis.cancel();
 
-        // Buscar voces en español
-        let vocesEs = voces.filter(v => v.lang.startsWith('es'));
+      const textoVoz = `Atención paciente: ${paciente.nombre}. Por favor, acercarse a ${paciente.especialidad}.`;
 
-        // Priorizar voces de alta calidad (Naturales, Online, Google, Microsoft)
-        let vozIdeal = vocesEs.find(v => v.name.includes('Natural') || v.name.includes('Online'))
-          || vocesEs.find(v => v.name.includes('Google') || v.name.includes('Microsoft'))
-          || vocesEs[0]; // Fallback a la primera disponible
+      const hablar = () => {
+        // Cancelar por si algo quedó en cola
+        window.speechSynthesis.cancel();
 
-        // Crear el mensaje hablado (corto y directo)
-        const textoVoz = `Atención paciente: ${paciente.nombre}. Por favor, acercarse a ${paciente.especialidad}.`;
         const u = new SpeechSynthesisUtterance(textoVoz);
         u.lang = 'es-ES';
-        u.rate = 0.85; // Velocidad pausada para mayor claridad
+        u.rate = 0.85;
         u.pitch = 1.0;
+        u.volume = 1.0;
+
+        const voces = window.speechSynthesis.getVoices();
+        const vocesEs = voces.filter(v => v.lang.startsWith('es'));
+
+        // Priorizar voces de alta calidad en español
+        const vozIdeal = vocesEs.find(v => /Natural|Online/i.test(v.name))
+          || vocesEs.find(v => /Google|Microsoft/i.test(v.name))
+          || vocesEs[0];
 
         if (vozIdeal) {
           u.voice = vozIdeal;
         }
 
+        // Workaround para Chrome: speechSynthesis se cuelga si la página lleva mucho tiempo abierta
         window.speechSynthesis.speak(u);
-      }, 1600); // Inicia justo cuando el Ding-Dong comienza a desvanecerse
+
+        // Chrome a veces se congela en textos largos — reiniciamos si no comenzó en 1s
+        const chequeoCongelado = setTimeout(() => {
+          if (window.speechSynthesis.speaking) return; // Está bien
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(u);
+        }, 1000);
+
+        u.onend = () => clearTimeout(chequeoCongelado);
+        u.onerror = (ev) => {
+          clearTimeout(chequeoCongelado);
+          console.error('SpeechSynthesis error:', ev.error);
+        };
+      };
+
+      // Esperar al evento voiceschanged si las voces aún no están cargadas
+      const iniciar = () => {
+        setTimeout(hablar, 1600); // Inicia después del Ding-Dong
+      };
+
+      if (window.speechSynthesis.getVoices().length > 0) {
+        iniciar();
+      } else {
+        // Las voces aún no están disponibles (ocurre en la primera llamada)
+        window.speechSynthesis.addEventListener('voiceschanged', iniciar, { once: true });
+        // Timeout de seguridad por si el evento nunca dispara
+        setTimeout(iniciar, 2500);
+      }
     } catch (e) {
       console.error('Error de voz (SpeechSynthesis):', e);
     }
