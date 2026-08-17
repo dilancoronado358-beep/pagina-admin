@@ -1836,7 +1836,7 @@ const app = {
 
       const escapeCsv = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
 
-      let csvRows = [headers.map(escapeCsv).join(',')];
+      let csvRows = [headers.map(escapeCsv).join(';')];
 
       data.forEach(t => {
         let sv = {};
@@ -1868,7 +1868,7 @@ const app = {
           sv.diagnostico || ''
         ];
 
-        csvRows.push(row.map(escapeCsv).join(','));
+        csvRows.push(row.map(escapeCsv).join(';'));
       });
 
       // BOM para compatibilidad UTF-8 con Excel
@@ -2026,9 +2026,12 @@ const app = {
 
     container.innerHTML = `
       <div style="margin-bottom: 2rem; background: var(--bg); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-        <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin-bottom: 1rem; color: var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
           <span>👤 Perfil del Paciente</span>
-          <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">${registros.length} atención(es) registrada(s)</span>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-muted);">${registros.length} atención(es) registrada(s)</span>
+            <button class="btn-action" style="background: var(--success); padding: 0.4rem 0.8rem; font-size: 0.9rem; min-width: auto; margin: 0;" onclick="app.prepararNuevaCitaDesdeHistoria('${p.cedula || ''}')">📅 Agendar Cita</button>
+          </div>
         </h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
           <div>
@@ -2057,6 +2060,22 @@ const app = {
     `;
 
     container.style.display = 'block';
+  },
+
+  prepararNuevaCitaDesdeHistoria(cedula) {
+    if (!cedula) {
+      this.toast('El paciente no tiene cédula registrada. Búscalo manualmente.', 'error');
+      return;
+    }
+    document.getElementById('pacienteCedula').value = cedula;
+    this.buscarPacienteExistente().then(() => {
+      this.mostrarVista('darTurno');
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      const btnPrin = document.getElementById('navBtnPrincipal');
+      if (Estado.role === 'turnero' && btnPrin) btnPrin.classList.add('active');
+      window.scrollTo(0, 0);
+      this.toast('Completa los datos para agendar la cita.', 'info');
+    });
   },
 
   // ============================================================
